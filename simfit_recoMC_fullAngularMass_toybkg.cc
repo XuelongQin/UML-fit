@@ -56,7 +56,7 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
-void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, bool save, std::vector<int> years)
+void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, int save, std::vector<int> years)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
@@ -697,10 +697,11 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     cout<<"Bad fits: "<<cnt[3]<<" converging outside physical region, "<<cnt[5]+cnt[7]<<" not converged ("<<cnt[5]<<" in ph region)"<<endl;
   }
 
-  if (save) {
+  if (save>0) {
     fout->cd();
     fitResultsTree->Write();
-    wksp->Write();
+    if (save==2)
+      wksp->Write();
   }
 
   fout->Close();
@@ -870,10 +871,10 @@ int main(int argc, char** argv)
   if ( argc > 5 && atoi(argv[5]) > 0 ) localFiles = true;
 
   bool plot = true;
-  bool save = true;
+  int save = 1;
 
   if ( argc > 6 && atoi(argv[6]) == 0 ) plot = false;
-  if ( argc > 7 && atoi(argv[7]) == 0 ) save = false;
+  if ( argc > 7 ) save = atoi(argv[7]);
 
   std::vector<int> years;
   if ( argc > 8 && atoi(argv[8]) != 0 ) years.push_back(atoi(argv[8]));
