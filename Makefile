@@ -17,6 +17,7 @@ EXECUTABLE5 := plotMultiResults
 EXECUTABLE6 := simfit_toy_fullAngular
 EXECUTABLE7 := simfit_recoMC_fullAngularMass
 EXECUTABLE8 := simfit_recoMC_fullMass
+EXECUTABLE9 := simfit_recoMC_fullAngularMass_toybkg
 
 EXTRACLASS := RooDataHist.cxx
 CLASS0     := PdfRT
@@ -31,6 +32,7 @@ CLASS8     := PdfSigAngMass
 CLASS9     := PdfSigMass
 CLASS10    := ShapeSigAng
 CLASS11    := Fitter
+CLASS12    := RooBernsteinSideband
 
 CLASSDICT  := AngDict
 CLASSDICT2 := RooDoubleCBDict
@@ -42,11 +44,11 @@ CXXFLAGS := $(DEBUGFLAGS)
 #compile class
 LIBS := $(SOURCEDIR)/$(CLASS0).cc $(SOURCEDIR)/$(CLASS1).cc $(SOURCEDIR)/$(CLASS2).cc $(SOURCEDIR)/$(CLASS3).cc \
         $(SOURCEDIR)/$(CLASS5).cc $(SOURCEDIR)/$(CLASS6).cc $(SOURCEDIR)/$(CLASS7).cc $(SOURCEDIR)/$(CLASS8).cc \
-        $(SOURCEDIR)/$(CLASS9).cc $(SOURCEDIR)/$(CLASS10).cc $(SOURCEDIR)/$(CLASS11).cc $(CLASSDICT).cc $(SOURCEDIR)/$(EXTRACLASS)
+        $(SOURCEDIR)/$(CLASS9).cc $(SOURCEDIR)/$(CLASS10).cc $(SOURCEDIR)/$(CLASS11).cc $(SOURCEDIR)/$(CLASS12).cxx $(CLASSDICT).cc $(SOURCEDIR)/$(EXTRACLASS)
 
 $(CLASSDICT): $(INCLUDEDIR)/$(CLASS0).h $(INCLUDEDIR)/$(CLASS1).h $(INCLUDEDIR)/$(CLASS2).h $(INCLUDEDIR)/$(CLASS3).h \
               $(INCLUDEDIR)/$(CLASS5).h $(INCLUDEDIR)/$(CLASS6).h $(INCLUDEDIR)/$(CLASS7).h $(INCLUDEDIR)/$(CLASS8).h \
-              $(INCLUDEDIR)/$(CLASS9).h $(INCLUDEDIR)/$(CLASS10).h $(INCLUDEDIR)/$(CLASS11).h
+              $(INCLUDEDIR)/$(CLASS9).h $(INCLUDEDIR)/$(CLASS10).h $(INCLUDEDIR)/$(CLASS11).h $(INCLUDEDIR)/$(CLASS12).h
 	@echo "Generating dictionary $@ using rootcint ..."
 	$(ROOTCINT) -f $@.cc -c $^
 
@@ -81,7 +83,8 @@ $(EXECUTABLE7): $(EXECUTABLE7).cc
 $(EXECUTABLE8): $(EXECUTABLE8).cc 
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
 
-
+$(EXECUTABLE9): $(EXECUTABLE9).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
 
 #cleaning options
 .PHONY: clean
