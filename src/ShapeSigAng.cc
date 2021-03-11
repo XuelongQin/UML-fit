@@ -43,6 +43,59 @@ ShapeSigAng::ShapeSigAng(const char *name, const char *title,
   intPart(_intPart),
   isC(_isC)
 {
+
+  useSWave = false;
+
+}
+
+ShapeSigAng::ShapeSigAng(const char *name, const char *title,
+			 RooAbsReal& _ctK,
+			 RooAbsReal& _ctL,
+			 RooAbsReal& _phi,
+			 RooAbsReal& _Fl,
+			 RooAbsReal& _P1,
+			 RooAbsReal& _P2,
+			 RooAbsReal& _P3,
+			 RooAbsReal& _P4p,
+			 RooAbsReal& _P5p,
+			 RooAbsReal& _P6p,
+			 RooAbsReal& _P8p,
+			 RooAbsReal& _Fs,
+			 RooAbsReal& _As,
+			 RooAbsReal& _A4s,
+			 RooAbsReal& _A5s,
+			 RooAbsReal& _A7s,
+			 RooAbsReal& _A8s,
+			 RooAbsReal& _Eff,
+			 std::vector<double> _intPart,
+			 bool _isC,
+			 Double_t _interferenceFactor) :
+  RooAbsReal(name,title),
+  ctK("ctK","ctK",this,_ctK),
+  ctL("ctL","ctL",this,_ctL),
+  phi("phi","phi",this,_phi),
+  Fl("Fl","Fl",this,_Fl),
+  P1("P1","P1",this,_P1),
+  P2("P2","P2",this,_P2),
+  P3("P3","P3",this,_P3),
+  P4p("P4p","P4p",this,_P4p),
+  P5p("P5p","P5p",this,_P5p),
+  P6p("P6p","P6p",this,_P6p),
+  P8p("P8p","P8p",this,_P8p),
+  Fs("Fs","Fs",this,_Fs),
+  As("As","As",this,_As),
+  A4s("A4s","A4s",this,_A4s),
+  A5s("A5s","A5s",this,_A5s),
+  A7s("A7s","A7s",this,_A7s),
+  A8s("A8s","A8s",this,_A8s),
+  Eff("Eff","efficiency",this,_Eff),
+  intPart(_intPart),
+  isC(_isC),
+  interferenceFactor(_interferenceFactor)
+{
+
+  useSWave = true;
+
 }
 
 ShapeSigAng::ShapeSigAng(const ShapeSigAng& other, const char* name) :  
@@ -62,6 +115,18 @@ ShapeSigAng::ShapeSigAng(const ShapeSigAng& other, const char* name) :
   intPart(other.intPart),
   isC(other.isC)
 {
+
+  if (other.useSWave) {
+    useSWave = true;
+    interferenceFactor = other.interferenceFactor;
+    Fs = RooRealProxy("Fs",this,other.Fs);
+    As = RooRealProxy("As",this,other.As);
+    A4s = RooRealProxy("A4s",this,other.A4s);
+    A5s = RooRealProxy("A5s",this,other.A5s);
+    A7s = RooRealProxy("A7s",this,other.A7s);
+    A8s = RooRealProxy("A8s",this,other.A8s);
+  }
+
 }
 
 
@@ -70,6 +135,10 @@ Double_t ShapeSigAng::evaluate() const
 {
 
   double dec;
+
+  // Factor used to implement the interference parameters' limits (from arXiv:1303.5794)
+  double limitFac = 0;
+  if (useSWave) limitFac = interferenceFactor * sqrt( 3. * Fs * (1-Fs) );
   
   if (isC){
     dec = ( 0.75 * (1-Fl) * (1-ctK*ctK) +
@@ -81,6 +150,15 @@ Double_t ShapeSigAng::evaluate() const
 	    2 * P2 * (1-Fl) * (1-ctK*ctK) * ctL -
 	    P3 * (1-Fl) * (1-ctK*ctK) * (1-ctL*ctL) * sin(2*phi) );
   
+    if (useSWave)
+      dec = (1-Fs) * dec + 2./3. * ( Fs * (1-ctL*ctL) +
+				     As * 2*sqrt(Fl)*limitFac * (1-ctL*ctL) * ctK +
+				     A4s * sqrt((1-Fl)*(1-P1))/2.*limitFac * sqrt(1-ctK*ctK) * 2*ctL*sqrt(1-ctL*ctL) * cos(phi) +
+				     A5s * sqrt((1-Fl)*(1+P1))*limitFac * sqrt(1-ctK*ctK) * sqrt(1-ctL*ctL) * cos(phi) +
+				     A7s * sqrt((1-Fl)*(1-P1))*limitFac * sqrt(1-ctK*ctK) * sqrt(1-ctL*ctL) * sin(phi) +
+				     A8s * sqrt((1-Fl)*(1+P1))/2.*limitFac * sqrt(1-ctK*ctK) * 2*ctL*sqrt(1-ctL*ctL) * sin(phi)
+				     );
+
   }
   else{
     dec = ( 0.75 * (1-Fl) * (1-ctK*ctK) +
@@ -91,6 +169,16 @@ Double_t ShapeSigAng::evaluate() const
 	    2 * sin(phi) * ctK * sqrt(Fl * (1-Fl) * (1-ctK*ctK)) * ( -1. * P8p * ctL * sqrt(1-ctL*ctL) - P6p * sqrt(1-ctL*ctL) ) -
 	    2 * P2 * (1-Fl) * (1-ctK*ctK) * ctL +
 	    P3 * (1-Fl) * (1-ctK*ctK) * (1-ctL*ctL) * sin(2*phi) );
+
+    if (useSWave)
+      dec = (1-Fs) * dec + 2./3. * ( Fs * (1-ctL*ctL) -
+				     As * 2*sqrt(Fl)*limitFac * (1-ctL*ctL) * ctK -
+				     A4s * sqrt((1-Fl)*(1-P1))/2.*limitFac * sqrt(1-ctK*ctK) * 2*ctL*sqrt(1-ctL*ctL) * cos(phi) +
+				     A5s * sqrt((1-Fl)*(1+P1))*limitFac * sqrt(1-ctK*ctK) * sqrt(1-ctL*ctL) * cos(phi) -
+				     A7s * sqrt((1-Fl)*(1-P1))*limitFac * sqrt(1-ctK*ctK) * sqrt(1-ctL*ctL) * sin(phi) +
+				     A8s * sqrt((1-Fl)*(1+P1))/2.*limitFac * sqrt(1-ctK*ctK) * 2*ctL*sqrt(1-ctL*ctL) * sin(phi)
+				     );
+
   }
 
   double effValue = effVal()->getVal();
@@ -123,7 +211,7 @@ Int_t ShapeSigAng::getAnalyticalIntegral(RooArgSet& allVars, RooArgSet& analVars
 {
   // use pre-computed integrals for the integration over all the three variables
   // after checking that integrals are in place
-  if ( intPart.size()<1 || intPart[0]==0 )
+  if ( ( useSWave && intPart.size()<17 ) || intPart.size()<11 || intPart[0]==0 )
     return 0 ;
   if ( matchArgs(allVars,analVars,ctK,ctL,phi) )
     if ( fullRangeCosT(ctK,rangeName) && fullRangeCosT(ctL,rangeName) && fullRangePhi(phi,rangeName) )
@@ -143,37 +231,55 @@ Double_t ShapeSigAng::analyticalIntegral(Int_t code, const char* rangeName) cons
 
   Double_t ret;
 
+  double limitFac = 0;
+  if (useSWave) limitFac = interferenceFactor * sqrt( 3. * Fs * (1-Fs) );
+
   if (isC){
 
     // use the pre-computed integrals from histogram
-    ret =  9./(32*3.14159265) * (
-				 0.75*(1-Fl)              * intPart[0]
-				 + Fl                     * intPart[1]
-				 + 0.25*(1-Fl)            * intPart[2]
-				 - Fl                     * intPart[3]
-				 + 0.5*P1*(1-Fl)          * intPart[4]
-				 + 0.5*sqrt(Fl-Fl*Fl)*P4p * intPart[5]
-				 + sqrt(Fl-Fl*Fl)*P5p     * intPart[6]
-				 - sqrt(Fl-Fl*Fl)*P6p     * intPart[7]
-				 + 0.5*sqrt(Fl-Fl*Fl)*P8p * intPart[8]
-				 + 2*(1-Fl)*P2            * intPart[9]
-				 - P3*(1-Fl)              * intPart[10]
-				 );
+    ret = ( 0.75*(1-Fl)              * intPart[0]
+	    + Fl                     * intPart[1]
+	    + 0.25*(1-Fl)            * intPart[2]
+	    - Fl                     * intPart[3]
+	    + 0.5*P1*(1-Fl)          * intPart[4]
+	    + 0.5*sqrt(Fl-Fl*Fl)*P4p * intPart[5]
+	    + sqrt(Fl-Fl*Fl)*P5p     * intPart[6]
+	    - sqrt(Fl-Fl*Fl)*P6p     * intPart[7]
+	    + 0.5*sqrt(Fl-Fl*Fl)*P8p * intPart[8]
+	    + 2*(1-Fl)*P2            * intPart[9]
+	    - P3*(1-Fl)              * intPart[10] );
+
+    if (useSWave) ret = (1-Fs) * ret + 2./3. * ( Fs                                    * intPart[11] +
+						 As * 2*sqrt(Fl)*limitFac              * intPart[12] +
+						 A4s * sqrt((1-Fl)*(1-P1))/2.*limitFac * intPart[13] +
+						 A5s * sqrt((1-Fl)*(1+P1))*limitFac    * intPart[14] +
+						 A7s * sqrt((1-Fl)*(1-P1))*limitFac    * intPart[15] +
+						 A8s * sqrt((1-Fl)*(1+P1))/2.*limitFac * intPart[16]
+						 );
+
   }
   else{
-    ret =  9./(32*3.14159265) * (
-				 0.75*(1-Fl)              * intPart[0]
-				 + Fl                     * intPart[1]
-				 + 0.25*(1-Fl)            * intPart[2]
-				 - Fl                     * intPart[3]
-				 + 0.5*P1*(1-Fl)          * intPart[4]
-				 + 0.5*sqrt(Fl-Fl*Fl)*P4p * intPart[5]
-				 - sqrt(Fl-Fl*Fl)*P5p     * intPart[6]
-				 - sqrt(Fl-Fl*Fl)*P6p     * intPart[7]
-				 - 0.5*sqrt(Fl-Fl*Fl)*P8p * intPart[8]
-				 - 2*(1-Fl)*P2            * intPart[9]
-				 + P3*(1-Fl)              * intPart[10]
-				 );
+
+    ret = ( 0.75*(1-Fl)              * intPart[0]
+	    + Fl                     * intPart[1]
+	    + 0.25*(1-Fl)            * intPart[2]
+	    - Fl                     * intPart[3]
+	    + 0.5*P1*(1-Fl)          * intPart[4]
+	    + 0.5*sqrt(Fl-Fl*Fl)*P4p * intPart[5]
+	    - sqrt(Fl-Fl*Fl)*P5p     * intPart[6]
+	    - sqrt(Fl-Fl*Fl)*P6p     * intPart[7]
+	    - 0.5*sqrt(Fl-Fl*Fl)*P8p * intPart[8]
+	    - 2*(1-Fl)*P2            * intPart[9]
+	    + P3*(1-Fl)              * intPart[10] );
+
+    if (useSWave) ret = (1-Fs) * ret + 2./3. * ( Fs                                    * intPart[11] -
+						 As * 2*sqrt(Fl)*limitFac              * intPart[12] -
+						 A4s * sqrt((1-Fl)*(1-P1))/2.*limitFac * intPart[13] +
+						 A5s * sqrt((1-Fl)*(1+P1))*limitFac    * intPart[14] -
+						 A7s * sqrt((1-Fl)*(1-P1))*limitFac    * intPart[15] +
+						 A8s * sqrt((1-Fl)*(1+P1))/2.*limitFac * intPart[16]
+						 );
+
   }
 
   if (ret<=0) {
@@ -182,5 +288,5 @@ Double_t ShapeSigAng::analyticalIntegral(Int_t code, const char* rangeName) cons
     return 1e-55;
   }
   
-  return ret;
+  return (9./(32*3.14159265) * ret);
 }  
