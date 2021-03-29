@@ -18,9 +18,9 @@ std::map<int,std::vector<float>> frt_sigmas = {
 };
 
 std::map<int,std::vector<float>> fM_sigmas = {
-  {2016, {0.023, 0.015, 0.017, 0.013, 0.005, 0.010, 0.006, 0.013}},
-  {2017, {0.018, 0.014, 0.015, 0.010, 0.004, 0.008, 0.005, 0.011}},
-  {2018, {0.015, 0.010, 0.011, 0.008, 0.006, 0.006, 0.006, 0.008}},
+  {2016, {0.023, 0.015, 0.017, 0.013, 0.0005, 0.010, 0.006, 0.013}},
+  {2017, {0.018, 0.014, 0.015, 0.010, 0.0004, 0.008, 0.005, 0.011}},
+  {2018, {0.015, 0.010, 0.011, 0.008, 0.0002, 0.006, 0.006, 0.008}},
 };
 
 
@@ -82,6 +82,8 @@ void constrainVar2(RooRealVar* var,
                                                   RooConst( w->var(inVarName.c_str())->getVal()  ), 
                                                   RooConst( w->var(inVarName.c_str())->getError())
                                                  ); 
+    std::cout << "constraining " << w->var(inVarName.c_str()) << std::endl;
+    gauss_constr->Print("T");
     if (addToList){
       c_vars.add(*var);    
       c_pdfs.add(*gauss_constr);
@@ -107,11 +109,12 @@ bool retrieveWorkspace(string filename, std::vector<RooWorkspace*> &ws, std::str
 }
 
 
-std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastSample, RooWorkspace *ws, 
+std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastSample, RooWorkspace *ws, RooWorkspace *ws2, 
                                        int q2Bin, int parity, int year, //std::map<int,float> scale_to_data,
                                        RooArgSet reco_vars, RooArgSet vars, std::string shortString  ){
 
     RooDataSet* dataCT, *dataWT;
+    RooDataSet* dataCT2, *dataWT2;
     std::vector<RooDataSet*> datasample;
 
     if (nSample>0){  
@@ -132,13 +135,22 @@ std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastS
       }
     }
     else{
+
       RooDataSet* isample = new RooDataSet(("data_"+shortString + "_subs0").c_str(), 
 					   ("data_"+shortString + "_subs0").c_str(), 
 					   RooArgSet(vars));
       dataCT = (RooDataSet*)ws->data(Form((parity==1?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin)) ;
       dataWT = (RooDataSet*)ws->data(Form((parity==1?"data_wtRECO_ev_b%i":"data_wtRECO_od_b%i"),q2Bin)) ;
       isample->append(*dataCT);
-      isample->append(*dataWT);
+//       isample->append(*dataWT);
+     std::cout << "n sample : " << dataCT->sumEntries() << std::endl; 
+
+      dataCT2 = (RooDataSet*)ws2->data(Form((parity==1?"data_ctRECO_od_b%i":"data_ctRECO_ev_b%i"),q2Bin)) ;
+      dataWT2 = (RooDataSet*)ws2->data(Form((parity==1?"data_wtRECO_od_b%i":"data_wtRECO_ev_b%i"),q2Bin)) ;
+      isample->append(*dataCT2);
+//       isample->append(*dataWT2);
+      std::cout << "n sample 2: " << dataCT2->sumEntries() << std::endl; 
+
       datasample.push_back (isample);
     }
     return datasample;
