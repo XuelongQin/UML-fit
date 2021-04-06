@@ -69,7 +69,8 @@ void simfit_recoMC_fullMassBin(int q2Bin, int parity, bool multiSample, uint nSa
   gInterpreter->GenerateDictionary("std::pair<std::map<string,RooDataSet*>::iterator, bool>", "map;string;RooDataSet.h");
   std::map<std::string, RooDataSet*> map;
 
-  RooRealVar* mass = new RooRealVar("mass","mass", 5.,5.6);
+  RooRealVar* mass = new RooRealVar("mass","mass", 4.9,5.7);
+//   RooRealVar* mass = new RooRealVar("mass","mass", 5.,5.6);
   RooRealVar* rand = new RooRealVar("rand","rand", 0,1);
   RooArgSet reco_vars ( *mass, *rand);
   RooArgSet observables (*mass);
@@ -91,7 +92,7 @@ void simfit_recoMC_fullMassBin(int q2Bin, int parity, bool multiSample, uint nSa
   // loop on the various datasets
   for (unsigned int iy = 0; iy < years.size(); iy++) {
     year.clear(); year.assign(Form("%i",years[iy]));
-    string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/noPUweight/recoMCDataset_b%i_%i.root", years[iy], q2Bin, years[iy]); 
+    string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/recoMCDataset_b%i_%i.root", years[iy], q2Bin, years[iy]); 
     // import data (or MC as data proxy)
     if (!retrieveWorkspace( filename_data, wsp, Form("ws_b%ip%i", q2Bin, 1-parity )))  return;
     if (!retrieveWorkspace( filename_data, wsp2, Form("ws_b%ip%i", q2Bin, parity )))  return;
@@ -132,15 +133,6 @@ void simfit_recoMC_fullMassBin(int q2Bin, int parity, bool multiSample, uint nSa
         dcb_rt = createRTMassShape(q2Bin, mass, mean_rt, sigma_rt, alpha_rt1, alpha_rt2, n_rt1, n_rt2 , wsp_mcmass[iy], years[iy], false, c_vars_rt, c_pdfs_rt  );
     }
     
-    
-    sigma_rt  -> setVal(0.028);
-    alpha_rt1 -> setVal(1.5);
-    alpha_rt2 -> setVal(-2);
-    n_rt1     -> setVal(1);
-    n_rt2     -> setVal(1);
-    f1rt      -> setVal(0.8);
-    sigma_rt2 -> setVal(0.048);
-
    
     /// create constrained PDF for RT mass
     RooArgList constr_rt_list = RooArgList(c_pdfs_rt);
@@ -154,8 +146,8 @@ void simfit_recoMC_fullMassBin(int q2Bin, int parity, bool multiSample, uint nSa
     RooRealVar* sigma_wt    = new RooRealVar (Form("#sigma_{WT1}^{%i}",years[iy])   , "sigmawt"    ,  wsp_mcmass[iy]->var(Form("#sigma_{WT1}^{%i}", q2Bin))->getVal() ,      0,    1, "GeV");
     RooRealVar* alpha_wt1   = new RooRealVar (Form("#alpha_{WT1}^{%i}",years[iy] )  , "alphawt1"   ,  wsp_mcmass[iy]->var(Form("#alpha_{WT1}^{%i}", q2Bin))->getVal() ,      0,   10 );
     RooRealVar* alpha_wt2   = new RooRealVar (Form("#alpha_{WT2}^{%i}",years[iy] )  , "alphawt2"   ,  wsp_mcmass[iy]->var(Form("#alpha_{WT2}^{%i}", q2Bin))->getVal() ,      0,   10 );
-    RooRealVar* n_wt1       = new RooRealVar (Form("n_{WT1}^{%i}",years[iy])        , "nwt1"       ,  wsp_mcmass[iy]->var(Form("n_{WT1}^{%i}", q2Bin))->getVal()      ,      0., 100.);
-    RooRealVar* n_wt2       = new RooRealVar (Form("n_{WT2}^{%i}",years[iy])        , "nwt2"       ,  wsp_mcmass[iy]->var(Form("n_{WT2}^{%i}", q2Bin))->getVal()      ,      0., 100.);
+    RooRealVar* n_wt1       = new RooRealVar (Form("n_{WT1}^{%i}",years[iy])        , "nwt1"       ,  wsp_mcmass[iy]->var(Form("n_{WT1}^{%i}", q2Bin))->getVal()      ,      0.01,  30); //100
+    RooRealVar* n_wt2       = new RooRealVar (Form("n_{WT2}^{%i}",years[iy])        , "nwt2"       ,  wsp_mcmass[iy]->var(Form("n_{WT2}^{%i}", q2Bin))->getVal()      ,      0.01, 100.);
 
     RooAbsPdf* dcb_wt = createWTMassShape(q2Bin, mass, mean_wt, sigma_wt, alpha_wt1, alpha_wt2, n_wt1, n_wt2 , wsp_mcmass[iy], years[iy], false, c_vars_wt, c_pdfs_wt );
 
@@ -203,7 +195,7 @@ void simfit_recoMC_fullMassBin(int q2Bin, int parity, bool multiSample, uint nSa
     mFrac->setConstant();
     c_vars.add(*mFrac);       
 
-    RooAbsPdf* final_PDF =  dcb_rt;
+    RooAbsPdf* final_PDF =  dcb_wt;
 //     RooProdPdf* final_PDF = new RooProdPdf(("final_PDF_"+year).c_str(), 
 //                                            ("final_PDF_"+year).c_str(),
 //                                            RooArgList(*PDF_sig_mass[iy],*c_fm[iy]));
@@ -322,7 +314,7 @@ void simfit_recoMC_fullMassBin(int q2Bin, int parity, bool multiSample, uint nSa
         combData->plotOn(frames[fr], MarkerColor(kRed+1), LineColor(kRed+1), Binning(40), 
                          Cut(("sample==sample::data"+year+Form("_subs%d",firstSample)).c_str()), 
                          Name(("plData"+year).c_str()));
-        simPdf  ->plotOn(frames[fr], LineWidth(1),
+        ws_pars->pdf("simPdf")  ->plotOn(frames[fr], LineWidth(1),
                          Slice(sample, ("data"+year+Form("_subs%i",firstSample)).c_str()), 
                          ProjWData(RooArgSet(sample), *combData),  
                          Name(("plPDF"+year).c_str()));
