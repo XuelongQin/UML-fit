@@ -22,17 +22,25 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 
   if ( year<6 || year>8 ) return;
 
+  bool isJpsi = false;
+  bool isPsi  = false;
+  bool isLMNR = false;
+  
+  if (q2Bin==4)      isJpsi = true;
+  else if (q2Bin==6) isPsi = true;
+  else isLMNR = true;
+
   // define angular variables and variable for PU-reweighting
   RooRealVar ctK ("ctK","cos(#theta_{K})",-1,1);
   RooRealVar ctL ("ctL","cos(#theta_{L})",-1,1);
   RooRealVar phi ("phi","#phi",-TMath::Pi(),TMath::Pi());
   RooArgSet vars (ctK, ctL, phi);
   RooRealVar wei ("weight","weight",1);
-  RooRealVar tagged_mass("tagged_mass","tagged_mass", 0,10);
+  RooRealVar mass("mass","mass", 0,10);
   // random variable [0,1] to keep or reject the event when performing data-like stat. studies
   RooRealVar rand("rand", "rand", 0,1);
   TRandom rand_gen(1029);
-  RooArgSet reco_vars (ctK, ctL, phi, wei, tagged_mass, rand);
+  RooArgSet reco_vars (ctK, ctL, phi, wei, mass, rand);
 
 
   // flags to mark which q2 bins should be filled
@@ -63,6 +71,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     year_str = "2018";
   }
   int numEntries = t_num->GetEntries();
+  std::cout << numEntries << std::endl;
   int counter;
 
   // Import branches from ntuples:
@@ -80,6 +89,11 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   double recoB0Mass;
   t_num->SetBranchAddress( "tagged_mass", &recoB0Mass );
 
+  bool passB0Psi_lmnr, passB0Psi_jpsi, passB0Psi_psip;
+  t_num->SetBranchAddress( "passB0Psi_lmnr", &passB0Psi_lmnr );
+  t_num->SetBranchAddress( "passB0Psi_jpsi", &passB0Psi_jpsi );
+  t_num->SetBranchAddress( "passB0Psi_psip", &passB0Psi_psip );
+
   // B0-kinematic variables
   // double recoB0pT, recoB0eta;
   // t_num->SetBranchAddress( "bPt"    , &recoB0pT  );
@@ -96,7 +110,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   t_num->SetBranchAddress( "eventN", &eventN     );
 
   // event pileup weight
-  float PUweight = 1;
+  double PUweight = 1;
   t_num->SetBranchAddress( "weight", &PUweight );
 
   // Define datasets for five efficiency terms
@@ -122,14 +136,10 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   for (int iCand=0; iCand<numEntries; ++iCand) {
     t_num->GetEntry(iCand);
     // anti-radiation cut
-    if ( recoDimuMass < PDGJpsiMass ) { // below Jpsi
-      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGJpsiMass ) < 0.18 ) continue;
-    } else if ( recoDimuMass > PDGPsiPrimeMass ) { // above PsiPrime
-      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGPsiPrimeMass ) < 0.08 ) continue;
-    } else { // between the resonances
-      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGJpsiMass ) < 0.08 ) continue;
-      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGPsiPrimeMass ) < 0.09 ) continue;
-    }      
+    if (isLMNR && passB0Psi_lmnr == 0) continue;
+    else if (isJpsi && passB0Psi_jpsi == 0) continue;
+    else if (isPsi  && passB0Psi_psip == 0)  continue;
+
     // find q2 bin of current candidate
     xBin=-1;
     for (int i=0; i<nBins; ++i)
@@ -150,7 +160,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     ctK.setVal(recoCosThetaK);
     ctL.setVal(recoCosThetaL);
     phi.setVal(recoPhi);
-    tagged_mass.setVal(recoB0Mass);
+    mass.setVal(recoB0Mass);
     rand.setVal(rand_gen.Uniform(1));
     if (genSignal != tagB0+1) { // correctly tagged events
       if (eventN%2==0) data_ctRECO_ev[xBin]->add(reco_vars,PUweight);
@@ -183,7 +193,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       ws_od[i]->import( *data_ctRECO_od[i] );
       ws_ev[i]->import( *data_wtRECO_ev[i] );
       ws_od[i]->import( *data_wtRECO_od[i] );
-      TFile* fout = new TFile( ( "recoMCDataset_"+shortString[i]+ "_" + year_str + "_tagged_newphi.root" ).c_str(), "RECREATE" );
+      TFile* fout = new TFile( ( "recoMCDataset_"+shortString[i]+ "_" + year_str + ".root" ).c_str(), "RECREATE" );
       ws_ev[i]->Write();
       ws_od[i]->Write();
       fout->Close();
