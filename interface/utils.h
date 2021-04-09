@@ -18,9 +18,22 @@ std::map<int,std::vector<float>> frt_sigmas = {
 };
 
 std::map<int,std::vector<float>> fM_sigmas = {
-  {2016, {0.024, 0.017, 0.018, 0.013, 0.005, 0.010, 0.006, 0.010}},
-  {2017, {0.020, 0.015, 0.016, 0.011, 0.004, 0.009, 0.005, 0.013}},
-  {2018, {0.015, 0.011, 0.013, 0.008, 0.002, 0.006, 0.003, 0.008}},
+  {2016, {0.023, 0.015, 0.017, 0.013, 0.005, 0.010, 0.006, 0.013}},
+  {2017, {0.018, 0.014, 0.015, 0.010, 0.004, 0.008, 0.005, 0.011}},
+  {2018, {0.015, 0.010, 0.011, 0.008, 0.006, 0.006, 0.006, 0.008}},
+};
+
+
+std::map<int,std::vector<float>> nbkg_years = {
+  {2016, {162, 535, 462,  810, 0.005, 1342, 0.006, 467}},
+  {2017, {185, 496, 441,  711, 0.004, 1363, 0.005, 379}},
+  {2018, {288, 842, 734, 1270, 0.002, 2954, 0.003, 779}},
+};
+
+std::map<int,std::vector<float>> nsig_years = {
+  {2016, {205, 454, 391,  689, 0.005, 1174, 0.006,  704}},
+  {2017, {307, 581, 495, 1013, 0.004, 1524, 0.005,  835}},
+  {2018, {500, 981, 821, 1608, 0.002, 3018, 0.003, 1836}},
 };
 
 
@@ -96,7 +109,7 @@ bool retrieveWorkspace(string filename, std::vector<RooWorkspace*> &ws, std::str
 
 std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastSample, RooWorkspace *ws, 
                                        int q2Bin, int parity, int year, //std::map<int,float> scale_to_data,
-                                       RooArgSet reco_vars, std::string shortString  ){
+                                       RooArgSet reco_vars, RooArgSet vars, std::string shortString  ){
 
     RooDataSet* dataCT, *dataWT;
     std::vector<RooDataSet*> datasample;
@@ -109,9 +122,9 @@ std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastS
 					     RooArgSet(reco_vars));
 
         dataCT = (RooDataSet*)ws->data(Form((parity==1?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin))
-          ->reduce( RooArgSet(reco_vars), Form("rand > %f && rand < %f", is*scale_to_data[year], (is+1)*scale_to_data[year] )) ;
+          ->reduce( RooArgSet(vars), Form("rand > %f && rand < %f", is*scale_to_data[year], (is+1)*scale_to_data[year] )) ;
         dataWT = (RooDataSet*)ws->data(Form((parity==1?"data_wtRECO_ev_b%i":"data_wtRECO_od_b%i"),q2Bin))
-          ->reduce( RooArgSet(reco_vars), Form("rand > %f && rand < %f", is*scale_to_data[year], (is+1)*scale_to_data[year] )) ;
+          ->reduce( RooArgSet(vars), Form("rand > %f && rand < %f", is*scale_to_data[year], (is+1)*scale_to_data[year] )) ;
 
         isample->append(*dataCT);
         isample->append(*dataWT);
@@ -121,7 +134,7 @@ std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastS
     else{
       RooDataSet* isample = new RooDataSet(("data_"+shortString + "_subs0").c_str(), 
 					   ("data_"+shortString + "_subs0").c_str(), 
-					   RooArgSet(reco_vars));
+					   RooArgSet(vars));
       dataCT = (RooDataSet*)ws->data(Form((parity==1?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin)) ;
       dataWT = (RooDataSet*)ws->data(Form((parity==1?"data_wtRECO_ev_b%i":"data_wtRECO_od_b%i"),q2Bin)) ;
       isample->append(*dataCT);

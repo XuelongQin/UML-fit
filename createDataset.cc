@@ -46,7 +46,6 @@ void createDataset(int year, int q2Bin = -1, int data = 0, bool plot = false)
   RooArgSet reco_vars (ctK, ctL, phi, mass, rand);
   if (data==0) reco_vars.add(wei);
 
-
   // flags to mark which q2 bins should be filled
   bool runBin [nBins];
   string shortString [nBins];
@@ -67,6 +66,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, bool plot = false)
   else
     t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/201%iData_All_finalSelection.root/ntuple", year, year));
   int numEntries = t_num->GetEntries();
+  std::cout << numEntries << std::endl;
   int counter;
 
   // Import branches from ntuples:
