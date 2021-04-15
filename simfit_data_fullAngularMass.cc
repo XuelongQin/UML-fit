@@ -28,6 +28,7 @@
 #include <RooProdPdf.h>
 #include <RooCBShape.h>
 #include "RooDoubleCBFast.h"
+#include "RooExponential.h"
 
 #include "utils.h"
 #include "PdfSigRTMass.h"
@@ -39,7 +40,7 @@
 #include "BoundDist.h"
 #include "Penalty.h"
 #include "Fitter.h"
-
+#include "RooBernsteinSideband.h"
 
 using namespace RooFit;
 using namespace std;
@@ -77,15 +78,15 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
   uint lastSample = nSample > 0 ? nSample-1 : 0;
   
   std::vector<TFile*> fin_eff;
-  std::vector<RooWorkspace*> wsp, wsp_mcmass;
+  std::vector<RooWorkspace*> wsp, wsp_mcmass, wsp_sb;
   std::vector<std::vector<RooDataSet*>> data;
   std::vector<RooAbsReal*> effC, effW;
   std::vector<TH3D*> effCHist, effWHist;
   std::vector<TH1D*> intCHist, intWHist;
   std::vector< std::vector<double> > intCVec(years.size(), std::vector<double>(0));
   std::vector< std::vector<double> > intWVec(years.size(), std::vector<double>(0));
-  std::vector<RooAbsPdf*> PDF_sig_ang_mass(0);
-  std::vector<RooAbsPdf*> PDF_sig_ang_mass_penalty(0);
+  std::vector<RooAbsPdf*> PDF_sig_ang_mass_bkg(0);
+  std::vector<RooAbsPdf*> PDF_sig_ang_mass_bkg_penalty(0);
   std::vector<RooGaussian*> c_deltaPeaks, c_fm;
   RooArgSet c_vars_rt, c_pdfs_rt;
   RooArgSet c_vars_wt, c_pdfs_wt;
@@ -210,7 +211,7 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 
 
     // create roodataset (in case data-like option is selected, only import the correct % of data)
-    data.push_back( createDatasetInDataInData( wsp[iy],  q2Bin,  observables,  shortString  )); 
+    data.push_back( createDatasetInData( wsp[iy],  q2Bin,  observables,  shortString  )); 
     // data.push_back( createDataset( nSample,  firstSample,  lastSample, wsp[iy],  
     //                                q2Bin,  parity,  years[iy], 
     //                                reco_vars, observables,  shortString  )); 
@@ -306,50 +307,83 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
          		                 );
     
 
+    PdfSigAngMass* pdf_sig_ang_mass = nullptr;
+    PdfSigAngMass* pdf_sig_ang_mass_penalty = nullptr;
     if (q2Bin < 5)  {
-        PDF_sig_ang_mass.push_back( new PdfSigAngMass( ("PDF_sig_ang_mass_"+shortString+"_"+year).c_str(),
-                                                       ("PDF_sig_ang_mass_"+year).c_str(),
-         		                                *ctK,*ctL,*phi,*mass,
-                                                        *mean_rt, *sigma_rt, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2,
-                                                        *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
-         		                                *mFrac, *c_fm,
-         		                                *ang_rt, *ang_wt,
-         		                                *c_dcb_rt, *c_dcb_wt
-         		                                ));
+        pdf_sig_ang_mass = new PdfSigAngMass( ("PDF_sig_ang_mass_"+shortString+"_"+year).c_str(),
+					      ("PDF_sig_ang_mass_"+year).c_str(),
+					      *ctK,*ctL,*phi,*mass,
+					      *mean_rt, *sigma_rt, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2,
+					      *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
+					      *mFrac, *c_fm,
+					      *ang_rt, *ang_wt,
+					      *c_dcb_rt, *c_dcb_wt
+					      );
     
-        PDF_sig_ang_mass_penalty.push_back(new PdfSigAngMass( ( "PDF_sig_ang_mass_penalty_"+shortString+"_"+year).c_str(),
-                                                              ( "PDF_sig_ang_mass_penalty_"+year).c_str(),
-      		                                                *ctK,*ctL,*phi,*mass,
-                                                                *mean_rt, *sigma_rt, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2,
-                                                                *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
-      		                                                *mFrac, *c_fm,
-                          		                        *penTerm,
-            		                                        *ang_rt, *ang_wt,
-      		                                                *c_dcb_rt, *c_dcb_wt
-      		                                                ));
+        pdf_sig_ang_mass_penalty = new PdfSigAngMass( ( "PDF_sig_ang_mass_penalty_"+shortString+"_"+year).c_str(),
+						      ( "PDF_sig_ang_mass_penalty_"+year).c_str(),
+						      *ctK,*ctL,*phi,*mass,
+						      *mean_rt, *sigma_rt, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2,
+						      *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
+						      *mFrac, *c_fm,
+						      *penTerm,
+						      *ang_rt, *ang_wt,
+						      *c_dcb_rt, *c_dcb_wt
+						      );
     }      		                                           
     else {
-        PDF_sig_ang_mass.push_back( new PdfSigAngMass( ("PDF_sig_ang_mass_"+shortString+"_"+year).c_str(),
-                                                       ("PDF_sig_ang_mass_"+year).c_str(),
-         		                                *ctK,*ctL,*phi,*mass,
-                                                        *mean_rt, *sigma_rt, *sigma_rt2, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2, *f1rt,
-                                                        *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
-         		                                *mFrac, *c_fm,
-         		                                *ang_rt, *ang_wt,
-         		                                *c_dcb_rt, *c_dcb_wt
-         		                                ));
+        pdf_sig_ang_mass = new PdfSigAngMass( ("PDF_sig_ang_mass_"+shortString+"_"+year).c_str(),
+					      ("PDF_sig_ang_mass_"+year).c_str(),
+					      *ctK,*ctL,*phi,*mass,
+					      *mean_rt, *sigma_rt, *sigma_rt2, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2, *f1rt,
+					      *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
+					      *mFrac, *c_fm,
+					      *ang_rt, *ang_wt,
+					      *c_dcb_rt, *c_dcb_wt
+					      );
     
-        PDF_sig_ang_mass_penalty.push_back(new PdfSigAngMass( ("PDF_sig_ang_mass_penalty_"+shortString+"_"+year).c_str(),
-                                                              ("PDF_sig_ang_mass_penalty_"+year).c_str(),
-      		                                              *ctK,*ctL,*phi,*mass,
-                                                              *mean_rt, *sigma_rt, *sigma_rt2, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2, *f1rt,
-                                                              *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
-      		                                              *mFrac, *c_fm,
-                          		                      *penTerm,
-           		                                      *ang_rt, *ang_wt,
-      		                                              *c_dcb_rt, *c_dcb_wt
-      		                                              ));
+        pdf_sig_ang_mass_penalty = new PdfSigAngMass( ("PDF_sig_ang_mass_penalty_"+shortString+"_"+year).c_str(),
+						      ("PDF_sig_ang_mass_penalty_"+year).c_str(),
+						      *ctK,*ctL,*phi,*mass,
+						      *mean_rt, *sigma_rt, *sigma_rt2, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2, *f1rt,
+						      *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
+						      *mFrac, *c_fm,
+						      *penTerm,
+						      *ang_rt, *ang_wt,
+						      *c_dcb_rt, *c_dcb_wt
+						      );
     } 
+    
+
+    // Read angular pdf for sidebands from external file 
+    string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
+    if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
+    retrieveWorkspace( filename_sb, wsp_sb, "wsb");
+
+    RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));
+
+    // read mass pdf for background
+    RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , wsp_sb[iy]->var("slope")->getVal(), -10., 0.);
+    RooExponential* bkg_exp = new RooExponential(Form("bkg_exp_%i",years[iy]),  Form("bkg_exp_%i",years[iy]) ,  *slope,   *mass  );
+
+    // create 4D pdf  for background and import to workspace
+    RooProdPdf* bkg_pdf = new RooProdPdf(Form("bkg_pdf_%i",years[iy]), Form("bkg_pdf_%i",years[iy]), RooArgList(*bkg_ang_pdf,*bkg_exp)); 
+
+    // sum signal and bkg pdf 
+    RooRealVar *fsig = new RooRealVar( ("fsig_"+shortString+"_"+year).c_str(), ("fsig_"+shortString+"_"+year).c_str(),0,1 );
+    RooAddPdf* full_pdf = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
+                                         ("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
+                                          RooArgList(*pdf_sig_ang_mass, *bkg_pdf),
+                                          RooArgList(*fsig)
+                                       );
+    PDF_sig_ang_mass_bkg.push_back(full_pdf);
+    
+    RooAddPdf* full_pdf_penalty = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
+                                                 ("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
+                                                  RooArgList(*pdf_sig_ang_mass_penalty, *bkg_pdf),
+                                                  RooArgList(*fsig)
+                                       );
+    PDF_sig_ang_mass_bkg_penalty.push_back(full_pdf_penalty);
 
     // insert sample in the category map, to be imported in the combined dataset
     // and associate model with the data
@@ -359,8 +393,8 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 	  return;
 	}
 	map.insert( map.cbegin(), std::pair<const string,RooDataSet*>(("data"+year+Form("_subs%d",is)).c_str(), data[iy][is]) );
-	simPdf        -> addPdf(*PDF_sig_ang_mass[iy],         ("data"+year+Form("_subs%d",is)).c_str());
-	simPdf_penalty-> addPdf(*PDF_sig_ang_mass_penalty[iy], ("data"+year+Form("_subs%d",is)).c_str());
+	simPdf        -> addPdf(*PDF_sig_ang_mass_bkg[iy],         ("data"+year+Form("_subs%d",is)).c_str());
+	simPdf_penalty-> addPdf(*PDF_sig_ang_mass_bkg_penalty[iy], ("data"+year+Form("_subs%d",is)).c_str());
       }
     else {
       if ( !data[iy][0] || data[iy][0]->IsZombie() ) {
@@ -368,8 +402,8 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 	return;
       }
       map.insert( map.cbegin(), std::pair<const string,RooDataSet*>(("data"+year+Form("_subs%d",firstSample)).c_str(), data[iy][0]) );
-      simPdf        ->addPdf(*PDF_sig_ang_mass[iy],         ("data"+year+Form("_subs%d",firstSample)).c_str());
-      simPdf_penalty->addPdf(*PDF_sig_ang_mass_penalty[iy], ("data"+year+Form("_subs%d",firstSample)).c_str());
+      simPdf        ->addPdf(*PDF_sig_ang_mass_bkg[iy],         ("data"+year+Form("_subs%d",firstSample)).c_str());
+      simPdf_penalty->addPdf(*PDF_sig_ang_mass_bkg_penalty[iy], ("data"+year+Form("_subs%d",firstSample)).c_str());
     }
   
   }
