@@ -356,18 +356,18 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 
     // Read angular pdf for sidebands from external file 
     string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
+    if (!localFiles) filename_sb = "/afs/cern.ch/user/d/dini/public/SidebandBin4-preapp/" + filename_sb;
     // if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
     retrieveWorkspace( filename_sb, wsp_sb, "wsb");
 
-    RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("bkg_mass_sb_bin%i_%i", q2Bin, years[iy]));
-    // RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));
-  RooArgSet* bkg_ang_params = (RooArgSet*)bkg_ang_pdf->getParameters(observables);
-  auto iter = bkg_ang_params->createIterator();
-  RooRealVar* ivar =  (RooRealVar*)iter->Next();
-  while (ivar) {
-    ivar->setConstant(true);
-    ivar = (RooRealVar*) iter->Next();
-  }
+    RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));
+    RooArgSet* bkg_ang_params = (RooArgSet*)bkg_ang_pdf->getParameters(observables);
+    auto iter = bkg_ang_params->createIterator();
+    RooRealVar* ivar =  (RooRealVar*)iter->Next();
+    while (ivar) {
+      ivar->setConstant(true);
+      ivar = (RooRealVar*) iter->Next();
+    }
 
     // read mass pdf for background
     RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , -1., -10., 0.);
