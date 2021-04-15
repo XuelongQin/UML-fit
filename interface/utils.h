@@ -144,3 +144,18 @@ std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastS
     return datasample;
 }
 
+std::vector<RooDataSet*> createDatasetInData(RooWorkspace *ws, int q2Bin, RooArgSet vars, std::string shortString ){
+
+  RooDataSet* data;
+  std::vector<RooDataSet*> datasample;
+
+  RooDataSet* isample = new RooDataSet(("data_"+shortString + "_subs0").c_str(), 
+				       ("data_"+shortString + "_subs0").c_str(), 
+				       RooArgSet(vars));
+  data = (RooDataSet*)ws->data(Form("data_b%i",q2Bin)) ;
+  isample->append(*data);
+  datasample.push_back (isample);
+
+  return datasample;
+}
+
