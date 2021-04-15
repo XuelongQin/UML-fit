@@ -46,7 +46,6 @@ void createDataset(int year, int q2Bin = -1, int data = 0, bool plot = false)
   RooArgSet reco_vars (ctK, ctL, phi, mass, rand);
   if (data==0) reco_vars.add(wei);
 
-
   // flags to mark which q2 bins should be filled
   bool runBin [nBins];
   string shortString [nBins];
@@ -62,11 +61,16 @@ void createDataset(int year, int q2Bin = -1, int data = 0, bool plot = false)
   // Load ntuples
   TChain* t_num = new TChain();
   string year_str = Form("201%i", year);
-  if (data==0)
+  if (data==0 && isLMNR)
     t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/201%iMC_LMNR.root/ntuple", year, year));
+  else if (data==0 && isJpsi)
+    t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/201%iMC_JPSI.root/ntuple", year, year));
+  else if (data==0 && isPsi)
+    t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/201%iMC_PSI.root/ntuple", year, year));
   else
     t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/201%iData_All_finalSelection.root/ntuple", year, year));
   int numEntries = t_num->GetEntries();
+  std::cout << numEntries << std::endl;
   int counter;
 
   // Import branches from ntuples:
@@ -139,7 +143,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, bool plot = false)
     t_num->SetBranchAddress( "genSignal", &genSignal );
   
     std::cout << "is MC"  << std::endl;
-    float PUweight = 1;
+    double PUweight = 1;
     t_num->SetBranchAddress( "weight", &PUweight );
   
     // Define datasets for five efficiency terms
