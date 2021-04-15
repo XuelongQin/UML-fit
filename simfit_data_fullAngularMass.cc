@@ -233,7 +233,7 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
     RooAbsPdf* dcb_rt;
     RooRealVar* sigma_rt2 = new RooRealVar (Form("#sigma_{RT2}^{%i}",years[iy] ), "sigmaRT2"  ,   0 , 0,   0.12, "GeV");
     RooRealVar* f1rt      = new RooRealVar (Form("f^{RT%i}",years[iy])          , "f1rt"      ,   0 , 0.,  1.);
-    if (q2Bin >= 5){
+    if (q2Bin >= 4){
       sigma_rt2-> setVal(wsp_mcmass[iy]->var(Form("#sigma_{RT2}^{%i}",q2Bin))->getVal() );
       f1rt     -> setVal(wsp_mcmass[iy]->var(Form("f^{RT%i}", q2Bin))->getVal() );
       dcb_rt = createRTMassShape(q2Bin, mass, mean_rt, sigma_rt, sigma_rt2, alpha_rt1, alpha_rt2, n_rt1, n_rt2 ,f1rt, wsp_mcmass[iy], years[iy], true, c_vars_rt, c_pdfs_rt );
@@ -306,7 +306,6 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
          		                 false 
          		                 );
     
-
     PdfSigAngMass* pdf_sig_ang_mass = nullptr;
     PdfSigAngMass* pdf_sig_ang_mass_penalty = nullptr;
     if (q2Bin < 5)  {
@@ -357,17 +356,27 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 
     // Read angular pdf for sidebands from external file 
     string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
-    if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
+    // if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
     retrieveWorkspace( filename_sb, wsp_sb, "wsb");
 
-    RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));
+    RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("bkg_mass_sb_bin%i_%i", q2Bin, years[iy]));
+    // RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));
+  RooArgSet* bkg_ang_params = (RooArgSet*)bkg_ang_pdf->getParameters(observables);
+  auto iter = bkg_ang_params->createIterator();
+  RooRealVar* ivar =  (RooRealVar*)iter->Next();
+  while (ivar) {
+    ivar->setConstant(true);
+    ivar = (RooRealVar*) iter->Next();
+  }
 
     // read mass pdf for background
-    RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , wsp_sb[iy]->var("slope")->getVal(), -10., 0.);
+    RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , -1., -10., 0.);
+    // RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , wsp_sb[iy]->var("slope")->getVal(), -10., 0.);
     RooExponential* bkg_exp = new RooExponential(Form("bkg_exp_%i",years[iy]),  Form("bkg_exp_%i",years[iy]) ,  *slope,   *mass  );
 
     // create 4D pdf  for background and import to workspace
     RooProdPdf* bkg_pdf = new RooProdPdf(Form("bkg_pdf_%i",years[iy]), Form("bkg_pdf_%i",years[iy]), RooArgList(*bkg_ang_pdf,*bkg_exp)); 
+
 
     // sum signal and bkg pdf 
     RooRealVar *fsig = new RooRealVar( ("fsig_"+shortString+"_"+year).c_str(), ("fsig_"+shortString+"_"+year).c_str(),0,1 );
@@ -410,7 +419,8 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 
   if (nSample>0)   stat = stat + Form("-%i",firstSample);
   if (multiSample) stat = stat + Form("-%i",lastSample);
-  TFile* fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  TFile* fout = 0;
+  if (save) fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
   
   // save initial par values    
   RooArgSet *params      = (RooArgSet *)simPdf->getParameters(observables);
@@ -434,7 +444,7 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
   vector<double> vResult  (pars.getSize());
   vector<double> vConfInterLow  (pars.getSize());
   vector<double> vConfInterHigh (pars.getSize());
-  fout->cd();
+  if (save) fout->cd();
   TTree* fitResultsTree = new TTree("fitResultsTree","fitResultsTree");
   for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
     RooRealVar* par = (RooRealVar*)pars.at(iPar);
@@ -523,7 +533,7 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 
 	TStopwatch improvTime;
 	improvTime.Start(true);
-	fitter->improveAng();
+	// fitter->improveAng();
 	improvTime.Stop();
 	imprTime = improvTime.CpuTime();
 	cout<<"Improv time: "<<imprTime<<" s"<<endl;
@@ -537,7 +547,7 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 	TStopwatch minosTime;
 	minosTime.Start(true);
 
-	fitter->MinosAng();
+	// fitter->MinosAng();
 
 	minosTime.Stop();
 	minTime = minosTime.CpuTime();
@@ -595,9 +605,8 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
   if (save) {
     fout->cd();
     fitResultsTree->Write();
+    fout->Close();
   }
-
-  fout->Close();
 
   if (!plot || multiSample) return;
 
