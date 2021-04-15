@@ -41,7 +41,7 @@ RooDoubleCBFast* createRTMassShape(int q2Bin,
 
 
 
-RooRealSumPdf* createRTMassShape( int q2Bin,
+RooAddPdf* createRTMassShape( int q2Bin,
                                   RooRealVar* x,
                                   RooRealVar* mean_rt,
                                   RooRealVar* sigma_rt,
@@ -68,7 +68,7 @@ RooRealSumPdf* createRTMassShape( int q2Bin,
                                               *x, 
                                               *mean_rt, *sigma_rt2, *alpha_rt2, *n_rt2
                                               );
-    RooRealSumPdf* dcb_rt = new RooRealSumPdf (Form("dcb_rt_%i", year) , 
+    RooAddPdf* dcb_rt = new RooAddPdf (Form("dcb_rt_%i", year) , 
                                        Form("dcb_rt_%i", year) ,  
                                        RooArgList(*cbshape_rt1,*cbshape_rt2), 
                                        RooArgList(*f1rt));
