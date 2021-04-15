@@ -8,9 +8,7 @@
 #include <list>
 #include <map>
 
-// #include <RooRealVar.h>
 #include <RooAbsPdf.h>
-// #include <RooWorkspace.h>
 #include <RooCategory.h>
 #include <RooSuperCategory.h>
 #include <RooDataSet.h>
@@ -23,11 +21,11 @@
 #include <RooNumIntConfig.h>
 #include <RooAddition.h>
 #include <RooRandom.h>
-// #include <RooGaussian.h>
 #include <RooAddPdf.h>
 #include <RooProdPdf.h>
 #include <RooCBShape.h>
 #include "RooDoubleCBFast.h"
+#include "RooExponential.h"
 
 #include "utils.h"
 #include "PdfSigRTMass.h"
@@ -39,6 +37,10 @@
 #include "BoundDist.h"
 #include "Penalty.h"
 #include "Fitter.h"
+#include "RooBernsteinSideband.h"
+
+//tmp
+#include "RooMCStudy.h"
 
 
 using namespace RooFit;
@@ -54,7 +56,7 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
-void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, bool save, std::vector<int> years)
+void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, int save, std::vector<int> years)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
@@ -77,19 +79,26 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   uint lastSample = nSample > 0 ? nSample-1 : 0;
   
   std::vector<TFile*> fin_eff;
-  std::vector<RooWorkspace*> wsp, wsp_mcmass;
+  std::vector<RooWorkspace*> wsp, wsp_mcmass, wsp_sb;
   std::vector<std::vector<RooDataSet*>> data;
   std::vector<RooAbsReal*> effC, effW;
   std::vector<TH3D*> effCHist, effWHist;
   std::vector<TH1D*> intCHist, intWHist;
   std::vector< std::vector<double> > intCVec(years.size(), std::vector<double>(0));
   std::vector< std::vector<double> > intWVec(years.size(), std::vector<double>(0));
-  std::vector<RooAbsPdf*> PDF_sig_ang_mass(0);
-  std::vector<RooAbsPdf*> PDF_sig_ang_mass_penalty(0);
+  std::vector<RooAbsPdf*> PDF_sig_ang_mass_bkg(0);
+  std::vector<RooAbsPdf*> PDF_sig_ang_mass_bkg_penalty(0);
   std::vector<RooGaussian*> c_deltaPeaks, c_fm;
   RooArgSet c_vars_rt, c_pdfs_rt;
   RooArgSet c_vars_wt, c_pdfs_wt;
   RooArgSet c_vars; 
+
+  // create workspace to save results to out file (or for internal usage)
+  RooWorkspace* wksp = new RooWorkspace(((multiSample?"wsMulti_":"ws_")+shortString+Form("_s%i_pow%.1f",nSample,power)).c_str(),
+					 (multiSample?"Workspace with set of RECO subsample fit results":
+					 (nSample>0?"Workspace with RECO subsample fit result":
+					  "Workspace with full RECO fit result")));
+
 
   //// from https://root-forum.cern.ch/t/combining-roodatasets-using-std-map-in-pyroot/16471/20
   gInterpreter->GenerateDictionary("std::pair<std::string, RooDataSet*>", "map;string;RooDataSet.h");
@@ -105,16 +114,29 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   RooRealVar* rand = new RooRealVar("rand", "rand", 0,1);
   RooArgSet reco_vars (*ctK, *ctL, *phi, *mass, *rand);
   RooArgSet observables (*ctK, *ctL, *phi, *mass);
+  wksp->defineSet("observables", observables, true);
 
   // define angular parameters with ranges from positiveness requirements on the decay rate
-  RooRealVar* Fl    = new RooRealVar("Fl","F_{L}",0.5,0,1);
-  RooRealVar* P1    = new RooRealVar("P1","P_{1}",0,-1,1);   
-  RooRealVar* P2    = new RooRealVar("P2","P_{2}",0,-0.5,0.5);
-  RooRealVar* P3    = new RooRealVar("P3","P_{3}",0,-0.5,0.5);
-  RooRealVar* P4p   = new RooRealVar("P4p","P'_{4}",0,-1*sqrt(2),sqrt(2));
-  RooRealVar* P5p   = new RooRealVar("P5p","P'_{5}",0,-1*sqrt(2),sqrt(2));
-  RooRealVar* P6p   = new RooRealVar("P6p","P'_{6}",0,-1*sqrt(2),sqrt(2));
-  RooRealVar* P8p   = new RooRealVar("P8p","P'_{8}",0,-1*sqrt(2),sqrt(2));
+  RooRealVar* tmp_Fl    = new RooRealVar("Fl","F_{L}",0.5,0,1);
+  RooRealVar* tmp_P1    = new RooRealVar("P1","P_{1}",0,-1,1);   
+  RooRealVar* tmp_P2    = new RooRealVar("P2","P_{2}",0,-0.5,0.5);
+  RooRealVar* tmp_P3    = new RooRealVar("P3","P_{3}",0,-0.5,0.5);
+  RooRealVar* tmp_P4p   = new RooRealVar("P4p","P'_{4}",0,-1*sqrt(2),sqrt(2));
+  RooRealVar* tmp_P5p   = new RooRealVar("P5p","P'_{5}",0,-1*sqrt(2),sqrt(2));
+  RooRealVar* tmp_P6p   = new RooRealVar("P6p","P'_{6}",0,-1*sqrt(2),sqrt(2));
+  RooRealVar* tmp_P8p   = new RooRealVar("P8p","P'_{8}",0,-1*sqrt(2),sqrt(2));
+  
+  RooArgSet sig_ang_pars(*tmp_Fl, *tmp_P1,*tmp_P2,*tmp_P3,*tmp_P4p,*tmp_P5p,*tmp_P6p,*tmp_P8p);
+  wksp->import(sig_ang_pars);
+  RooRealVar* Fl  = (RooRealVar*)wksp->var("Fl" );
+  RooRealVar* P1  = (RooRealVar*)wksp->var("P1" );
+  RooRealVar* P2  = (RooRealVar*)wksp->var("P2" );
+  RooRealVar* P3  = (RooRealVar*)wksp->var("P3" );
+  RooRealVar* P4p = (RooRealVar*)wksp->var("P4p");
+  RooRealVar* P5p = (RooRealVar*)wksp->var("P5p");
+  RooRealVar* P6p = (RooRealVar*)wksp->var("P6p");
+  RooRealVar* P8p = (RooRealVar*)wksp->var("P8p");
+
 
   RooCategory sample ("sample", "sample");
   for (unsigned int iy = 0; iy < years.size(); iy++) {
@@ -140,8 +162,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   Penalty* penTerm = new Penalty("penTerm","Penalty term",*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p,0,0,0,0);
 
   // Random generators
-  RooRandom::randomGenerator()->SetSeed(1);
-
+  TRandom gen_nevt;
+  
   // loop on the various datasets
   for (unsigned int iy = 0; iy < years.size(); iy++) {
     year.clear(); year.assign(Form("%i",years[iy]));
@@ -214,7 +236,84 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
                                    q2Bin,  parity,  years[iy], 
                                    reco_vars, observables,  shortString  )); 
 
-    // Mass Component
+ 
+     // now generate bkg events
+    int nbkg_togen = nbkg_years[years[iy]][q2Bin];
+
+    // Read angular pdf for sidebands from external file 
+    string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
+    if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
+    retrieveWorkspace( filename_sb, wsp_sb, "wsb");
+
+    RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));
+    RooArgSet*  bkg_ang_params = (RooArgSet*) bkg_ang_pdf->getParameters(observables);
+
+    // read mass pdf for background
+    RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , wsp_sb[iy]->var("slope")->getVal(), -10., 0.);
+    RooExponential* bkg_exp = new RooExponential(Form("bkg_exp_%i",years[iy]),  Form("bkg_exp_%i",years[iy]) ,  *slope,   *mass  );
+
+    // retrieve sideband range from input file
+    float max_lsb = wsp_sb[iy]->var(Form("max_sbl_bin%i_%i", q2Bin, years[iy]))->getVal();
+    float min_rsb = wsp_sb[iy]->var(Form("min_sbr_bin%i_%i", q2Bin, years[iy]))->getVal();
+    mass->setRange("sbleft",  5., max_lsb);
+    mass->setRange("sbright", min_rsb, 5.6);
+    cout << Form("sideband mass range: [5., %.2f] U [%.2f, 5.6]", max_lsb, min_rsb)  << endl;
+
+    // create 4D pdf  for background and import to workspace
+    RooProdPdf* bkg_pdf = new RooProdPdf(Form("bkg_pdf_%i",years[iy]), Form("bkg_pdf_%i",years[iy]), RooArgList(*bkg_ang_pdf,*bkg_exp)); 
+    wksp->import(*bkg_ang_pdf);
+    wksp->import(*bkg_pdf, RecycleConflictNodes());
+    
+    RooArgSet*  bkg_params       = (RooArgSet*)bkg_pdf->getParameters(observables);
+    RooArgSet*  saved_bkg_params = (RooArgSet*)bkg_params->snapshot() ;
+    wksp->saveSnapshot(Form("gen_bkg_pdf_%i",years[iy]), *bkg_params, true) ;
+
+    // define set for later checks
+    // does not work properly if number of parameters is > XX 
+    // (e.g. problems when we have > 100 pars from SB, bin 1 2018, bin2 2018)
+    wksp->defineSet(Form("bkg_params_%i",years[iy]),     *bkg_params, true);
+    
+    RooAbsPdf::GenSpec* genSpec = bkg_pdf->prepareMultiGen( observables, NumEvents(gen_nevt.Poisson(nbkg_togen)));
+
+
+    
+    // now generate toy bkg sample
+    for (uint itoy = 0; itoy <= lastSample-firstSample; itoy++){
+      
+      // set the random generator seed for reproducibility (in case comparing multisample to single sample) 
+      RooRandom::randomGenerator()->SetSeed(itoy+firstSample);
+      RooDataSet *toy_bkg = bkg_pdf->generate(*genSpec) ;
+      data[iy][itoy]->append(*toy_bkg);
+
+      // reduce to events in the mass sidebands
+      RooDataSet* toy_bkg_red = (RooDataSet*)toy_bkg->reduce(observables, Form("(mass > 5 && mass < %f) || (mass > %f && mass < 5.6)", max_lsb, min_rsb));
+      cout << "bkg events: " << nbkg_togen << " (" << toy_bkg_red->sumEntries() << " in sideband)"  << endl;
+      
+      // fit toy bkg sample to update bkg pdf parameters which are not zero
+      // start from gen pars for each toy
+      *bkg_params = *saved_bkg_params ;
+
+      // fix pars == 0 or 1
+      auto iter = bkg_ang_params->createIterator();
+      RooRealVar* ivar =  (RooRealVar*)iter->Next();
+      while (ivar){
+          if (ivar->getVal()==0 || ivar->getVal()==1.) ivar->setConstant(true);
+          else ivar->setConstant(false);
+          ivar = (RooRealVar*) iter->Next();
+      }
+      // fit pars that are not 0 or 1
+      bkg_ang_pdf->fitTo(*toy_bkg_red);
+      //save into workspace (as constant) 
+      iter = bkg_ang_params->createIterator();
+      ivar = (RooRealVar*)iter->Next();
+      while (ivar){
+        ivar->setConstant(true);
+        ivar = (RooRealVar*) iter->Next();
+      }
+      wksp->saveSnapshot(Form("fit_bkg_pdf_%i_%i",years[iy], itoy+firstSample), *bkg_params, kTRUE) ;
+    }      
+
+    // Signal Mass Component
     // import mass PDF from fits to the MC
     string filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%i_fM_newbdt.root",years[iy]);
     if (!retrieveWorkspace( filename_mc_mass, wsp_mcmass, "w"))  return;
@@ -224,8 +323,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     RooRealVar* sigma_rt      = new RooRealVar (Form("#sigma_{RT1}^{%i}",years[iy] ), "sigmart1"    , wsp_mcmass[iy]->var(Form("#sigma_{RT1}^{%i}",q2Bin))->getVal()  ,      0,    1, "GeV");
     RooRealVar* alpha_rt1     = new RooRealVar (Form("#alpha_{RT1}^{%i}",years[iy] ), "alphart1"    , wsp_mcmass[iy]->var(Form("#alpha_{RT1}^{%i}", q2Bin))->getVal() ,      0,   10 );
     RooRealVar* alpha_rt2     = new RooRealVar (Form("#alpha_{RT2}^{%i}",years[iy] ), "alphart2"    , wsp_mcmass[iy]->var(Form("#alpha_{RT2}^{%i}", q2Bin))->getVal() ,    -10,   10 );
-    RooRealVar* n_rt1         = new RooRealVar (Form("n_{RT1}^{%i}",years[iy])      , "nrt1"        , wsp_mcmass[iy]->var(Form("n_{RT1}^{%i}", q2Bin))->getVal()      ,      0.01,  100.);
-    RooRealVar* n_rt2         = new RooRealVar (Form("n_{RT2}^{%i}",years[iy])      , "nrt2"        , wsp_mcmass[iy]->var(Form("n_{RT2}^{%i}", q2Bin))->getVal()      ,      0.01,  100.);
+    RooRealVar* n_rt1         = new RooRealVar (Form("n_{RT1}^{%i}",years[iy])      , "nrt1"        , wsp_mcmass[iy]->var(Form("n_{RT1}^{%i}", q2Bin))->getVal()      ,   0.01,  100.);
+    RooRealVar* n_rt2         = new RooRealVar (Form("n_{RT2}^{%i}",years[iy])      , "nrt2"        , wsp_mcmass[iy]->var(Form("n_{RT2}^{%i}", q2Bin))->getVal()      ,   0.01,  100.);
 
     RooAbsPdf* dcb_rt;
     RooRealVar* sigma_rt2 = new RooRealVar (Form("#sigma_{RT2}^{%i}",years[iy] ), "sigmaRT2"  ,   0 , 0,   0.12, "GeV");
@@ -234,7 +333,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
       sigma_rt2-> setVal(wsp_mcmass[iy]->var(Form("#sigma_{RT2}^{%i}",q2Bin))->getVal() );
       f1rt     -> setVal(wsp_mcmass[iy]->var(Form("f^{RT%i}", q2Bin))->getVal() );
       dcb_rt = createRTMassShape(q2Bin, mass, mean_rt, sigma_rt, sigma_rt2, alpha_rt1, alpha_rt2, n_rt1, n_rt2 ,f1rt, wsp_mcmass[iy], years[iy], true, c_vars_rt, c_pdfs_rt );
-    } 
+    }   
     else{
         alpha_rt2->setRange(0,10);
         dcb_rt = createRTMassShape(q2Bin, mass, mean_rt, sigma_rt, alpha_rt1, alpha_rt2, n_rt1, n_rt2 , wsp_mcmass[iy], years[iy], true, c_vars_rt, c_pdfs_rt  );
@@ -253,8 +352,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     RooRealVar* sigma_wt    = new RooRealVar (Form("#sigma_{WT1}^{%i}",years[iy])   , "sigmawt"    ,  wsp_mcmass[iy]->var(Form("#sigma_{WT1}^{%i}", q2Bin))->getVal() ,      0,    1, "GeV");
     RooRealVar* alpha_wt1   = new RooRealVar (Form("#alpha_{WT1}^{%i}",years[iy] )  , "alphawt1"   ,  wsp_mcmass[iy]->var(Form("#alpha_{WT1}^{%i}", q2Bin))->getVal() ,      0,   10 );
     RooRealVar* alpha_wt2   = new RooRealVar (Form("#alpha_{WT2}^{%i}",years[iy] )  , "alphawt2"   ,  wsp_mcmass[iy]->var(Form("#alpha_{WT2}^{%i}", q2Bin))->getVal() ,      0,   10 );
-    RooRealVar* n_wt1       = new RooRealVar (Form("n_{WT1}^{%i}",years[iy])        , "nwt1"       ,  wsp_mcmass[iy]->var(Form("n_{WT1}^{%i}", q2Bin))->getVal()      ,      0.01, 100.);
-    RooRealVar* n_wt2       = new RooRealVar (Form("n_{WT2}^{%i}",years[iy])        , "nwt2"       ,  wsp_mcmass[iy]->var(Form("n_{WT2}^{%i}", q2Bin))->getVal()      ,      0.01, 100.);
+    RooRealVar* n_wt1       = new RooRealVar (Form("n_{WT1}^{%i}",years[iy])        , "nwt1"       ,  wsp_mcmass[iy]->var(Form("n_{WT1}^{%i}", q2Bin))->getVal()      ,   0.01, 100.);
+    RooRealVar* n_wt2       = new RooRealVar (Form("n_{WT2}^{%i}",years[iy])        , "nwt2"       ,  wsp_mcmass[iy]->var(Form("n_{WT2}^{%i}", q2Bin))->getVal()      ,   0.01, 100.);
 
     RooAbsPdf* dcb_wt = createWTMassShape(q2Bin, mass, mean_wt, sigma_wt, alpha_wt1, alpha_wt2, n_wt1, n_wt2 , wsp_mcmass[iy], years[iy], true, c_vars_wt, c_pdfs_wt );
 
@@ -264,8 +363,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     RooProdPdf * c_dcb_wt = new RooProdPdf(("c_dcb_wt_"+year).c_str(), ("c_dcb_wt_"+year).c_str(), constr_wt_list );
     c_vars.add(c_vars_wt);
 
-    cout << "deltap built --> constraint not added yet (to be done)" << endl;
-    //// creating constraints for the difference between the two peaks
+//     cout << "deltap built --> constraint not added yet (to be done)" << endl;
+    // creating constraints for the difference between the two peaks
 //     RooFormulaVar* deltaPeaks = new RooFormulaVar(Form("deltaPeaks^{%i}", years[iy]), "@0 - @1", RooArgList(*mean_rt, *mean_wt))  ;
 //     c_deltaPeaks.push_back(     new RooGaussian(Form("c_deltaPeaks^{%i}", years[iy]), "c_deltaPeaks", *deltaPeaks, 
 //                                                 RooConst( deltaPeaks->getVal() ), 
@@ -283,7 +382,6 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
                                         RooConst(1.) , 
                                         RooConst(frac_sigma)
                                         );
-//     cout << fraction << " +/- " << fM_sigmas[years[iy]][q2Bin] << " ---> << "1 +/- " << frac_sigma << endl;                                    
     c_vars.add(*mFrac); 
 
     // Angular Component
@@ -303,51 +401,75 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
          		                 false 
          		                 );
     
-
+    PdfSigAngMass* pdf_sig_ang_mass = nullptr;
+    PdfSigAngMass* pdf_sig_ang_mass_penalty = nullptr;
     if (q2Bin < 5)  {
-        PDF_sig_ang_mass.push_back( new PdfSigAngMass( ("PDF_sig_ang_mass_"+shortString+"_"+year).c_str(),
-                                                       ("PDF_sig_ang_mass_"+year).c_str(),
-         		                                *ctK,*ctL,*phi,*mass,
-                                                        *mean_rt, *sigma_rt, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2,
-                                                        *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
-         		                                *mFrac, *c_fm,
-         		                                *ang_rt, *ang_wt,
-         		                                *c_dcb_rt, *c_dcb_wt
-         		                                ));
-    
-        PDF_sig_ang_mass_penalty.push_back(new PdfSigAngMass( ( "PDF_sig_ang_mass_penalty_"+shortString+"_"+year).c_str(),
-                                                              ( "PDF_sig_ang_mass_penalty_"+year).c_str(),
-      		                                                *ctK,*ctL,*phi,*mass,
-                                                                *mean_rt, *sigma_rt, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2,
-                                                                *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
-      		                                                *mFrac, *c_fm,
-                          		                        *penTerm,
-            		                                        *ang_rt, *ang_wt,
-      		                                                *c_dcb_rt, *c_dcb_wt
-      		                                                ));
+        pdf_sig_ang_mass = new PdfSigAngMass( ("PDF_sig_ang_mass_"+shortString+"_"+year).c_str(),
+                                              ("PDF_sig_ang_mass_"+year).c_str(),
+         		                      *ctK,*ctL,*phi,*mass,
+                                              *mean_rt, *sigma_rt, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2,
+                                              *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
+         		                      *mFrac, *c_fm,
+         		                      *ang_rt, *ang_wt,
+         		                      *c_dcb_rt, *c_dcb_wt
+         		                      );
+ 
+   
+        pdf_sig_ang_mass_penalty = new PdfSigAngMass(  ( "PDF_sig_ang_mass_penalty_"+shortString+"_"+year).c_str(),
+                                                       ( "PDF_sig_ang_mass_penalty_"+year).c_str(),
+      		                                          *ctK,*ctL,*phi,*mass,
+                                                          *mean_rt, *sigma_rt, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2,
+                                                          *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
+      		                                          *mFrac, *c_fm,
+                          		                  *penTerm,
+            		                                  *ang_rt, *ang_wt,
+      		                                          *c_dcb_rt, *c_dcb_wt
+      		                                          );
     }      		                                           
     else {
-        PDF_sig_ang_mass.push_back( new PdfSigAngMass( ("PDF_sig_ang_mass_"+shortString+"_"+year).c_str(),
-                                                       ("PDF_sig_ang_mass_"+year).c_str(),
-         		                                *ctK,*ctL,*phi,*mass,
+        pdf_sig_ang_mass = new PdfSigAngMass( ("PDF_sig_ang_mass_"+shortString+"_"+year).c_str(),
+                                              ("PDF_sig_ang_mass_"+year).c_str(),
+         		                      *ctK,*ctL,*phi,*mass,
+                                              *mean_rt, *sigma_rt, *sigma_rt2, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2, *f1rt,
+                                              *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
+         		                      *mFrac, *c_fm,
+         		                      *ang_rt, *ang_wt,
+         		                      *c_dcb_rt, *c_dcb_wt
+         		                      );
+    
+        pdf_sig_ang_mass_penalty =  new PdfSigAngMass( ( "PDF_sig_ang_mass_penalty_"+shortString+"_"+year).c_str(),
+                                                       ( "PDF_sig_ang_mass_penalty_"+year).c_str(),
+      		                                        *ctK,*ctL,*phi,*mass,
                                                         *mean_rt, *sigma_rt, *sigma_rt2, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2, *f1rt,
                                                         *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
-         		                                *mFrac, *c_fm,
-         		                                *ang_rt, *ang_wt,
-         		                                *c_dcb_rt, *c_dcb_wt
-         		                                ));
-    
-        PDF_sig_ang_mass_penalty.push_back(new PdfSigAngMass( ("PDF_sig_ang_mass_penalty_"+shortString+"_"+year).c_str(),
-                                                              ("PDF_sig_ang_mass_penalty_"+year).c_str(),
-      		                                              *ctK,*ctL,*phi,*mass,
-                                                              *mean_rt, *sigma_rt, *sigma_rt2, *alpha_rt1, *alpha_rt2, *n_rt1, *n_rt2, *f1rt,
-                                                              *mean_wt, *sigma_wt, *alpha_wt1, *alpha_wt2, *n_wt1, *n_wt2,                        
-      		                                              *mFrac, *c_fm,
-                          		                      *penTerm,
-           		                                      *ang_rt, *ang_wt,
-      		                                              *c_dcb_rt, *c_dcb_wt
-      		                                              ));
+      		                                        *mFrac, *c_fm,
+                          		                *penTerm,
+            		                                *ang_rt, *ang_wt,
+      		                                        *c_dcb_rt, *c_dcb_wt
+      		                                        );
     } 
+    RooRealVar *fsig = new RooRealVar( ("fsig_"+shortString+"_"+year).c_str(), ("fsig_"+shortString+"_"+year).c_str(),0,1 );
+    // import signal pdf in order to have initial parameters available in the wsp 
+    wksp->import(*pdf_sig_ang_mass, RecycleConflictNodes());
+    wksp->import(*pdf_sig_ang_mass_penalty, RecycleConflictNodes());
+    RooArgSet *params      = (RooArgSet *)pdf_sig_ang_mass->getParameters(observables);
+    wksp->saveSnapshot(Form("initial_signal_pars_%i",years[iy]), *params, true) ;
+
+
+    // sum signal and bkg pdf 
+    RooAddPdf* full_pdf = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
+                                         ("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
+                                          RooArgList(*pdf_sig_ang_mass, *bkg_pdf),
+                                          RooArgList(*fsig)
+                                       );
+    PDF_sig_ang_mass_bkg.push_back(full_pdf);
+    
+    RooAddPdf* full_pdf_penalty = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
+                                                 ("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
+                                                  RooArgList(*pdf_sig_ang_mass_penalty, *bkg_pdf),
+                                                  RooArgList(*fsig)
+                                       );
+    PDF_sig_ang_mass_bkg_penalty.push_back(full_pdf_penalty);
 
     // insert sample in the category map, to be imported in the combined dataset
     // and associate model with the data
@@ -357,8 +479,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 	  return;
 	}
 	map.insert( map.cbegin(), std::pair<const string,RooDataSet*>(("data"+year+Form("_subs%d",is)).c_str(), data[iy][is]) );
-	simPdf        -> addPdf(*PDF_sig_ang_mass[iy],         ("data"+year+Form("_subs%d",is)).c_str());
-	simPdf_penalty-> addPdf(*PDF_sig_ang_mass_penalty[iy], ("data"+year+Form("_subs%d",is)).c_str());
+	simPdf        -> addPdf(*PDF_sig_ang_mass_bkg[iy],         ("data"+year+Form("_subs%d",is)).c_str());
+	simPdf_penalty-> addPdf(*PDF_sig_ang_mass_bkg_penalty[iy], ("data"+year+Form("_subs%d",is)).c_str());
       }
     else {
       if ( !data[iy][0] || data[iy][0]->IsZombie() ) {
@@ -366,19 +488,19 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 	return;
       }
       map.insert( map.cbegin(), std::pair<const string,RooDataSet*>(("data"+year+Form("_subs%d",firstSample)).c_str(), data[iy][0]) );
-      simPdf        ->addPdf(*PDF_sig_ang_mass[iy],         ("data"+year+Form("_subs%d",firstSample)).c_str());
-      simPdf_penalty->addPdf(*PDF_sig_ang_mass_penalty[iy], ("data"+year+Form("_subs%d",firstSample)).c_str());
+      simPdf        ->addPdf(*PDF_sig_ang_mass_bkg[iy],         ("data"+year+Form("_subs%d",firstSample)).c_str());
+      simPdf_penalty->addPdf(*PDF_sig_ang_mass_bkg_penalty[iy], ("data"+year+Form("_subs%d",firstSample)).c_str());
     }
   
   }
-
+  
   if (nSample>0)   stat = stat + Form("-%i",firstSample);
   if (multiSample) stat = stat + Form("-%i",lastSample);
-  TFile* fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  TFile* fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
   
-  // save initial par values    
-  RooArgSet *params      = (RooArgSet *)simPdf->getParameters(observables);
-  RooArgSet* savedParams = (RooArgSet *)params->snapshot() ;
+  wksp->import(*simPdf,RecycleConflictNodes());
+  wksp->import(*simPdf_penalty,RecycleConflictNodes()); 
+
   // Construct combined dataset in (x,sample)
   RooDataSet allcombData ("allcombData", "combined data", 
                             reco_vars,
@@ -391,7 +513,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   double co1, co4, co5;
   double boundDistFit, boundDist;
   bool boundCheck, convCheck, usedPenalty;
-
+  
   RooArgList pars (*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p);
 
   // TTree with the MINOS output
@@ -424,6 +546,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   // counters to monitor results' status
   int cnt[9];
   for (int iCnt=0; iCnt<9; ++iCnt) cnt[iCnt] = 0;
+  // seed for random generator for reproducibility
+  RooRandom::randomGenerator()->SetSeed(1);
 
   Fitter* fitter = 0;
   vector<Fitter*> vFitter (0);
@@ -445,17 +569,33 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     int combEntries = combData->numEntries();
     penTerm->setPower(power/combEntries);
 
-    // to start the fit, parameters are restored to the center of the parameter space
-    *params = *savedParams ;
+    // to start the fit, angular parameters are restored to the center of the parameter space
+    for (unsigned int iy = 0; iy < years.size(); iy++) {
+      wksp->loadSnapshot(Form("fit_bkg_pdf_%i_%i",years[iy], is));
+      wksp->loadSnapshot(Form("initial_signal_pars_%i",years[iy]));
+    }
+    
+    RooSimultaneous* simPdf_forFit  = (RooSimultaneous* ) wksp->pdf("simPdf");
+    RooSimultaneous* simPdf_penalty = (RooSimultaneous* ) wksp->pdf("simPdf_penalty");
+    
+//     RooArgSet *check_params = (RooArgSet *)wksp->pdf("simPdf")->getParameters(observables);
+//     auto iter = check_params->createIterator();
+//     RooRealVar* ivar =  (RooRealVar*)iter->Next();
+//     cout << "initial par values: -------------"  << endl;
+//     while (ivar){
+//         if (ivar->getVal()!=0) ivar->Print();
+//         ivar = (RooRealVar*) iter->Next();
+//     }
 
     // run the fit
-    fitter = new Fitter (Form("fitter%i",is),Form("fitter%i",is),pars,combData,simPdf,simPdf_penalty,boundary,bound_dist,penTerm,&c_vars);
+    fitter = new Fitter (Form("fitter%i",is),Form("fitter%i",is),pars,combData,simPdf_forFit,simPdf_penalty,boundary,bound_dist,penTerm,&c_vars);
     vFitter.push_back(fitter);
 
     subTime.Start(true);
     int status = fitter->fit();
     subTime.Stop();
-
+        
+    // include fit time in dataset with per-toy informations
     fitTime=subTime.CpuTime();
     cout<<"Fit+boundDist time: "<<fitTime<<endl;
 
@@ -465,9 +605,10 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     boundDist=0;
     boundDistFit=0;
     minTime=0;
-
+    
     convCheck = false;
     boundCheck = false;
+
 
     if (status==0) {
       
@@ -478,13 +619,15 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
       boundDistFit = boundDist = fitter->boundDist;
       usedPenalty = fitter->usedPenalty;
-	
+
       if (fitter->usedPenalty) {
-	// save coefficient values
+	// include coefficient values in dataset with per-toy informations
 	co1 = fitter->coeff1;
 	co4 = fitter->coeff4;
 	co5 = fitter->coeff5;
 
+	// Compute distance from boundary, print it
+	// and save it in dataset with per-toy informations
 	TStopwatch improvTime;
 	improvTime.Start(true);
 	fitter->improveAng();
@@ -493,7 +636,6 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 	cout<<"Improv time: "<<imprTime<<" s"<<endl;
 
 	boundDist = fitter->boundDist;
-
       }
 
       if (nSample>0) {
@@ -509,11 +651,10 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
 	// cout<<"Error difference [custMINOS - fit], lower and higher:"<<endl;
 	// for (int iPar = 0; iPar < pars.getSize(); ++iPar)
-	// 	cout<<vResult[iPar]-vConfInterLow[iPar]+vFitErrLow[iPar]<<"   \t"
-	// 	    <<vConfInterHigh[iPar]-vResult[iPar]-vFitErrHigh[iPar]<<endl;
+	// 	cout<<vFitResult[iPar]-vConfInterLow[iPar]+vFitErrLow[iPar]<<"   \t"
+	// 	    <<vConfInterHigh[iPar]-vFitResult[iPar]-vFitErrHigh[iPar]<<endl;
 
       }
-
       // save results in tree
       for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
 	vResult[iPar] = fitter->vResult[iPar];
@@ -556,9 +697,11 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     cout<<"Bad fits: "<<cnt[3]<<" converging outside physical region, "<<cnt[5]+cnt[7]<<" not converged ("<<cnt[5]<<" in ph region)"<<endl;
   }
 
-  if (save) {
+  if (save>0) {
     fout->cd();
     fitResultsTree->Write();
+    if (save==2)
+      wksp->Write();
   }
 
   fout->Close();
@@ -566,87 +709,87 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   if (!plot || multiSample) return;
 
   // For plotting the effective penalty term is used
-  Penalty* penTerm_eff = new Penalty(*penTerm,"penTerm_eff");
-  penTerm_eff->setPower(power);
-  RooFormulaVar* penLog = new RooFormulaVar("penLog","penLog","-1.0 * log(penTerm_eff)",RooArgList(*penTerm_eff));
-
-  double xZoom = 200.0;
-  if (nSample>0) xZoom = 2.0;
-
-  cnll  = new TCanvas (("cnll_"+shortString).c_str(),("cnll_"+shortString).c_str(),1800,1800);
-  cZoom = new TCanvas (("cZoom_"+shortString).c_str(),("cZoom_"+shortString).c_str(),1800,1800);
-  cPen = new TCanvas (("cPen_"+shortString).c_str(),("cPen_"+shortString).c_str(),1800,1800);
-  cnll->Divide(3,3);
-  cZoom->Divide(3,3);
-  cPen->Divide(3,3);
-
-  RooPlot* frame [8];
-  RooPlot* fZoom [8];
-  RooPlot* fPenTerm [8];
-
-  for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
-
-    RooRealVar* par = (RooRealVar*)pars.at(iPar);
-
-    frame[iPar] = par->frame(Name(Form("f1%s",par->GetName())),Title(Form("-log(L) scan vs %s",par->GetTitle()))) ;
-    fZoom[iPar] = par->frame(Name(Form("f2%s",par->GetName())),Title(Form("zoom on -log(L) scan vs %s",par->GetTitle())),
-			     Range(TMath::Max(par->getMin(),par->getValV()+xZoom*par->getErrorLo()),
-				   TMath::Min(par->getMax(),par->getValV()+xZoom*par->getErrorHi()) )) ;
-
-    fitter->nll->plotOn(frame[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll->getVal()+10),LineColor(kRed),LineWidth(2)) ;
-    fitter->nll->plotOn(fZoom[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll->getVal()+10),LineColor(kRed),LineWidth(2)) ;
-
-    if (iPar>0) {
-
-      double hMax = frame[iPar]->GetMaximum();
-
-      boundary->plotOn(frame[iPar],LineColor(13),FillColor(13),FillStyle(3545),Normalization(1.1*hMax,RooAbsReal::Raw),DrawOption("LF"),VLines(),LineWidth(2));
-      boundary->plotOn(fZoom[iPar],LineColor(13),FillColor(13),FillStyle(3545),Normalization(1.1*hMax,RooAbsReal::Raw),DrawOption("LF"),VLines(),LineWidth(2));
-
-      if (fitter->usedPenalty) {
-
-	fitter->nll_penalty->plotOn(frame[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll_penalty->getVal()+10),LineColor(kBlue),LineWidth(2));
-	fitter->nll_penalty->plotOn(fZoom[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll_penalty->getVal()+10),LineColor(kBlue),LineWidth(2));
-
-	penLog->plotOn(frame[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(penLog->getVal()+10),LineColor(8),LineWidth(2));
-	penLog->plotOn(fZoom[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(penLog->getVal()+10),LineColor(8),LineWidth(2));
-
-      }  
-
-      frame[iPar]->SetMaximum(hMax);
-
-      fPenTerm[iPar] = par->frame(Name(Form("f3%s",par->GetName())),Title(Form("Penalty term vs %s",par->GetTitle()))) ;
-      penTerm_eff->plotOn(fPenTerm[iPar],LineColor(4),LineWidth(2)) ;
-      double hMaxP = fPenTerm[iPar]->GetMaximum();
-      boundary->plotOn(fPenTerm[iPar],LineColor(13),FillColor(13),FillStyle(3545),Normalization(1.1*hMaxP,RooAbsReal::Raw),DrawOption("LF"),VLines(),LineWidth(2));
-      fPenTerm[iPar]->SetMaximum(hMaxP);
-      cPen->cd(iPar+1);
-      fPenTerm[iPar]->Draw();
-
-    }
-
-    fZoom[iPar]->SetMaximum(0.5*xZoom*xZoom);
-
-    cnll->cd(iPar+1);
-    frame[iPar]->Draw();
-
-    cZoom->cd(iPar+1);
-    fZoom[iPar]->Draw();
-
-
-  }
-
+//   Penalty* penTerm_eff = new Penalty(*penTerm,"penTerm_eff");
+//   penTerm_eff->setPower(power);
+//   RooFormulaVar* penLog = new RooFormulaVar("penLog","penLog","-1.0 * log(penTerm_eff)",RooArgList(*penTerm_eff));
+// 
+//   double xZoom = 200.0;
+//   if (nSample>0) xZoom = 2.0;
+// 
+//   cnll  = new TCanvas (("cnll_"+shortString).c_str(),("cnll_"+shortString).c_str(),1800,1800);
+//   cZoom = new TCanvas (("cZoom_"+shortString).c_str(),("cZoom_"+shortString).c_str(),1800,1800);
+//   cPen = new TCanvas (("cPen_"+shortString).c_str(),("cPen_"+shortString).c_str(),1800,1800);
+//   cnll->Divide(3,3);
+//   cZoom->Divide(3,3);
+//   cPen->Divide(3,3);
+// 
+//   RooPlot* frame [8];
+//   RooPlot* fZoom [8];
+//   RooPlot* fPenTerm [8];
+// 
+//   for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
+// 
+//     RooRealVar* par = (RooRealVar*)pars.at(iPar);
+// 
+//     frame[iPar] = par->frame(Name(Form("f1%s",par->GetName())),Title(Form("-log(L) scan vs %s",par->GetTitle()))) ;
+//     fZoom[iPar] = par->frame(Name(Form("f2%s",par->GetName())),Title(Form("zoom on -log(L) scan vs %s",par->GetTitle())),
+// 			     Range(TMath::Max(par->getMin(),par->getValV()+xZoom*par->getErrorLo()),
+// 				   TMath::Min(par->getMax(),par->getValV()+xZoom*par->getErrorHi()) )) ;
+// 
+//     fitter->nll->plotOn(frame[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll->getVal()+10),LineColor(kRed),LineWidth(2)) ;
+//     fitter->nll->plotOn(fZoom[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll->getVal()+10),LineColor(kRed),LineWidth(2)) ;
+// 
+//     if (iPar>0) {
+// 
+//       double hMax = frame[iPar]->GetMaximum();
+// 
+//       boundary->plotOn(frame[iPar],LineColor(13),FillColor(13),FillStyle(3545),Normalization(1.1*hMax,RooAbsReal::Raw),DrawOption("LF"),VLines(),LineWidth(2));
+//       boundary->plotOn(fZoom[iPar],LineColor(13),FillColor(13),FillStyle(3545),Normalization(1.1*hMax,RooAbsReal::Raw),DrawOption("LF"),VLines(),LineWidth(2));
+// 
+//       if (fitter->usedPenalty) {
+// 
+// 	fitter->nll_penalty->plotOn(frame[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll_penalty->getVal()+10),LineColor(kBlue),LineWidth(2));
+// 	fitter->nll_penalty->plotOn(fZoom[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll_penalty->getVal()+10),LineColor(kBlue),LineWidth(2));
+// 
+// 	penLog->plotOn(frame[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(penLog->getVal()+10),LineColor(8),LineWidth(2));
+// 	penLog->plotOn(fZoom[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(penLog->getVal()+10),LineColor(8),LineWidth(2));
+// 
+//       }  
+// 
+//       frame[iPar]->SetMaximum(hMax);
+// 
+//       fPenTerm[iPar] = par->frame(Name(Form("f3%s",par->GetName())),Title(Form("Penalty term vs %s",par->GetTitle()))) ;
+//       penTerm_eff->plotOn(fPenTerm[iPar],LineColor(4),LineWidth(2)) ;
+//       double hMaxP = fPenTerm[iPar]->GetMaximum();
+//       boundary->plotOn(fPenTerm[iPar],LineColor(13),FillColor(13),FillStyle(3545),Normalization(1.1*hMaxP,RooAbsReal::Raw),DrawOption("LF"),VLines(),LineWidth(2));
+//       fPenTerm[iPar]->SetMaximum(hMaxP);
+//       cPen->cd(iPar+1);
+//       fPenTerm[iPar]->Draw();
+// 
+//     }
+// 
+//     fZoom[iPar]->SetMaximum(0.5*xZoom*xZoom);
+// 
+//     cnll->cd(iPar+1);
+//     frame[iPar]->Draw();
+// 
+//     cZoom->cd(iPar+1);
+//     fZoom[iPar]->Draw();
+// 
+// 
+//   }
+// 
   string plotString = shortString + "_" + all_years;
   if (nSample>0) plotString = plotString + Form("_s%i",nSample);
-
-  cnll->Update();
-  cnll->SaveAs( ("plotSimFit4d_d/recoNLL_scan_" + plotString + ".pdf").c_str() );
-
-  cZoom->Update();
-  cZoom->SaveAs( ("plotSimFit4d_d/recoNLL_scan_" + plotString + "_zoom.pdf").c_str() );
-
-  cPen->Update();
-  cPen->SaveAs( ("plotSimFit4d_d/recoPenTerm_" + plotString + ".pdf").c_str() );
+// 
+//   cnll->Update();
+//   cnll->SaveAs( ("plotSimFit4d_d/recoNLL_scan_" + plotString + "_toybkg.pdf").c_str() );
+// 
+//   cZoom->Update();
+//   cZoom->SaveAs( ("plotSimFit4d_d/recoNLL_scan_" + plotString + "_zoom_toybkg.pdf").c_str() );
+// 
+//   cPen->Update();
+//   cPen->SaveAs( ("plotSimFit4d_d/recoPenTerm_" + plotString + "_toybkg.pdf").c_str() );
 
    
   int confIndex = 2*nBins*parity  + q2Bin;
@@ -688,7 +831,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
         leg->Draw("same");
     }
   }
-  c[confIndex]->SaveAs( ("plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_" + plotString +  ".pdf").c_str() );
+  c[confIndex]->SaveAs( ("plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_toybkg_" + plotString +  ".pdf").c_str() );
 
 }
 
@@ -728,10 +871,10 @@ int main(int argc, char** argv)
   if ( argc > 5 && atoi(argv[5]) > 0 ) localFiles = true;
 
   bool plot = true;
-  bool save = true;
+  int save = 1;
 
   if ( argc > 6 && atoi(argv[6]) == 0 ) plot = false;
-  if ( argc > 7 && atoi(argv[7]) == 0 ) save = false;
+  if ( argc > 7 ) save = atoi(argv[7]);
 
   std::vector<int> years;
   if ( argc > 8 && atoi(argv[8]) != 0 ) years.push_back(atoi(argv[8]));

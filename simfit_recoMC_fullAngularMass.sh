@@ -2,6 +2,10 @@
 
 par=1
 
+## full stat
+# multi=0
+# nsam=0
+#### data like one job
 multi=0
 nsam=${1}
 
@@ -9,14 +13,14 @@ plot=0
 save=1
 
 # Create directories for fit logs, results and plots
-if [ ! -d logs_simFit ]; then mkdir logs_simFit; fi
-if [ ! -d simFitResults4d ]; then mkdir -p simFitResults4d; fi
-if [ ! -d plotSimFit_d ]; then mkdir plotSimFit_d; fi
+if [ ! -d logs_simFit4d ]; then mkdir logs_simFit4d; fi
+if [ ! -d simFitResults4d ]; then mkdir simFitResults4d; fi
+if [ ! -d plotSimFit4d_d ]; then mkdir plotSimFit4d_d; fi
 
 # Compile dictionary and macro
 # make AngDict
 if make simfit_recoMC_fullAngularMass; then
- 
+
     while read -a line; do
 	bin=${line[0]}
 	
