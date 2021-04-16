@@ -29,6 +29,8 @@
 #include <RooCBShape.h>
 #include "RooDoubleCBFast.h"
 #include "RooExponential.h"
+#include "RooPolynomial.h"
+#include "RooGenericPdf.h"
 
 #include "utils.h"
 #include "PdfSigRTMass.h"
@@ -102,7 +104,7 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
   RooRealVar* ctL = new RooRealVar("ctL", "ctL", -1  , 1  );
   RooRealVar* phi = new RooRealVar("phi", "phi", -3.14159, 3.14159  );
   RooArgList vars (* ctK,* ctL,* phi);
-  RooRealVar* mass = new RooRealVar("mass","mass", 5.,5.6);
+  RooRealVar* mass = new RooRealVar("mass","mass", 5.,5.6,"GeV");
   RooRealVar* rand = new RooRealVar("rand", "rand", 0,1);
   RooArgSet reco_vars (*ctK, *ctL, *phi, *mass, *rand);
   RooArgSet observables (*ctK, *ctL, *phi, *mass);
@@ -356,7 +358,7 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 
     // Read angular pdf for sidebands from external file 
     string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
-    if (!localFiles) filename_sb = "/afs/cern.ch/user/d/dini/public/SidebandBin4-preapp/" + filename_sb;
+    // if (!localFiles) filename_sb = "/afs/cern.ch/user/d/dini/public/SidebandBin4-preapp/" + filename_sb;
     // if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
     retrieveWorkspace( filename_sb, wsp_sb, "wsb");
 
@@ -370,12 +372,27 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
     }
 
     // read mass pdf for background
-    RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , -1., -10., 0.);
+    RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , -5., -10., 0.);
     // RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , wsp_sb[iy]->var("slope")->getVal(), -10., 0.);
-    RooExponential* bkg_exp = new RooExponential(Form("bkg_exp_%i",years[iy]),  Form("bkg_exp_%i",years[iy]) ,  *slope,   *mass  );
+    RooExponential* bkg_mass = new RooExponential(Form("bkg_mass_%i",years[iy]),  Form("bkg_mass_%i",years[iy]) ,  *slope,   *mass  );
+
+    // RooRealVar* p1_bkg_mass = new RooRealVar(Form("p1-bkg-mass-%i",years[iy]),  Form("p1-bkg-mass^{%i}",years[iy]) , 0. , -100.0 , 100.0 );
+    // RooRealVar* p2_bkg_mass = new RooRealVar(Form("p2-bkg-mass-%i",years[iy]),  Form("p2-bkg-mass^{%i}",years[iy]) , 0. , -100.0 , 100.0 );
+    // RooRealVar* p3_bkg_mass = new RooRealVar(Form("p3-bkg-mass-%i",years[iy]),  Form("p3-bkg-mass^{%i}",years[iy]) , 0. , -100.0 , 100.0 );
+    // RooAbsPdf* bkg_mass = new RooPolynomial(Form("bkg_mass_%i",years[iy]),
+    // 					    Form("bkg_mass_%i",years[iy]) ,
+    // 					    *mass,
+    // 					    RooArgList(*p1_bkg_mass,*p2_bkg_mass,*p3_bkg_mass) );
+
+    // RooAbsPdf* bkg_mass = wsp_sb[iy]->pdf(Form("bkg_mass_sb_bin%i_%i", q2Bin, years[iy]));
+
+    // RooRealVar* p1_bkg_mass = new RooRealVar(Form("p1-bkg-mass-%i",years[iy]),  Form("p1-bkg-mass^{%i}",years[iy]) , 4.95 , 4. , 5. );
+    // RooRealVar* p2_bkg_mass = new RooRealVar(Form("p2-bkg-mass-%i",years[iy]),  Form("p2-bkg-mass^{%i}",years[iy]) , 0.2 , 0. , 1. );
+    // RooAbsPdf* bkg_mass2 = new RooGenericPdf(Form("bkg_mass2_%i",years[iy]),Form("bkg_mass2_%i",years[iy]),"(@0-@1)^@2",RooArgList(*mass,*p1_bkg_mass,*p2_bkg_mass));
 
     // create 4D pdf  for background and import to workspace
-    RooProdPdf* bkg_pdf = new RooProdPdf(Form("bkg_pdf_%i",years[iy]), Form("bkg_pdf_%i",years[iy]), RooArgList(*bkg_ang_pdf,*bkg_exp)); 
+    RooProdPdf* bkg_pdf = new RooProdPdf(Form("bkg_pdf_%i",years[iy]), Form("bkg_pdf_%i",years[iy]), RooArgList(*bkg_ang_pdf,*bkg_mass));
+    // RooProdPdf* bkg_pdf = new RooProdPdf(Form("bkg_pdf_%i",years[iy]), Form("bkg_pdf_%i",years[iy]), RooArgList(*bkg_ang_pdf,*bkg_mass,*bkg_mass2));
 
 
     // sum signal and bkg pdf 
@@ -609,7 +626,7 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
   }
 
   if (!plot || multiSample) return;
-
+  /*
   // For plotting the effective penalty term is used
   Penalty* penTerm_eff = new Penalty(*penTerm,"penTerm_eff");
   penTerm_eff->setPower(power);
@@ -680,10 +697,10 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 
 
   }
-
+  */
   string plotString = shortString + "_" + all_years;
   if (nSample>0) plotString = plotString + Form("_s%i",nSample);
-
+  /*
   cnll->Update();
   cnll->SaveAs( ("plotSimFit4d_d/recoNLL_scan_" + plotString + ".pdf").c_str() );
 
@@ -692,7 +709,7 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
 
   cPen->Update();
   cPen->SaveAs( ("plotSimFit4d_d/recoPenTerm_" + plotString + ".pdf").c_str() );
-
+  */
    
   int confIndex = 2*nBins*parity  + q2Bin;
   string longString  = "Fit to reconstructed events";
@@ -711,7 +728,7 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
     frames.push_back( prepareFrame( ctK ->frame(Title((longString+year).c_str())) ));
     frames.push_back( prepareFrame( ctL ->frame(Title((longString+year).c_str())) ));
     frames.push_back( prepareFrame( phi ->frame(Title((longString+year).c_str())) ));
-    TLegend* leg = new TLegend (0.25,0.8,0.9,0.9);
+    // TLegend* leg = new TLegend (0.25,0.8,0.9,0.9);
 
     cout<<"canvas ready"<<endl;
     for (unsigned int fr = 0; fr < frames.size(); fr++){
@@ -723,14 +740,14 @@ void simfit_data_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uin
                                      LineWidth(1), 
                                      Name(("plPDF"+year).c_str()), 
                                      NumCPU(4));
-        if (fr == 0) { 
-          leg->AddEntry(frames[fr]->findObject(("plData"+year).c_str()),("Post-selection distribution "+year).c_str() ,"lep");
-          leg->AddEntry(frames[fr]->findObject(("plPDF"+year ).c_str()),("Decay rate x efficiency "+year).c_str(),"l");
-        }
+        // if (fr == 0) { 
+        //   leg->AddEntry(frames[fr]->findObject(("plData"+year).c_str()),("Post-selection distribution "+year).c_str() ,"lep");
+        //   leg->AddEntry(frames[fr]->findObject(("plPDF"+year ).c_str()),("Decay rate x efficiency "+year).c_str(),"l");
+        // }
         c[confIndex]->cd(iy*4+fr+1);
         gPad->SetLeftMargin(0.19); 
         frames[fr]->Draw();
-        leg->Draw("same");
+        // leg->Draw("same");
     }
   }
   c[confIndex]->SaveAs( ("plotSimFit4d_d/simFitResult_data_fullAngularMass_" + plotString +  ".pdf").c_str() );
