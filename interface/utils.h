@@ -139,6 +139,8 @@ std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastS
       dataWT = (RooDataSet*)ws->data(Form((parity==1?"data_wtRECO_ev_b%i":"data_wtRECO_od_b%i"),q2Bin)) ;
       isample->append(*dataCT);
       isample->append(*dataWT);
+      /* isample->append(*((RooDataSet*)dataCT->reduce(EventRange(0,0.1*dataCT->numEntries())))); */
+      /* isample->append(*((RooDataSet*)dataWT->reduce(EventRange(0,0.1*dataWT->numEntries())))); */
       datasample.push_back (isample);
     }
     return datasample;
@@ -154,6 +156,7 @@ std::vector<RooDataSet*> createDatasetInData(RooWorkspace *ws, int q2Bin, RooArg
 				       RooArgSet(vars));
   data = (RooDataSet*)ws->data(Form("data_b%i",q2Bin)) ;
   isample->append(*data);
+  /* isample->append(*((RooDataSet*)data->reduce(EventRange(0,0.1*data->numEntries())))); */
   datasample.push_back (isample);
 
   return datasample;

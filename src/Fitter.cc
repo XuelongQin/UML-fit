@@ -169,12 +169,15 @@ Int_t Fitter::fit()
     m.setStrategy(2);
     m.migrad() ;
     m.hesse() ;
-    m.minos() ;
+    // m.minos() ;
     
     result_free = m.save("result") ;
 
     result_penalty = 0;
     usedPenalty = false;
+
+    std::cout<<"============ FREE FIT ==========="<<std::endl;
+    result_free->Print("v");
 
     // if free fit is good return its result
     if ( result_free->status()==0 && result_free->covQual()==3 && boundary->getValV() == 0 ) {
@@ -242,18 +245,18 @@ Int_t Fitter::fit()
 	m_penalty.hesse() ;
 	result_penalty = m_penalty.save("result");
 	    
-	// cout<<penTerm->getCoefficient(1)<<"\t"<<penTerm->getCoefficient(5)<<"\t"<<P5p->getValV()<<endl;
-	// result_penalty->Print("v");
+	// std::cout<<penTerm->getCoefficient(1)<<"\t"<<penTerm->getCoefficient(5)<<"\t"<<P5p->getValV()<<std::endl;
+	result_penalty->Print("v");
 
 	// if a good fit is found return good status
 	if ( result_penalty->status()==0 && result_penalty->covQual()==3 ) {
 	  if ( boundary->getValV()==0 ) {
-	    // cout<<"P "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<endl;
+	    std::cout<<"P "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
 	    computeBoundaryDistance();
 	    fillResultContainers();
 	    return 0;
-	  } // else cout<<"O "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<endl;
-	} // else cout<<"N "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<endl;
+	  } else std::cout<<"O "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
+	} else std::cout<<"N "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
 
       }
 

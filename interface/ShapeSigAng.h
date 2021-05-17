@@ -35,11 +35,21 @@ class ShapeSigAng : public RooAbsReal {
   RooRealProxy P6p ;
   RooRealProxy P8p ;
 
+  RooRealProxy Fs ;
+  RooRealProxy As ;
+  RooRealProxy A4s ;
+  RooRealProxy A5s ;
+  RooRealProxy A7s ;
+  RooRealProxy A8s ;
+
   RooRealProxy Eff ;
 
   std::vector<double> intPart;
 
   bool isC;
+
+  bool useSWave;
+  Double_t interferenceFactor;
   
   const RooAbsReal* effVal() const { 
     // Return pointer to efficiency function in product
@@ -65,6 +75,28 @@ class ShapeSigAng : public RooAbsReal {
 	      RooAbsReal& _Eff,
 	      std::vector<double> _intPart,
 	      bool _isC);
+  ShapeSigAng(const char *name, const char *title,
+	      RooAbsReal& _ctK,
+	      RooAbsReal& _ctL,
+	      RooAbsReal& _phi,
+	      RooAbsReal& _Fl,
+	      RooAbsReal& _P1,
+	      RooAbsReal& _P2,
+	      RooAbsReal& _P3,
+	      RooAbsReal& _P4p,
+	      RooAbsReal& _P5p,
+	      RooAbsReal& _P6p,
+	      RooAbsReal& _P8p,
+	      RooAbsReal& _Fs,
+	      RooAbsReal& _As,
+	      RooAbsReal& _A4s,
+	      RooAbsReal& _A5s,
+	      RooAbsReal& _A7s,
+	      RooAbsReal& _A8s,
+	      RooAbsReal& _Eff,
+	      std::vector<double> _intPart,
+	      bool _isC,
+	      Double_t _interferenceFactor = 0.9);
   ShapeSigAng(const ShapeSigAng& other, const char* name=0) ;
   virtual TObject* clone(const char* newname) const { return new ShapeSigAng(*this,newname); }
   inline virtual ~ShapeSigAng() { }

@@ -27,7 +27,7 @@ RooDoubleCBFast* createRTMassShape(int q2Bin,
                                                    );
 
     if (constrainVars){
-        constrainVar2(mean_rt  , Form("mean_{RT}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
+        /* constrainVar2(mean_rt  , Form("mean_{RT}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs); */
         constrainVar2(sigma_rt , Form("#sigma_{RT1}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
         constrainVar2(alpha_rt1, Form("#alpha_{RT1}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
         constrainVar2(alpha_rt2, Form("#alpha_{RT2}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
@@ -74,7 +74,7 @@ RooAddPdf* createRTMassShape( int q2Bin,
                                        RooArgList(*f1rt));
 
     if (constrainVars){
-        constrainVar2(mean_rt ,  Form("mean_{RT}^{%i}",q2Bin)   , w, year, true, c_vars, c_pdfs);
+        /* constrainVar2(mean_rt ,  Form("mean_{RT}^{%i}",q2Bin)   , w, year, true, c_vars, c_pdfs); */
         constrainVar2(sigma_rt , Form("#sigma_{RT1}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
         constrainVar2(alpha_rt1, Form("#alpha_{RT1}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
         constrainVar2(alpha_rt2, Form("#alpha_{RT2}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
