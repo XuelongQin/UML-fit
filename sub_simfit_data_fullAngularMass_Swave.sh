@@ -11,8 +11,8 @@ bin         = \$(ProcId) / 4
 yearConf    = \$(ProcId) % 4
 Arguments   = \$INT(nsamp) \$INT(bin) \$INT(yearConf)
 Log         = logs_parSub/sub_\$(ClusterId).log
-Output      = logs_parSub/simfit_data_fullAngularMass_Swave_\$INT(nsamp)_\$INT(bin)_\$INT(yearConf)_noMeanCon.out
-Error       = logs_parSub/simfit_data_fullAngularMass_Swave_\$INT(nsamp)_\$INT(bin)_\$INT(yearConf)_noMeanCon.err
+Output      = logs_parSub/simfit_data_fullAngularMass_Swave_\$INT(nsamp)_\$INT(bin)_\$INT(yearConf).out
+Error       = logs_parSub/simfit_data_fullAngularMass_Swave_\$INT(nsamp)_\$INT(bin)_\$INT(yearConf).err
 +JobFlavour = "testmatch"
 EOF
 

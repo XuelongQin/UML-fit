@@ -28,6 +28,7 @@ Fitter::Fitter(const char *_name, const char *_title,
 
   SetDefConf();
   usedPenalty = false;
+  runSimpleFit = false;
 
 }
 
@@ -55,6 +56,7 @@ Fitter::Fitter(const char *_name, const char *_title,
 
   SetDefConf();
   usedPenalty = false;
+  runSimpleFit = false;
 
 }
 
@@ -88,6 +90,7 @@ Fitter::Fitter(const Fitter& other, const char* name) :
   coeff5 = other.coeff5;
 
   usedPenalty = other.usedPenalty;
+  runSimpleFit = other.runSimpleFit;
 
 }
 
@@ -181,11 +184,13 @@ Int_t Fitter::fit()
 
     // if free fit is good return its result
     if ( result_free->status()==0 && result_free->covQual()==3 && boundary->getValV() == 0 ) {
-      computeBoundaryDistance();
+      if ( !runSimpleFit ) computeBoundaryDistance(); //allow to skip the boundary-distance computation (for full-stat MC and control region fits)
       fillResultContainers();
       return 0;
     }
 
+    if ( runSimpleFit ) return 1; //allow to skip the penalised fit (for full-stat MC and control region fits)
+    
     usedPenalty = true;
 
     // optional: if a partial boundary is satisfied

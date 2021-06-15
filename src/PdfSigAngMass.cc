@@ -286,7 +286,7 @@ Double_t PdfSigAngMass::evaluate() const
   double mCT = ((RooAbsPdf&)(rtMassTerm.arg())).getVal( RooArgSet(marg)) ;
   double mWT = ((RooAbsPdf&)(wtMassTerm.arg())).getVal( RooArgSet(marg)) ;
 
-  double c_mFrac = constrTermVal()->getVal();
+  double c_mFrac =1; //= constrTermVal()->getVal();
   
   double ret = (decCT_times_eff * mCT + (mFrac * c_mFrac) * decWT_times_eff * mWT) * penalty;
   return ret;
@@ -320,7 +320,7 @@ namespace {
 Int_t PdfSigAngMass::getAnalyticalIntegral(RooArgSet& allVars, RooArgSet& analVars, const char* rangeName) const
 {
   if ( matchArgs(allVars,analVars,ctK,ctL,phi,m) ){
-    if ( fullRangeCosT(ctK,rangeName) && fullRangeCosT(ctL,rangeName) && fullRangePhi(phi,rangeName) && fullRangeMass(m,rangeName) ){
+    if ( fullRangeCosT(ctK,rangeName) && fullRangeCosT(ctL,rangeName) && fullRangePhi(phi,rangeName) ){
 //       std::cout << "code 1"<<  std::endl;
       return 1 ;
     }  
@@ -332,19 +332,19 @@ Int_t PdfSigAngMass::getAnalyticalIntegral(RooArgSet& allVars, RooArgSet& analVa
     }
   }
   if ( matchArgs(allVars,analVars,ctL,phi,m) ){
-    if ( fullRangeCosT(ctL,rangeName) && fullRangePhi(phi,rangeName) && fullRangeMass(m,rangeName) ){
+    if ( fullRangeCosT(ctL,rangeName) && fullRangePhi(phi,rangeName) ){
 //       std::cout << "code 3"<<  std::endl;
       return 3 ;
     }  
   }
   if ( matchArgs(allVars,analVars,ctK,phi,m) ){
-    if ( fullRangeCosT(ctK,rangeName) && fullRangePhi(phi,rangeName) && fullRangeMass(m,rangeName) ){
+    if ( fullRangeCosT(ctK,rangeName) && fullRangePhi(phi,rangeName) ){
 //       std::cout << "code 4"<<  std::endl;
       return 4 ;
     }  
   }
   if ( matchArgs(allVars,analVars,ctK,ctL,m) ){
-    if ( fullRangeCosT(ctK,rangeName) && fullRangeCosT(ctL,rangeName) && fullRangeMass(m,rangeName) ){
+    if ( fullRangeCosT(ctK,rangeName) && fullRangeCosT(ctL,rangeName) ){
 //       std::cout << "code 5"<<  std::endl;
       return 5 ;
     }  
@@ -389,8 +389,15 @@ Double_t PdfSigAngMass::analyticalIntegral(Int_t code, const char* rangeName) co
         return 1e-55;
       }
 
-    rtMassIntegral = 1; //((RooAbsReal* )rtMass.createIntegral(*marg))->getVal();
-    wtMassIntegral = 1; //((RooAbsReal* )wtMass.createIntegral(*marg))->getVal();
+    if ( fullRangeMass(m,rangeName) ) {
+      rtMassIntegral = 1;
+      wtMassIntegral = 1;
+    } else {
+      rtMassIntegral = ((RooAbsReal* )rtMass.createIntegral(*marg,rangeName))->getVal()
+	/ ((RooAbsReal* )rtMass.createIntegral(*marg))->getVal();
+      wtMassIntegral = ((RooAbsReal* )wtMass.createIntegral(*marg,rangeName))->getVal()
+	/ ((RooAbsReal* )wtMass.createIntegral(*marg))->getVal();
+    }
 
 //     std::cout <<  "PdfSigAngMass:analyticalIntegral1:mass  " << rtMassIntegral << " \t" << wtMassIntegral  << std::endl;
 //     std::cout <<  "PdfSigAngMass:analyticalIntegral1:ang   " << rtAngIntegral  << " \t" << wtAngIntegral    << std::endl;
@@ -422,8 +429,25 @@ Double_t PdfSigAngMass::analyticalIntegral(Int_t code, const char* rangeName) co
 
   else if (code >=3 && code <=5){
 
-    rtMassIntegral = 1; //((RooAbsReal* )rtMass.createIntegral(*marg))->getVal();
-    wtMassIntegral = 1; //((RooAbsReal* )wtMass.createIntegral(*marg))->getVal();
+    if ( fullRangeMass(m,rangeName) ) {
+      rtMassIntegral = 1;
+      wtMassIntegral = 1;
+    } else {
+      double rtMassInt = ((RooAbsReal* )rtMass.createIntegral(*marg,rangeName))->getVal();
+      double wtMassInt = ((RooAbsReal* )wtMass.createIntegral(*marg,rangeName))->getVal();
+      double rtMassIntFull = ((RooAbsReal* )rtMass.createIntegral(*marg))->getVal();
+      double wtMassIntFull = ((RooAbsReal* )wtMass.createIntegral(*marg))->getVal();
+
+      // std::cout<<"\n======== "<<rtMassInt<<" "<<wtMassInt<<" "<<rtMassIntFull<<" "<<wtMassIntFull<<"=========\n\n";
+
+      rtMassIntegral = rtMassInt / rtMassIntFull;
+      wtMassIntegral = wtMassInt / wtMassIntFull;
+
+      // rtMassIntegral = ((RooAbsReal* )rtMass.createIntegral(*marg,rangeName))->getVal()
+      // 	/ ((RooAbsReal* )rtMass.createIntegral(*marg))->getVal();
+      // wtMassIntegral = ((RooAbsReal* )wtMass.createIntegral(*marg,rangeName))->getVal()
+      // 	/ ((RooAbsReal* )wtMass.createIntegral(*marg))->getVal();
+    }
 //     std::cout <<  "PdfSigAngMass:analyticalIntegral345:mass  " << rtMassIntegral << " \t" << wtMassIntegral  << std::endl;
 
     if (code ==3){

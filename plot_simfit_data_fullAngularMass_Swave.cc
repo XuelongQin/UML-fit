@@ -117,30 +117,34 @@ void plot_simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, uint nSamp
     frames.push_back( prepareFrame( phi ->frame(Title((longString+year).c_str())) ));
     TLegend* leg = new TLegend (0.60,0.75,0.9,0.9);
 
+    auto singleYearPdf = simPdf->getPdf(("data"+year+Form("_subs%d",iSample)).c_str());
+    auto singleYearData = combData->reduce(("sample==sample::data"+year+Form("_subs%d",iSample)).c_str());
+
     cout<<"canvas ready"<<endl;
     for (unsigned int fr = 0; fr < frames.size(); fr++){
-        cout<<"fr " << fr<<endl;
-        combData->plotOn(frames[fr], MarkerColor(kRed+1), LineColor(kRed+1), Binning(40), Cut(("sample==sample::data"+year+Form("_subs%d",iSample)).c_str()), Name(("plData"+year).c_str()));
+      cout<<"fr "<<fr<<" data"<<year<<Form("_subs%d",iSample)<<endl;
+        singleYearData->plotOn(frames[fr], MarkerColor(kRed+1), LineColor(kRed+1), Binning(40), Name(("plData"+year).c_str()));
+        // combData->plotOn(frames[fr], MarkerColor(kRed+1), LineColor(kRed+1), Binning(40), Cut(("sample==sample::data"+year+Form("_subs%d",iSample)).c_str()), Name(("plData"+year).c_str()));
         
-        simPdf->plotOn(frames[fr],
-		       Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
-		       ProjWData(RooArgSet(sample), *combData), 
+        singleYearPdf->plotOn(frames[fr],
+		       // Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
+		       // ProjWData(RooArgSet(sample), *combData), 
 		       LineWidth(1), 
 		       Name(("plPDF"+year).c_str()), 
 		       NumCPU(4));
 
-        simPdf->plotOn(frames[fr],
-		       Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
-		       ProjWData(RooArgSet(sample), *combData), 
+        singleYearPdf->plotOn(frames[fr],
+		       // Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
+		       // ProjWData(RooArgSet(sample), *combData), 
 		       LineWidth(1), 
 		       Name(("plPDFbkg"+year).c_str()), 
 		       NumCPU(4),
 		       LineColor(8),
 		       Components( ("bkg_pdf_"+year).c_str() ));
 
-        simPdf->plotOn(frames[fr],
-		       Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
-		       ProjWData(RooArgSet(sample), *combData), 
+        singleYearPdf->plotOn(frames[fr],
+		       // Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
+		       // ProjWData(RooArgSet(sample), *combData), 
 		       LineWidth(1), 
 		       Name(("plPDFsig"+year).c_str()), 
 		       NumCPU(4),
@@ -166,7 +170,6 @@ void plot_simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, uint nSamp
   }
 
   c[confIndex]->SaveAs( ("plotSimFit4d_d/simFitResult_data_fullAngularMass_Swave_" + plotString +  "_newSB_fixFM_fullStat_testMacro_noMeanCon.pdf").c_str() );
-
 
   for (int i=0; i<nRanges; ++i)
     mass->setRange(rangeName[i].c_str(),rangeVal[i],rangeVal[i+1]);
@@ -199,26 +202,30 @@ void plot_simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, uint nSamp
       frames.push_back( prepareFrame( phi ->frame(Title((longString+year).c_str())) ));
       TLegend* leg = new TLegend (0.45,0.7,0.9,0.9);
 
+      auto singleYearPdf = simPdf->getPdf(("data"+year+Form("_subs%d",iSample)).c_str());
+      auto singleYearData = combData->reduce(("sample==sample::data"+year+Form("_subs%d",iSample)).c_str());
+
       for (unsigned int fr = 0; fr < frames.size(); fr++){
 
-	combData->plotOn(frames[fr],
+	singleYearData->plotOn(frames[fr],
 			 MarkerColor(kRed+1),
 			 LineColor(kRed+1),
 			 Binning(40),
-			 Cut(("("+massCut+")&&sample==sample::data"+year+Form("_subs%d",iSample)).c_str()),
+			 Cut(massCut.c_str()),
+			 // Cut(("("+massCut+")&&sample==sample::data"+year+Form("_subs%d",iSample)).c_str()),
 			 Name(("plData"+name+year).c_str()));
         
-	simPdf->plotOn(frames[fr],
-		       Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
-		       ProjWData(RooArgSet(sample), *combData), 
+	singleYearPdf->plotOn(frames[fr],
+		       // Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
+		       // ProjWData(RooArgSet(sample), *combData), 
 		       ProjectionRange(rangeList.c_str()),
 		       LineWidth(1), 
 		       Name(("plPDF"+name+year).c_str()),
 		       NumCPU(4));
 
-	simPdf->plotOn(frames[fr],
-		       Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
-		       ProjWData(RooArgSet(sample), *combData), 
+	singleYearPdf->plotOn(frames[fr],
+		       // Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
+		       // ProjWData(RooArgSet(sample), *combData), 
 		       ProjectionRange(rangeList.c_str()),
 		       LineWidth(1), 
 		       LineColor(8),
@@ -226,9 +233,9 @@ void plot_simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, uint nSamp
 		       Components( ("bkg_pdf_"+year).c_str() ),
 		       NumCPU(4));
 
-	simPdf->plotOn(frames[fr],
-		       Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
-		       ProjWData(RooArgSet(sample), *combData), 
+	singleYearPdf->plotOn(frames[fr],
+		       // Slice(sample, ("data"+year+Form("_subs%d",iSample)).c_str()), 
+		       // ProjWData(RooArgSet(sample), *combData), 
 		       ProjectionRange(rangeList.c_str()),
 		       LineWidth(1), 
 		       LineColor(880),
@@ -295,8 +302,8 @@ int main(int argc, char** argv)
     cout << "No specific years selected, using default: 2016" << endl;
     years.push_back(2016);
   }
-  if ( argc > 5 && atoi(argv[5])  != 0 ) years.push_back(atoi(argv[5]));
   if ( argc > 5 && atoi(argv[5]) != 0 ) years.push_back(atoi(argv[5]));
+  if ( argc > 6 && atoi(argv[6]) != 0 ) years.push_back(atoi(argv[6]));
 
   cout <<  "q2Bin       " << q2Bin        << endl;
   cout <<  "parity      " << parity       << endl;
