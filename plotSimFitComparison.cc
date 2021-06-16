@@ -71,7 +71,7 @@ void plotSimFitComparison(int q2Bin = 6)
   double massConstVal[3*nMassConstPars];
   double massConstErr[3*nMassConstPars];
 
-  string finName = "simFitResults4d/simFitResult_data_fullAngularMass_Swave_%s_MCStat_b%i_fullStat_noMeanCon.root";
+  string finName = "simFitResults4d/simFitResult_data_fullAngularMass_Swave_%s_MCStat_b%i.root";
   string finName2 = "/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%s_fM_";
   if (q2Bin==4) finName2 = finName2 + "Jpsi_newbdt.root";
   else if (q2Bin==6) finName2 = finName2 + "Psi_newbdt.root";
@@ -355,7 +355,7 @@ void plotSimFitComparison(int q2Bin = 6)
     legS.AddEntry(grS[iy],("Result "+year[iy]).c_str(),"lep");
   legS.Draw();
 
-  canv.SaveAs(("plotSimFit4d_d/comparisonSimFit_Swave_"+shortString+".pdf").c_str());
+  canvS.SaveAs(("plotSimFit4d_d/comparisonSimFit_Swave_"+shortString+".pdf").c_str());
 
   // Plot mass parameters
   double xMass[3*(nMassPars+nMassConstPars)];
@@ -432,6 +432,6 @@ void plotSimFitComparison(int q2Bin = 6)
   legM.AddEntry(grConst,"Constraint","fp");
   legM.Draw();
 
-  canv.SaveAs(("plotSimFit4d_d/comparisonSimFit_massParameters_"+shortString+".pdf").c_str());
+  canvM.SaveAs(("plotSimFit4d_d/comparisonSimFit_massParameters_"+shortString+".pdf").c_str());
 
 }
