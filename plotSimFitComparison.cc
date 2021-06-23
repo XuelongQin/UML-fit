@@ -420,7 +420,7 @@ void plotSimFitComparison(int q2Bin = 6)
 
   auto grConst = new TGraphErrors(3*(nMassPars+nMassConstPars),xMass,yMassConst,xMasse,yMasseConst);
   grConst->SetName("grConst");
-  grConst->SetLineColor(1);\
+  grConst->SetLineColor(1);
   grConst->SetLineWidth(2);
   grConst->SetFillStyle(0);
   grConst->SetMarkerStyle(20);

@@ -83,9 +83,8 @@ void plot_simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, uint nSamp
     sample.defineType(("data"+year+Form("_subs%i",iSample)).c_str());
   } 
 
-  if (nSample>0)   stat = Form("_sub-%i",iSample);
-  // TFile* fin = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + stat + Form("_b%i_fullStat.root", q2Bin)).c_str(),"READ");
-  TFile* fin = new TFile(("../UML-fit-JpsiFit/simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + "_MCStat" + stat + Form("_b%i_fullStat_noMeanCon.root", q2Bin)).c_str(),"READ");
+  if (nSample>0) stat = Form("_sub-%i",iSample);
+  TFile* fin = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + stat + Form("_MCStat_b%i.root", q2Bin)).c_str(),"READ");
   auto wsp_out = (RooWorkspace*)fin->Get("wsp_out");
   auto combData = (RooDataSet*)wsp_out->data("allcombData");
   auto simPdf = (RooSimultaneous*)wsp_out->pdf("simPdf");

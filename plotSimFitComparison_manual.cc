@@ -10,7 +10,7 @@ std::map<int,std::vector<float>> fM_sigmas =
   };
 
 
-void plotSimFitComparison_manual(int q2Bin = 6)
+void plotSimFitComparison_manual(int q2Bin = 4)
 {
   string shortString = Form("b%ip1",q2Bin);
 
@@ -45,24 +45,24 @@ void plotSimFitComparison_manual(int q2Bin = 6)
   double PDG_Fleh[2] = {0.007,0.028};
   double PDG_Flel[2] = {0.007,0.040};
 
-  double bestParSim[nPars] = {5.5337e-01,-1.5926e-02,-1.2078e-03,2.3698e-01,-9.5575e-01,-6.3722e-03,1.8206e-03,-2.1799e-01};
-  double lowParSim [nPars] = {-5.41e-04,-3.14e-03,-9.47e-04,-2.46e-03,-3.25e-03,-1.92e-03,-1.58e-03,-3.95e-03};
-  double highParSim[nPars] = {5.41e-04,3.14e-03,9.47e-04,2.46e-03,3.25e-03,1.92e-03,1.58e-03,3.95e-03};
+  double bestParSim[nPars];
+  double lowParSim [nPars];
+  double highParSim[nPars];
   double bestPar[3][nPars];
   double lowPar [3][nPars];
   double highPar[3][nPars];
   
-  double bestSParSim[nSPars] = {1.0204e-01,-4.1464e-01,2.3050e-02,4.9952e-03,-6.4214e-03,-3.7205e-01};
-  double lowSParSim [nSPars] = {-1.19e-03,-3.06e-03,-7.29e-03,-2.44e-03,-3.62e-03,-3.62e-03};
-  double highSParSim[nSPars] = {1.19e-03,3.06e-03,7.29e-03,2.44e-03,3.62e-03,3.62e-03};
+  double bestSParSim[nSPars];
+  double lowSParSim [nSPars];
+  double highSParSim[nSPars];
   double bestSPar[3][nSPars];
   double lowSPar [3][nSPars];
   double highSPar[3][nSPars];
   
-  double bestMassParSim[3*nMassPars] = {5.2754e+00,5.2758e+00,5.2756e+00,8.0127e-01,7.9899e-01,8.0311e-01,-5.7326e+00,-5.5572e+00,-5.5962e+00};
-  double errMassParSim [3*nMassPars] = {7.07e-05,5.92e-05,4.32e-05,1.00e-03,7.92e-04,6.26e-4,3.65e-02,2.75e-02,2.09e-02};
-  double bestMassConstParSim[3*nMassConstPars] = {9.9999e-01,1.0000e+00,1.0000e+00,1.6961e+00,1.5924e+00,1.6432e+00,-2.1039e+00,-2.4412e+00,-2.4312e+00,2.6405e-02,2.6021e-02,2.6010e-02,4.9160e-02,4.8716e-02,4.9286e-02,5.3159e-01,5.4499e-01,5.3495e-01,2.3803e+00,3.4712e+00,3.0201e+00,4.0165e+00,4.2124e+00,4.3951e+00,8.9729e-01,8.6277e-01,8.3543e-01,1.1477e+00,1.1141e+00,1.0864e+00,5.2726e-02,5.0570e-02,5.2088e-02,5.2736e+00,5.2743e+00,5.2745e+00,8.5247e+00,1.2334e+01,1.3871e+01,1.3334e+01,1.8758e+01,2.0588e+01};
-  double errMassConstParSim [3*nMassConstPars] = {1.49e-04,1.05e-04,1.12e-04,1.34e-02,1.16e-02,1.14e-02,1.67e-02,2.36e-02,2.58e-02,8.49e-05,7.32e-05,6.51e-05,1.67e-04,1.38e-04,1.26e-04,3.70e-03,3.27e-03,2.91e-03,4.99e-02,7.81e-02,8.15e-02,1.19e-01,1.57e-01,1.42e-01,1.26e-02,1.08e-02,9.94e-03,1.62e-02,1.41e-02,1.20e-02,3.49e-04,3.12e-04,3.11e-04,2.17e-04,2.01e-04,1.97e-04,6.20e-01,9.61e-01,1.35e+00,8.26e-01,1.18e+00,1.06e+00};
+  double bestMassParSim[3*nMassPars];
+  double errMassParSim [3*nMassPars];
+  double bestMassConstParSim[3*nMassConstPars];
+  double errMassConstParSim [3*nMassConstPars];
   double bestMassPar[3*nMassPars];
   double errMassPar [3*nMassPars];
   double bestMassConstPar[3*nMassConstPars];
@@ -71,11 +71,63 @@ void plotSimFitComparison_manual(int q2Bin = 6)
   double massConstVal[3*nMassConstPars];
   double massConstErr[3*nMassConstPars];
 
-  string finName = "simFitResults4d/simFitResult_data_fullAngularMass_Swave_%s_MCStat_b%i_fullStat_noMeanCon.root";
+  string finLogName = "logs_simFit4d/simfit_data_fullAngularMass_Swave_%i_1_0_0_0_0_1_2016_2017_2018.log";
+  ifstream fin_log(Form(finLogName.c_str(),q2Bin));
+  if ( !fin_log ) {
+    cout<<"Log file is problematic!"<<endl;
+    return;
+  }
+  string fin_line;
+  while (getline(fin_log, fin_line)) {
+    stringstream ss(fin_line);
+    istream_iterator<string> begin(ss);
+    istream_iterator<string> end;
+    vector<string> vec(begin, end);
+    if (vec.size()<1) continue;
+    cout<<vec[0]<<endl;
+    for (int iPar = 0; iPar<nSPars; ++iPar)
+      if ( vec[0].compare(sParName[iPar]) == 0 ) {
+	bestSParSim[iPar] = atof(vec[2].c_str());
+	highSParSim[iPar] = atof(vec[4].c_str());
+	lowSParSim [iPar] = -1. * atof(vec[4].c_str());
+      }
+    for (int iPar = 0; iPar<3*nMassPars; ++iPar)
+      if ( vec[0].compare(Form(massParName[iPar/3].c_str(),year[iPar%3].c_str())) == 0 ) {
+	bestMassParSim[iPar] = atof(vec[2].c_str());
+	errMassParSim [iPar] = atof(vec[4].c_str());
+      }
+    for (int iPar = 0; iPar<3*nMassConstPars; ++iPar)
+      if ( vec[0].compare(Form(massConstParName[iPar/3].c_str(),year[iPar%3].c_str())) == 0 ) {
+	bestMassConstParSim[iPar] = atof(vec[2].c_str());
+	errMassConstParSim [iPar] = atof(vec[4].c_str());
+      }
+  }
+  fin_log.close();
+
+  string finName = "simFitResults4d/simFitResult_data_fullAngularMass_Swave_%s_MCStat_b%i.root";
   string finName2 = "/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%s_fM_";
   if (q2Bin==4) finName2 = finName2 + "Jpsi_newbdt.root";
   else if (q2Bin==6) finName2 = finName2 + "Psi_newbdt.root";
   else finName2 = finName2 + "newbdt.root";
+
+  auto finSim = TFile::Open(Form(finName.c_str(),"201620172018",q2Bin));
+  if ( !finSim || finSim->IsZombie() ) {
+    cout<<"Sim file is problematic!"<<endl;
+    return;
+  }
+
+  auto tinSim = (TTree*)finSim->Get("fitResultsTree");
+  if ( !tinSim || tinSim->IsZombie() || tinSim->GetEntries() < 1 ) {
+    cout<<"Sim tree is problematic!"<<endl;
+    finSim->Close();
+    return;
+  }
+  for (int iPar=0; iPar<nPars; ++iPar) {
+    tinSim->SetBranchAddress((parName[iPar]+"_best").c_str(),&bestParSim[iPar]);
+    tinSim->SetBranchAddress((parName[iPar]+"_low" ).c_str(),&lowParSim [iPar]);
+    tinSim->SetBranchAddress((parName[iPar]+"_high").c_str(),&highParSim[iPar]);
+  }
+  tinSim->GetEntry(0);
 
   for (int iy=0; iy<3; ++iy) {
     auto fin = TFile::Open(Form(finName.c_str(),year[iy].c_str(),q2Bin));
