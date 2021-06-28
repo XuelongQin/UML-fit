@@ -59,6 +59,8 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
+int q2stat = 0;
+
 void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, bool save, std::vector<int> years)
 {
 
@@ -77,7 +79,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   string all_years = "";
   string year = ""; 
   string isample = ""; 
-  string stat = nSample > 0 ? "_dataStat":"_MCStat";
+  string stat = nSample > 0 ? Form("_b%istat",q2stat):"";
   uint firstSample = ( multiSample || nSample==0 ) ? 0 : nSample-1;
   uint lastSample = nSample > 0 ? nSample-1 : 0;
   
@@ -225,10 +227,11 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
 
     // create roodataset (in case data-like option is selected, only import the correct % of data)
-    data.push_back( createDatasetInData( wsp[iy],  q2Bin,  observables,  shortString  )); 
-    // data.push_back( createDataset( nSample,  firstSample,  lastSample, wsp[iy],  
-    //                                q2Bin,  parity,  years[iy], 
-    //                                reco_vars, observables,  shortString  )); 
+    if (nSample==0)
+      data.push_back( createDatasetInData( wsp[iy],  q2Bin,  observables,  shortString  ));
+    else
+      data.push_back( createDatasetInData( nSample,  firstSample,  lastSample, wsp[iy],
+					   q2Bin,  years[iy], observables,  shortString, q2stat ));
 
     // Mass Component
     // import mass PDF from fits to the MC
@@ -560,7 +563,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     fitter = new Fitter (Form("fitter%i",is),Form("fitter%i",is),pars,combData,simPdf,simPdf_penalty,boundary,bound_dist,penTerm,&c_vars);
     vFitter.push_back(fitter);
 
-    if (q2Bin==4 || q2Bin==6) fitter->runSimpleFit = true;
+    if (nSample==0 && (q2Bin==4 || q2Bin==6)) fitter->runSimpleFit = true;
 
     subTime.Start(true);
     int status = fitter->fit();
@@ -599,7 +602,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
 	TStopwatch improvTime;
 	improvTime.Start(true);
-	// fitter->improveAng();
+	if (!fitter->runSimpleFit) fitter->improveAng();
 	improvTime.Stop();
 	imprTime = improvTime.CpuTime();
 	cout<<"Improv time: "<<imprTime<<" s"<<endl;
@@ -613,7 +616,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 	TStopwatch minosTime;
 	minosTime.Start(true);
 
-	// fitter->MinosAng();
+	if (!fitter->runSimpleFit) fitter->MinosAng();
 
 	minosTime.Stop();
 	minTime = minosTime.CpuTime();

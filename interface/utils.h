@@ -162,3 +162,40 @@ std::vector<RooDataSet*> createDatasetInData(RooWorkspace *ws, int q2Bin, RooArg
   return datasample;
 }
 
+std::vector<RooDataSet*> createDatasetInData(int nSample, uint firstSample, uint lastSample, RooWorkspace *ws,
+					     int q2Bin, int year, RooArgSet vars, std::string shortString, int q2st )
+{
+
+  std::vector<RooDataSet*> datasample;
+
+  RooDataSet* data = (RooDataSet*)ws->data(Form("data_b%i",q2Bin)) ;
+
+  if (nSample>0){
+
+    int nSigCR[3] = {627365, 787149, 1694952};
+    int subSampStat = (int)(data->sumEntries()*nsig_years[year][q2st]/nSigCR[year-2016]);
+
+    for (uint is = firstSample; is <= lastSample; is++) {
+
+      RooDataSet* isample = new RooDataSet(("data_"+shortString + Form("_subs%i", is)).c_str(),
+					   ("data_"+shortString + Form("_subs%i", is)).c_str(),
+					   RooArgSet(vars));
+
+      isample->append(*((RooDataSet*)data->reduce(EventRange(is*subSampStat+1,
+							     (is+1)*subSampStat))));
+      datasample.push_back (isample);
+    }
+  }
+  else{
+    RooDataSet* isample = new RooDataSet(("data_"+shortString + "_subs0").c_str(),
+					 ("data_"+shortString + "_subs0").c_str(),
+					 RooArgSet(vars));
+    isample->append(*data);
+    datasample.push_back (isample);
+
+  }
+
+
+  return datasample;
+}
+

@@ -115,4 +115,3 @@ rm -rf simFitResults4d
 rm simfit_data_fullAngularMass_Swave
 rm recoDATADataset_b*
 rm KDEeff_b*
-rm simFitResult*
