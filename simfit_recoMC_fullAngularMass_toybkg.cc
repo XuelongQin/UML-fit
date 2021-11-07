@@ -870,7 +870,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
 
 
-void simfit_recoMC_fullAngularMassBin1(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, bool save, std::vector<int> years)
+void simfit_recoMC_fullAngularMassBin1(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, int save, std::vector<int> years)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
