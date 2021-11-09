@@ -28,9 +28,13 @@ int colors [12] = { 633, 417, 879, 857, 839, 801, 921, 607, 807, 419, 907, 402 }
 double diffMax = 0.0999;
 // double diffMax = 0.0499;
 
-void plotMultiFit (int binIndex=-1, int parity=1, bool plot4dFit = true, bool ref4dFit = true)
+void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref4dFit = true)
 {
 
+  // whichSamples=0 -> plot fit results to 3D MC subsamples
+  // whichSamples=1 -> plot fit results to 4D MC subsamples
+  // whichSamples=2 -> plot fit results to 4D MC subsamples + toy background
+  
   vector< vector<TH1D*> > vHistBest (nPars);
   vector< vector<TH1D*> > vHistErrH (nPars);
   vector< vector<TH1D*> > vHistErrL (nPars);
@@ -79,7 +83,8 @@ void plotMultiFit (int binIndex=-1, int parity=1, bool plot4dFit = true, bool re
 
     TChain fitResultsTree ("fitResultsTree","");
     string filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-*_b%i.root",q2Bin);
-    if (!plot4dFit) filename = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_dataStat-*_b%i.root",q2Bin);
+    if (plot4dFit==1) filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_dataStat-*_b%i.root",q2Bin);
+    if (plot4dFit==0) filename = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_dataStat-*_b%i.root",q2Bin);
     fitResultsTree.Add(filename.c_str());
 
     string filename_fR = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_MCStat_b%i.root",q2Bin);
