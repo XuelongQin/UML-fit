@@ -17,7 +17,8 @@ RooDoubleCBFast* createRTMassShape(int q2Bin,
                                    int year,
                                    bool constrainVars, 
                                    RooArgSet &c_vars,
-                                   RooArgSet &c_pdfs
+                                   RooArgSet &c_pdfs,
+				   int contraintStat = -1
                                    ){
 
     RooDoubleCBFast* dcb_rt = new RooDoubleCBFast ( Form("dcb_rt_%i", year)  , 
@@ -27,12 +28,15 @@ RooDoubleCBFast* createRTMassShape(int q2Bin,
                                                    );
 
     if (constrainVars){
-        /* constrainVar2(mean_rt  , Form("mean_{RT}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs); */
-        constrainVar2(sigma_rt , Form("#sigma_{RT1}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
-        constrainVar2(alpha_rt1, Form("#alpha_{RT1}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
-        constrainVar2(alpha_rt2, Form("#alpha_{RT2}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
-        constrainVar2(n_rt1    , Form("n_{RT1}^{%i}",q2Bin)      , w, year, true, c_vars, c_pdfs);
-        constrainVar2(n_rt2    , Form("n_{RT2}^{%i}",q2Bin)      , w, year, true, c_vars, c_pdfs);
+      int scaleWidth = -1;
+      if (q2Bin==4 && contraintStat>=0) scaleWidth = 2*contraintStat;
+
+      /* constrainVar2(mean_rt  , Form("mean_{RT}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, scaleWidth); */
+      constrainVar2(sigma_rt , Form("#sigma_{RT1}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, scaleWidth);
+      constrainVar2(alpha_rt1, Form("#alpha_{RT1}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, scaleWidth);
+      constrainVar2(alpha_rt2, Form("#alpha_{RT2}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, scaleWidth);
+      constrainVar2(n_rt1    , Form("n_{RT1}^{%i}",q2Bin)     , w, year, true, c_vars, c_pdfs, scaleWidth);
+      constrainVar2(n_rt2    , Form("n_{RT2}^{%i}",q2Bin)     , w, year, true, c_vars, c_pdfs, scaleWidth);
     }
 
     return dcb_rt;                                                   
@@ -55,7 +59,8 @@ RooAddPdf* createRTMassShape( int q2Bin,
                                   int year,
                                   bool constrainVars, 
                                   RooArgSet &c_vars,
-                                  RooArgSet &c_pdfs
+			          RooArgSet &c_pdfs,
+			          int contraintStat = -1
                                   ){
 
     RooCBShape* cbshape_rt1 = new RooCBShape (Form("cbshape_rt1_%i", year) , 
@@ -74,14 +79,17 @@ RooAddPdf* createRTMassShape( int q2Bin,
                                        RooArgList(*f1rt));
 
     if (constrainVars){
-        /* constrainVar2(mean_rt ,  Form("mean_{RT}^{%i}",q2Bin)   , w, year, true, c_vars, c_pdfs); */
-        constrainVar2(sigma_rt , Form("#sigma_{RT1}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
-        constrainVar2(alpha_rt1, Form("#alpha_{RT1}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
-        constrainVar2(alpha_rt2, Form("#alpha_{RT2}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs);
-        constrainVar2(n_rt1    , Form("n_{RT1}^{%i}",q2Bin)      , w, year, true, c_vars, c_pdfs);
-        constrainVar2(n_rt2    , Form("n_{RT2}^{%i}",q2Bin)      , w, year, true, c_vars, c_pdfs);
-        constrainVar2(sigma_rt2 , Form("#sigma_{RT2}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs);
-        constrainVar2(f1rt      , Form("f^{RT%i}"         ,q2Bin), w, year, true, c_vars, c_pdfs);
+      int scaleWidth = -1;
+      if (q2Bin==4 && contraintStat>=0) scaleWidth = 2*contraintStat;
+
+      /* constrainVar2(mean_rt ,  Form("mean_{RT}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs, scaleWidth); */
+      constrainVar2(sigma_rt , Form("#sigma_{RT1}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs, scaleWidth);
+      constrainVar2(alpha_rt1, Form("#alpha_{RT1}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs, scaleWidth);
+      constrainVar2(alpha_rt2, Form("#alpha_{RT2}^{%i}",q2Bin) , w, year, true, c_vars, c_pdfs, scaleWidth);
+      constrainVar2(n_rt1    , Form("n_{RT1}^{%i}",q2Bin)      , w, year, true, c_vars, c_pdfs, scaleWidth);
+      constrainVar2(n_rt2    , Form("n_{RT2}^{%i}",q2Bin)      , w, year, true, c_vars, c_pdfs, scaleWidth);
+      constrainVar2(sigma_rt2 , Form("#sigma_{RT2}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, scaleWidth);
+      constrainVar2(f1rt      , Form("f^{RT%i}"         ,q2Bin), w, year, true, c_vars, c_pdfs, scaleWidth);
     }
 
     return dcb_rt;                                                   

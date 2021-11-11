@@ -18,9 +18,9 @@ std::map<int,std::vector<float>> frt_sigmas = {
 };
 
 std::map<int,std::vector<float>> fM_sigmas = {
-  {2016, {0.023, 0.015, 0.017, 0.013, 0.005, 0.010, 0.006, 0.013}},
-  {2017, {0.018, 0.014, 0.015, 0.010, 0.004, 0.008, 0.005, 0.011}},
-  {2018, {0.015, 0.010, 0.011, 0.008, 0.006, 0.006, 0.006, 0.008}},
+  {2016, {0.023, 0.015, 0.017, 0.013, 0.0003, 0.010, 0.0009, 0.013}},
+  {2017, {0.018, 0.014, 0.015, 0.010, 0.0003, 0.008, 0.0007, 0.011}},
+  {2018, {0.015, 0.010, 0.011, 0.008, 0.0002, 0.006, 0.0007, 0.008}},
 };
 
 
@@ -36,7 +36,11 @@ std::map<int,std::vector<float>> nsig_years = {
   {2018, {500, 981, 821, 1608, 0.002, 3018, 0.003, 1836}},
 };
 
-
+std::map<int,std::vector<float>> constr_width_fac = {
+  {2016, {2.10, 4.02, 1.32, 3.08, 1.47, 2.88, 1.22, 3.37, 1.00, 1.00, 2.33, 1.83, 0.00, 0.00, 2.16, 2.18}},
+  {2017, {1.76, 3.61, 1.18, 2.32, 1.36, 2.90, 1.06, 2.50, 1.00, 1.00, 2.19, 1.76, 0.00, 0.00, 1.99, 2.01}},
+  {2018, {1.87, 4.17, 1.16, 2.72, 1.27, 2.99, 1.08, 2.13, 1.00, 1.00, 1.78, 1.70, 0.00, 0.00, 1.84, 2.62}}
+};
 
 RooPlot* prepareFrame(RooPlot* frame){
     frame->GetYaxis()->SetTitleOffset(1.8);
@@ -46,19 +50,24 @@ RooPlot* prepareFrame(RooPlot* frame){
 }
 
 
-RooGaussian* constrainVar(RooRealVar* var, 
-                          string inVarName,  
-                          RooWorkspace *w, 
-                          int year,
-                          bool addToList,
-                          RooArgSet &c_vars,
-                          RooArgSet &c_pdfs
+RooGaussian* constrainVar(RooRealVar* var,
+			  string inVarName,
+			  RooWorkspace *w,
+			  int year,
+			  bool addToList,
+			  RooArgSet &c_vars,
+			  RooArgSet &c_pdfs,
+			  int scaleWidth = -1
                           ){
+
+  float widthFac = 1.;
+  if (scaleWidth>=0) widthFac = constr_width_fac[year][scaleWidth];
+
     RooGaussian* gauss_constr = new RooGaussian(  Form("c_%s_%i", inVarName.c_str(), year) , 
                                                   Form("c_%s_%i", inVarName.c_str(), year) , 
                                                   *var,  
                                                   RooConst( w->var(inVarName.c_str())->getVal()  ), 
-                                                  RooConst( w->var(inVarName.c_str())->getError())
+                                                  RooConst( widthFac*w->var(inVarName.c_str())->getError())
                                                  ); 
 //     gauss_constr ->Print();
     if (addToList){
@@ -69,18 +78,23 @@ RooGaussian* constrainVar(RooRealVar* var,
 }
 
 void constrainVar2(RooRealVar* var, 
-                          string inVarName,  
-                          RooWorkspace *w, 
-                          int year,
-                          bool addToList,
-                          RooArgSet &c_vars,
-                          RooArgSet &c_pdfs
-                          ){
+		   string inVarName,
+		   RooWorkspace *w,
+		   int year,
+		   bool addToList,
+		   RooArgSet &c_vars,
+		   RooArgSet &c_pdfs,
+		   int scaleWidth = -1
+		   ){
+
+  float widthFac = 1.;
+  if (scaleWidth>=0) widthFac = constr_width_fac[year][scaleWidth];
+
     RooGaussian* gauss_constr = new RooGaussian(  Form("c_%s_%i", inVarName.c_str(), year) , 
                                                   Form("c_%s_%i", inVarName.c_str(), year) , 
                                                   *var,  
                                                   RooConst( w->var(inVarName.c_str())->getVal()  ), 
-                                                  RooConst( w->var(inVarName.c_str())->getError())
+                                                  RooConst( widthFac*w->var(inVarName.c_str())->getError())
                                                  ); 
     if (addToList){
       c_vars.add(*var);    
