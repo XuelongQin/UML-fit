@@ -34,6 +34,7 @@ void plotMultiDataFit ()
 {
 
   vector< vector<TH1D*> > vHistBest (nPars);
+  vector< vector<TH1D*> > vHistPull (nPars);
   vector< vector<TH1D*> > vHistErrH (nPars);
   vector< vector<TH1D*> > vHistErrL (nPars);
 
@@ -71,7 +72,7 @@ void plotMultiDataFit ()
     string filename = Form("simFitResults4d/simFitResult_data_fullAngularMass_Swave_201620172018_b%istat-*_b%i.root",q2stat,q2Bin);
     fitResultsTree.Add(filename.c_str());
 
-    string filename_fR = Form("/eos/user/a/aboletti/BdToKstarMuMu/dataCR-results/simFitResult_data_fullAngularMass_Swave_201620172018_MCStat_b%i.root",q2Bin);
+    string filename_fR = Form("/eos/user/a/aboletti/BdToKstarMuMu/dataCR-results/simFitResult_data_fullAngularMass_Swave_201620172018_b%i.root",q2Bin);
     TFile* filein_fR = TFile::Open(filename_fR.c_str());
     TTree* fitResultsTree_fR = (TTree*)filein_fR->Get("fitResultsTree");
     if (!fitResultsTree_fR || fitResultsTree_fR->GetEntries() != 1) {
@@ -97,10 +98,12 @@ void plotMultiDataFit ()
       fitResultsTree_fR->SetBranchAddress(Form("%s_low" ,parName[iPar].c_str()),&vLow [iPar]);
 
       vHistBest[iPar].push_back( new TH1D(Form("hBest%i%i",iColor,iPar),Form("%s results of fits to control-region sub-samples with signal q2-bin statistics;%s;# of results",parTitle[iPar].c_str(),parTitle[iPar].c_str()),100,parMin[iPar],parMax[iPar]) );
+      vHistPull[iPar].push_back( new TH1D(Form("hPull%i%i",iColor,iPar),Form("%s pulls in fits to control-region sub-samples with signal q2-bin statistics;%s pulls;# of results",parTitle[iPar].c_str(),parTitle[iPar].c_str()),30,-5,5) );
       vHistErrH[iPar].push_back( new TH1D(Form("hErrH%i%i",iColor,iPar),Form("%s MINOS uncertainties of fits to control-region sub-samples with signal q2-bin statistics;#sigma(%s);# of results",parTitle[iPar].c_str(),parTitle[iPar].c_str()),nUncBins,binsUnc) );
       vHistErrL[iPar].push_back( new TH1D(Form("hErrL%i%i",iColor,iPar),Form("%s MINOS uncertainties of fits to control-region sub-samples with signal q2-bin statistics;#sigma(%s);# of results",parTitle[iPar].c_str(),parTitle[iPar].c_str()),nUncBins,binsUnc) );
 
       vHistBest[iPar].back()->SetLineColor(colors[iColor]);
+      vHistPull[iPar].back()->SetLineColor(colors[iColor]);
       vHistErrH[iPar].back()->SetLineColor(colors[iColor]);
       vHistErrL[iPar].back()->SetLineColor(colors[iColor]);
       vHistErrL[iPar].back()->SetFillColor(colors[iColor]);
@@ -124,6 +127,7 @@ void plotMultiDataFit ()
       fitResultsTree.GetEntry(iEn);
       for (int iPar=0; iPar<nPars; ++iPar) {
 	vHistBest[iPar].back()->Fill(vBest[iPar]);
+	vHistPull[iPar].back()->Fill((vBest[iPar]-vHistBestRECO[iPar].back())/(vBest[iPar]>vHistBestRECO[iPar].back()?vBest[iPar]-vLow[iPar]:vHigh[iPar]-vBest[iPar]));
 	vHistErrH[iPar].back()->Fill(vHigh[iPar]-vBest[iPar]);
 	vHistErrH[iPar].back()->Fill(vBest[iPar]-vLow [iPar]); // To create a stacked histogram
 	vHistErrL[iPar].back()->Fill(vBest[iPar]-vLow [iPar]);
@@ -155,6 +159,7 @@ void plotMultiDataFit ()
 
   vector<TCanvas*> cDistr (nPars);
   vector<TCanvas*> cUncert (nPars);
+  vector<TCanvas*> cPull (nPars);
   vector<TCanvas*> cResult (nPars);
   vector< vector<TLine*> > lineRECO (nPars);
   vector< vector<TLine*> > lineRMS (nPars);
@@ -163,11 +168,16 @@ void plotMultiDataFit ()
 
     cDistr[iPar] = new TCanvas(Form("cDistr%i",iPar),Form("%s distribution",parTitle[iPar].c_str()),2000,1000);
     cUncert[iPar] = new TCanvas(Form("cUncert%i",iPar),Form("%s uncertainty",parTitle[iPar].c_str()),2000,1000);
+    cPull[iPar] = new TCanvas(Form("cPull%i",iPar),Form("%s pulls",parTitle[iPar].c_str()),2000,1000);
     cResult[iPar] = new TCanvas(Form("cResult%i",iPar),Form("%s results",parTitle[iPar].c_str()),1000,1000);
 
     cDistr[iPar]->cd();
     vHistBest[iPar][0]->Draw();
     double ymax = vHistBest[iPar][0]->GetMaximum();
+
+    cPull[iPar]->cd();
+    vHistPull[iPar][0]->Draw();
+    double ymaxPull = vHistPull[iPar][0]->GetMaximum();
 
     cUncert[iPar]->cd()->SetLogx();
     // copy underflow and overflow in first and last bins
@@ -181,6 +191,7 @@ void plotMultiDataFit ()
     double ymaxUnc = vHistErrH[iPar][0]->GetMaximum();
 
     TLegend* leg;
+    TLegend* legPull;
     TLegend* legUnc;
     if ( parName[iPar].compare("P4p")==0 || parName[iPar].compare("P5p")==0 || parName[iPar].compare("P1")==0 )
       leg = new TLegend(0.67,0.57,0.87,0.87,"q^{2} bin");
@@ -191,11 +202,14 @@ void plotMultiDataFit ()
     else
       legUnc = new TLegend(0.67,0.62,0.87,0.87,"q^{2} bin");
     legUnc->SetNColumns(2);
+    legPull = new TLegend(0.67,0.57,0.87,0.87,"q^{2} bin");
     if (nPlotBins>1) {
       // vHistBest[iPar][0]->SetTitle( Form("%s results of data-like MC sample fits",parTitle[iPar].c_str()) );
       // vHistErrH[iPar][0]->SetTitle( Form("%s MINOS uncertainties of data-like MC sample fits",parTitle[iPar].c_str()) );
       leg->SetBorderSize(0);
       leg->AddEntry(vHistBest[iPar][0],Form("%i [Bias:%.3f RMS:%.3f]",vq2Bins[0],vBias[iPar][0],vRMS[iPar][0]),"l");
+      legPull->SetBorderSize(0);
+      legPull->AddEntry(vHistPull[iPar][0],Form("%i [Mean:%.3f RMS:%.3f]",vq2Bins[0],vHistPull[iPar][0]->GetMean(),vHistPull[iPar][0]->GetRMS()),"l");
     }
 
     legUnc->SetBorderSize(0);
@@ -207,6 +221,10 @@ void plotMultiDataFit ()
       vHistBest[iPar][iBin]->Draw("same");
       if (ymax < vHistBest[iPar][iBin]->GetMaximum()) ymax = vHistBest[iPar][iBin]->GetMaximum();
 
+      cPull[iPar]->cd();
+      vHistPull[iPar][iBin]->Draw("same");
+      if (ymaxPull < vHistPull[iPar][iBin]->GetMaximum()) ymaxPull = vHistPull[iPar][iBin]->GetMaximum();
+
       cUncert[iPar]->cd();
       vHistErrH[iPar][iBin]->AddBinContent(1,vHistErrH[iPar][iBin]->GetBinContent(0));
       vHistErrL[iPar][iBin]->AddBinContent(1,vHistErrL[iPar][iBin]->GetBinContent(0));
@@ -216,12 +234,14 @@ void plotMultiDataFit ()
       vHistErrL[iPar][iBin]->Draw("same");
       if (ymaxUnc < vHistErrH[iPar][iBin]->GetMaximum()) ymaxUnc = vHistErrH[iPar][iBin]->GetMaximum();
 
-      leg   ->AddEntry(vHistBest[iPar][iBin],Form("%i [Bias:%.3f RMS:%.3f]",vq2Bins[iBin],vBias[iPar][iBin],vRMS[iPar][iBin]),"l");
+      leg->AddEntry(vHistBest[iPar][iBin],Form("%i [Bias:%.3f RMS:%.3f]",vq2Bins[iBin],vBias[iPar][iBin],vRMS[iPar][iBin]),"l");
+      legPull->AddEntry(vHistPull[iPar][iBin],Form("%i [Mean:%.3f RMS:%.3f]",vq2Bins[iBin],vHistPull[iPar][iBin]->GetMean(),vHistPull[iPar][iBin]->GetRMS()),"l");
       legUnc->AddEntry(vHistErrH[iPar][iBin],Form("%i higher",vq2Bins[iBin]),"f");
       legUnc->AddEntry(vHistErrL[iPar][iBin],Form("%i lower",vq2Bins[iBin]),"f");
     }
 
     vHistBest[iPar][0]->GetYaxis()->SetRangeUser(0,1.1*ymax);
+    vHistPull[iPar][0]->GetYaxis()->SetRangeUser(0,1.1*ymaxPull);
     vHistErrH[iPar][0]->GetYaxis()->SetRangeUser(0,1.1*ymaxUnc);
 
     for (int iBin=0; iBin<nPlotBins; ++iBin) {
@@ -235,15 +255,18 @@ void plotMultiDataFit ()
       lineRMS[iPar].push_back( new TLine(vRMS[iPar][iBin],0,vRMS[iPar][iBin],1.1*ymaxUnc) );
       lineRMS[iPar].back()->SetLineWidth(2);
       lineRMS[iPar].back()->SetLineColor(colors[iBin]);
-      lineRMS[iPar].back()->Draw();
+      // lineRMS[iPar].back()->Draw();
     }
 
     cDistr[iPar]->cd();
     if (nPlotBins>1) leg->Draw();
+    cPull[iPar]->cd();
+    if (nPlotBins>1) legPull->Draw();
     cUncert[iPar]->cd();
     legUnc->Draw();
 
     cDistr[iPar]->SaveAs(Form("plotSimFit_d/simfit_dataCRsub_%s_dist.pdf",parName[iPar].c_str()));
+    cPull[iPar]->SaveAs(Form("plotSimFit_d/simfit_dataCRsub_%s_pulls.pdf",parName[iPar].c_str()));
     cUncert[iPar]->SaveAs(Form("plotSimFit_d/simfit_dataCRsub_%s_uncert.pdf",parName[iPar].c_str()));
 
   }
