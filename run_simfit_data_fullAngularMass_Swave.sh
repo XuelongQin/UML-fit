@@ -4,11 +4,13 @@ par=1
 
 multi=0
 nsam=${1}
+q2stat=${4}
 
 plot=0
 save=1
 
-ibin=${2}
+bin=${2}
+# ibin=${2}
 
 yearConf=${3}
 
@@ -26,12 +28,12 @@ echo setting CMSSWDIR to $CMSSWDIR
 
 cd $WORKDIR
 
-nbin=0
-while read -a line; do
-    abin[$nbin]=${line[0]}
-    nbin=$((nbin+1))
-done < $HOME/../confSF/KDE_SF.list
-bin=${abin[$ibin]}
+# nbin=0
+# while read -a line; do
+#     abin[$nbin]=${line[0]}
+#     nbin=$((nbin+1))
+# done < $HOME/../confSF/KDE_SF.list
+# bin=${abin[$ibin]}
 
 echo 'now submitting for bin ' ${bin}
 
@@ -78,23 +80,23 @@ mkdir plotSimFit_d
 case "$yearConf" in
 
     0)
-	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2016 2017 2018
-	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2016 2017 2018
+	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 1 ${plot} ${save} 2016 2017 2018
+	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 1 ${plot} ${save} 2016 2017 2018
 	;;
 
     1)
-	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2016
-	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2016
+	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 1 ${plot} ${save} 2016
+	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 1 ${plot} ${save} 2016
 	;;
 
     2)
-	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2017
-	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2017
+	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 1 ${plot} ${save} 2017
+	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 1 ${plot} ${save} 2017
 	;;
 
     3)
-	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2018
-	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2018
+	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 1 ${plot} ${save} 2018
+	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 1 ${plot} ${save} 2018
 	;;
 
 esac

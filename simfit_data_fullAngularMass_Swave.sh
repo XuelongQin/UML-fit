@@ -4,6 +4,7 @@ par=1
 
 multi=0
 nsam=0
+q2stat=0
 
 plot=0
 save=1
@@ -24,27 +25,27 @@ if make simfit_data_fullAngularMass_Swave; then
     case "$yearConf" in
 
 	0)
-	    echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2016 2017 2018
-	    ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2016 2017 2018 \
-		&> logs_simFit4d/simfit_data_fullAngularMass_Swave_${bin}_${par}_${multi}_${nsam}_0_${plot}_${save}_2016_2017_2018.log &
+	    echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 0 ${plot} ${save} 2016 2017 2018
+	    ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 0 ${plot} ${save} 2016 2017 2018 \
+		&> logs_simFit4d/simfit_data_fullAngularMass_Swave_${bin}_${par}_${multi}_${nsam}_${q2stat}_0_${plot}_${save}_2016_2017_2018.log &
 	    ;;
 
 	1)
-	    echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2016
-	    ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2016 \
-		&> logs_simFit4d/simfit_data_fullAngularMass_Swave_${bin}_${par}_${multi}_${nsam}_0_${plot}_${save}_2016.log &
+	    echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 0 ${plot} ${save} 2016
+	    ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 0 ${plot} ${save} 2016 \
+		&> logs_simFit4d/simfit_data_fullAngularMass_Swave_${bin}_${par}_${multi}_${nsam}_${q2stat}_0_${plot}_${save}_2016.log &
 	    ;;
 
 	2)
-	    echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2017
-	    ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2017 \
-		&> logs_simFit4d/simfit_data_fullAngularMass_Swave_${bin}_${par}_${multi}_${nsam}_0_${plot}_${save}_2017.log &
+	    echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 0 ${plot} ${save} 2017
+	    ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 0 ${plot} ${save} 2017 \
+		&> logs_simFit4d/simfit_data_fullAngularMass_Swave_${bin}_${par}_${multi}_${nsam}_${q2stat}_0_${plot}_${save}_2017.log &
 	    ;;
 
 	3)
-	    echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2018
-	    ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2018 \
-		&> logs_simFit4d/simfit_data_fullAngularMass_Swave_${bin}_${par}_${multi}_${nsam}_0_${plot}_${save}_2018.log &
+	    echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 0 ${plot} ${save} 2018
+	    ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} 0 ${plot} ${save} 2018 \
+		&> logs_simFit4d/simfit_data_fullAngularMass_Swave_${bin}_${par}_${multi}_${nsam}_${q2stat}_0_${plot}_${save}_2018.log &
 	    ;;
 
     esac

@@ -59,9 +59,7 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
-int q2stat = 0;
-
-void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, bool save, std::vector<int> years)
+void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, bool save, std::vector<int> years)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
@@ -79,9 +77,11 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   string all_years = "";
   string year = ""; 
   string isample = ""; 
-  string stat = nSample > 0 ? Form("_b%istat",q2stat):"";
   uint firstSample = ( multiSample || nSample==0 ) ? 0 : nSample-1;
   uint lastSample = nSample > 0 ? nSample-1 : 0;
+  string stat = "";
+  if (nSample>0)   stat = Form("_b%istat-%i",q2stat,firstSample);
+  if (multiSample) stat = stat + Form("-%i",lastSample);
   
   std::vector<TFile*> fin_eff;
   std::vector<RooWorkspace*> wsp, wsp_mcmass, wsp_sb;
@@ -255,11 +255,13 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     if (q2Bin >= 4){
       sigma_rt2-> setVal(wsp_mcmass[iy]->var(Form("#sigma_{RT2}^{%i}",q2Bin))->getVal() );
       f1rt     -> setVal(wsp_mcmass[iy]->var(Form("f^{RT%i}", q2Bin))->getVal() );
-      dcb_rt = createRTMassShape(q2Bin, mass, mean_rt, sigma_rt, sigma_rt2, alpha_rt1, alpha_rt2, n_rt1, n_rt2 ,f1rt, wsp_mcmass[iy], years[iy], true, c_vars_rt, c_pdfs_rt );
+      if (nSample==0) dcb_rt = createRTMassShape(q2Bin, mass, mean_rt, sigma_rt, sigma_rt2, alpha_rt1, alpha_rt2, n_rt1, n_rt2 ,f1rt, wsp_mcmass[iy], years[iy], true, c_vars_rt, c_pdfs_rt );
+      else dcb_rt = createRTMassShape(q2Bin, mass, mean_rt, sigma_rt, sigma_rt2, alpha_rt1, alpha_rt2, n_rt1, n_rt2 ,f1rt, wsp_mcmass[iy], years[iy], true, c_vars_rt, c_pdfs_rt, q2stat );
     } 
     else{
         alpha_rt2->setRange(0,10);
-        dcb_rt = createRTMassShape(q2Bin, mass, mean_rt, sigma_rt, alpha_rt1, alpha_rt2, n_rt1, n_rt2 , wsp_mcmass[iy], years[iy], true, c_vars_rt, c_pdfs_rt  );
+        if (nSample==0) dcb_rt = createRTMassShape(q2Bin, mass, mean_rt, sigma_rt, alpha_rt1, alpha_rt2, n_rt1, n_rt2 , wsp_mcmass[iy], years[iy], true, c_vars_rt, c_pdfs_rt  );
+        else dcb_rt = createRTMassShape(q2Bin, mass, mean_rt, sigma_rt, alpha_rt1, alpha_rt2, n_rt1, n_rt2 , wsp_mcmass[iy], years[iy], true, c_vars_rt, c_pdfs_rt, q2stat );
     }
     
     /// create constrained PDF for RT mass
@@ -278,7 +280,9 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     RooRealVar* n_wt1       = new RooRealVar (Form("n_{WT1}^{%i}",years[iy])        , "nwt1"       ,  wsp_mcmass[iy]->var(Form("n_{WT1}^{%i}", q2Bin))->getVal()      ,      0.01, 100.);
     RooRealVar* n_wt2       = new RooRealVar (Form("n_{WT2}^{%i}",years[iy])        , "nwt2"       ,  wsp_mcmass[iy]->var(Form("n_{WT2}^{%i}", q2Bin))->getVal()      ,      0.01, 100.);
 
-    RooAbsPdf* dcb_wt = createWTMassShape(q2Bin, mass, mean_wt, sigma_wt, alpha_wt1, alpha_wt2, n_wt1, n_wt2 , wsp_mcmass[iy], years[iy], true, c_vars_wt, c_pdfs_wt );
+    RooAbsPdf* dcb_wt;
+    if (nSample==0) dcb_wt = createWTMassShape(q2Bin, mass, mean_wt, sigma_wt, alpha_wt1, alpha_wt2, n_wt1, n_wt2 , wsp_mcmass[iy], years[iy], true, c_vars_wt, c_pdfs_wt );
+    else dcb_wt = createWTMassShape(q2Bin, mass, mean_wt, sigma_wt, alpha_wt1, alpha_wt2, n_wt1, n_wt2 , wsp_mcmass[iy], years[iy], true, c_vars_wt, c_pdfs_wt, q2stat );
 
     /// create constrained PDF for WT mass
     RooArgList constr_wt_list = RooArgList(c_pdfs_wt);
@@ -301,6 +305,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     double nwt_mc   =  wsp_mcmass[iy]->var(Form("nWT_%i",q2Bin))->getVal(); 
     double fraction = nwt_mc / (nrt_mc + nwt_mc);
     double frac_sigma = fM_sigmas[years[iy]][q2Bin]/fraction;
+    if (nSample!=0) frac_sigma = fM_sigmas[years[iy]][q2stat]/fraction;
     RooGaussian* c_fm = new RooGaussian(Form("c_fm^{%i}",years[iy]) , "c_fm" , *mFrac,  
                                         RooConst(1.) , 
                                         RooConst(frac_sigma)
@@ -481,8 +486,6 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   
   }
 
-  if (nSample>0)   stat = stat + Form("-%i",firstSample);
-  if (multiSample) stat = stat + Form("-%i",lastSample);
   TFile* fout = 0;
   if (save) fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
   RooWorkspace* wsp_out = 0;
@@ -757,8 +760,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
   }
   */
-  string plotString = shortString + "_" + all_years;
-  if (nSample>0) plotString = plotString + Form("_s%i",nSample);
+  string plotString = shortString + "_" + all_years + stat;
   /*
   cnll->Update();
   cnll->SaveAs( ("plotSimFit4d_d/recoNLL_scan_" + plotString + ".pdf").c_str() );
@@ -815,13 +817,13 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
 
 
-void simfit_data_fullAngularMass_SwaveBin1(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, bool save, std::vector<int> years)
+void simfit_data_fullAngularMass_SwaveBin1(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, bool save, std::vector<int> years)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, localFiles, plot, save, years);
+      simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years);
   else
-    simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, localFiles, plot, save, years);
+    simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years);
 }
 
 int main(int argc, char** argv)
@@ -840,33 +842,36 @@ int main(int argc, char** argv)
 
   bool multiSample = false;
   uint nSample = 0;
+  uint q2stat = 0;
   if ( argc > 3 && atoi(argv[3]) > 0 ) multiSample = true;
   if ( argc > 4 ) nSample = atoi(argv[4]);
+  if ( argc > 5 ) q2stat = atoi(argv[5]);
 
   if (nSample==0) multiSample = false;
 
   bool localFiles = false;
-  if ( argc > 5 && atoi(argv[5]) > 0 ) localFiles = true;
+  if ( argc > 6 && atoi(argv[6]) > 0 ) localFiles = true;
 
   bool plot = true;
   bool save = true;
 
-  if ( argc > 6 && atoi(argv[6]) == 0 ) plot = false;
-  if ( argc > 7 && atoi(argv[7]) == 0 ) save = false;
+  if ( argc > 7 && atoi(argv[7]) == 0 ) plot = false;
+  if ( argc > 8 && atoi(argv[8]) == 0 ) save = false;
 
   std::vector<int> years;
-  if ( argc > 8 && atoi(argv[8]) != 0 ) years.push_back(atoi(argv[8]));
+  if ( argc > 9 && atoi(argv[9]) != 0 ) years.push_back(atoi(argv[8]));
   else {
     cout << "No specific years selected, using default: 2016" << endl;
     years.push_back(2016);
   }
-  if ( argc > 9  && atoi(argv[9])  != 0 ) years.push_back(atoi(argv[9]));
   if ( argc > 10 && atoi(argv[10]) != 0 ) years.push_back(atoi(argv[10]));
+  if ( argc > 11 && atoi(argv[11]) != 0 ) years.push_back(atoi(argv[11]));
 
   cout <<  "q2Bin       " << q2Bin        << endl;
   cout <<  "parity      " << parity       << endl;
   cout <<  "multiSample " << multiSample  << endl;
   cout <<  "nSample     " << nSample      << endl;
+  cout <<  "q2stat      " << q2stat       << endl;
   cout <<  "local files " << localFiles   << endl;
   cout <<  "plot        " << plot         << endl;
   cout <<  "save        " << save         << endl;
@@ -877,6 +882,8 @@ int main(int argc, char** argv)
 
   if ( q2Bin   < -1 || q2Bin   >= nBins ) return 1;
   if ( parity  < -1 || parity  > 1      ) return 1;
+
+  if ( q2stat  <  0 || q2stat  >= nBins ) return 1;
 
   // Protectrion against accidental unblinding
   if ( q2Bin != 4 && q2Bin != 6 ) {
@@ -894,9 +901,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, localFiles, plot, save, years);
+      simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years);
   else
-    simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, localFiles, plot, save, years);
+    simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years);
 
   return 0;
 
