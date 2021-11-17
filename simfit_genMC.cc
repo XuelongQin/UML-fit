@@ -52,7 +52,8 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save, int nSample, doub
   // Load variables and dataset
   // import the "other parity" dataset, to stay coherent with fit_recoMC notation
   // gen without cuts is the same for the 3 years
-  string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/2016/lmnr/effDataset_GENOnly_b%i.root",q2Bin);
+  // string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/2016/lmnr/effDataset_GENOnly_b%i.root",q2Bin);
+  string filename_data = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/effDataset_b%i_2016.root",q2Bin);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;

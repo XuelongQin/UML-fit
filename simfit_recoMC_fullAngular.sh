@@ -1,11 +1,11 @@
 #!/bin/bash
 
-par=1
+par=0
 
 multi=${1}
 nsam=${2}
 
-plot=0
+plot=1
 save=1
 
 # Create directories for fit logs, results and plots
@@ -27,8 +27,13 @@ if make simfit_recoMC_fullAngular; then
 	
 	# done
 
-	./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2016 2017 2018 \
-	    &>logs_simFit/simfit_recoMC_fullAngular_${bin}_${par}_${multi}_${nsam}_2016_2017_2018.out &
+	if [ "$bin" -lt 8 ]; then
+	    nohup ./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2016 2017 2018 \
+		&>logs_simFit/simfit_recoMC_fullAngular_${bin}_${par}_${multi}_${nsam}_2016_2017_2018.out &
+	else
+	    nohup ./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2016 \
+		&>logs_simFit/simfit_recoMC_fullAngular_${bin}_${par}_${multi}_${nsam}_2016.out &
+	fi
 
     done < ../confSF/KDE_SF.list
 

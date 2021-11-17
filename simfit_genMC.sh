@@ -1,6 +1,6 @@
 #!/bin/bash
 
-par=1
+par=0
 sample=${1}
 
 pow=${2}
@@ -20,7 +20,7 @@ make simfit_genMC
 while read -a line; do
     bin=${line[0]}
 
-    ./simfit_genMC ${bin} ${par} ${sample} ${pow} ${co1} ${co4} ${co5} 1 1 \
+    nohup ./simfit_genMC ${bin} ${par} ${sample} ${pow} ${co1} ${co4} ${co5} 1 1 \
 	&> logs_simFit/simfit_genMC_${bin}_${par}_${sample}_${pow}_${co1}_${co4}_${co5}.out &
 
 done < ../confSF/KDE_SF.list

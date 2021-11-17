@@ -14,6 +14,7 @@ export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
 export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
 export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE
 export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/files
+export OUTDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/
 
 export WORKDIR=$PWD
 cd $CMSSWDIR
@@ -75,14 +76,14 @@ else
 fi
 
 
-if [ ! -d $HOME/simFitResults4d ]; then
-    mkdir $HOME/simFitResults4d
+if [ ! -d $OUTDIR/simFitResults4d ]; then
+    mkdir $OUTDIR/simFitResults4d
 fi
-if [ ! -d $HOME/plotSimFit4d_d ]; then
-    mkdir $HOME/plotSimFit4d_d
+if [ ! -d $OUTDIR/plotSimFit4d_d ]; then
+    mkdir $OUTDIR/plotSimFit4d_d
 fi
-cp plotSimFit4d_d/* $HOME/plotSimFit4d_d/
-cp simFitResults4d/* $HOME/simFitResults4d/
+cp plotSimFit4d_d/* $OUTDIR/plotSimFit4d_d/
+cp simFitResults4d/* $OUTDIR/simFitResults4d/
 
 rm -rf plotSimFit4d_d
 rm -rf simFitResults4d

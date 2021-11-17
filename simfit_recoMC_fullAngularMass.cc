@@ -152,7 +152,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
-    if (!localFiles) filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/",years[iy]) + filename;
+    // if (!localFiles) filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/",years[iy]) + filename;
+    if (!localFiles) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/files/" + filename;
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
     if ( !fin_eff[iy] || !fin_eff[iy]->IsOpen() ) {
       cout<<"File not found: "<<filename<<endl;
@@ -407,7 +408,9 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
   if (nSample>0)   stat = stat + Form("-%i",firstSample);
   if (multiSample) stat = stat + Form("-%i",lastSample);
-  TFile* fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  string foutName = "simFitResults4d/simFitResult_recoMC_fullAngularMass" + all_years + stat + Form("_b%i.root", q2Bin);
+  if (!localFiles) foutName = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/" + foutName;
+  TFile* fout = new TFile(foutName.c_str(),"RECREATE");
   
   // save initial par values    
   RooArgSet *params      = (RooArgSet *)simPdf->getParameters(observables);
@@ -676,15 +679,17 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
   string plotString = shortString + "_" + all_years;
   if (nSample>0) plotString = plotString + Form("_s%i",nSample);
+  string plotDir = "plotSimFit4d_d";
+  if (!localFiles) plotDir = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/" + plotDir;
 
   cnll->Update();
-  cnll->SaveAs( ("plotSimFit4d_d/recoNLL_scan_" + plotString + ".pdf").c_str() );
+  cnll->SaveAs( (plotDir+"/recoNLL_scan_" + plotString + ".pdf").c_str() );
 
   cZoom->Update();
-  cZoom->SaveAs( ("plotSimFit4d_d/recoNLL_scan_" + plotString + "_zoom.pdf").c_str() );
+  cZoom->SaveAs( (plotDir+"/recoNLL_scan_" + plotString + "_zoom.pdf").c_str() );
 
   cPen->Update();
-  cPen->SaveAs( ("plotSimFit4d_d/recoPenTerm_" + plotString + ".pdf").c_str() );
+  cPen->SaveAs( (plotDir+"/recoPenTerm_" + plotString + ".pdf").c_str() );
 
    
   int confIndex = 2*nBins*parity  + q2Bin;
@@ -726,7 +731,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
         leg->Draw("same");
     }
   }
-  c[confIndex]->SaveAs( ("plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_" + plotString +  ".pdf").c_str() );
+  c[confIndex]->SaveAs( (plotDir+"/simFitResult_recoMC_fullAngularMass_" + plotString +  ".pdf").c_str() );
 
 }
 
