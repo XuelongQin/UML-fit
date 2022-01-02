@@ -59,7 +59,7 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
-void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, bool save, std::vector<int> years)
+void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, int save, std::vector<int> years)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
@@ -487,7 +487,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   }
 
   TFile* fout = 0;
-  if (save) fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
   RooWorkspace* wsp_out = 0;
 
   // save initial par values    
@@ -512,7 +512,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   vector<double> vResult  (pars.getSize());
   vector<double> vConfInterLow  (pars.getSize());
   vector<double> vConfInterHigh (pars.getSize());
-  if (save) fout->cd();
+  if (save>0) fout->cd();
   TTree* fitResultsTree = new TTree("fitResultsTree","fitResultsTree");
   for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
     RooRealVar* par = (RooRealVar*)pars.at(iPar);
@@ -645,7 +645,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
       }
       fitResultsTree->Fill();
 
-      if (save && nSample==0 && (q2Bin!=4 || years.size()<3)) {
+      if (save>1 && (q2Bin!=4 || years.size()<3 || nSample>0)) {
 	wsp_out = new RooWorkspace("wsp_out","wsp_out");
 	wsp_out->import(*combData);
 	wsp_out->import(*simPdf);
@@ -680,7 +680,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     cout<<"Bad fits: "<<cnt[3]<<" converging outside physical region, "<<cnt[5]+cnt[7]<<" not converged ("<<cnt[5]<<" in ph region)"<<endl;
   }
 
-  if (save) {
+  if (save>0) {
     fout->cd();
     fitResultsTree->Write();
     if (wsp_out) wsp_out->Write();
@@ -817,7 +817,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
 
 
-void simfit_data_fullAngularMass_SwaveBin1(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, bool save, std::vector<int> years)
+void simfit_data_fullAngularMass_SwaveBin1(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, int save, std::vector<int> years)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
@@ -853,13 +853,13 @@ int main(int argc, char** argv)
   if ( argc > 6 && atoi(argv[6]) > 0 ) localFiles = true;
 
   bool plot = true;
-  bool save = true;
+  int save = true;
 
   if ( argc > 7 && atoi(argv[7]) == 0 ) plot = false;
-  if ( argc > 8 && atoi(argv[8]) == 0 ) save = false;
+  if ( argc > 8 ) save = atoi(argv[8]);
 
   std::vector<int> years;
-  if ( argc > 9 && atoi(argv[9]) != 0 ) years.push_back(atoi(argv[8]));
+  if ( argc > 9 && atoi(argv[9]) != 0 ) years.push_back(atoi(argv[9]));
   else {
     cout << "No specific years selected, using default: 2016" << endl;
     years.push_back(2016);

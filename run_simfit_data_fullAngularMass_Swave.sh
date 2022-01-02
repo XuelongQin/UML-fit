@@ -7,7 +7,7 @@ nsam=${1}
 q2stat=${4}
 
 plot=0
-save=1
+save=${5}
 
 bin=${2}
 # ibin=${2}

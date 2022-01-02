@@ -2,12 +2,11 @@
 
 string year[3] = {"2016","2017","2018"};
 
-std::map<int,std::vector<float>> fM_sigmas =
-  {
-   {2016, {0.023, 0.015, 0.017, 0.013, 0.005, 0.010, 0.006, 0.013}},
-   {2017, {0.018, 0.014, 0.015, 0.010, 0.004, 0.008, 0.005, 0.011}},
-   {2018, {0.015, 0.010, 0.011, 0.008, 0.006, 0.006, 0.006, 0.008}},
-  };
+std::map<int,std::vector<float>> fM_sigmas = {
+  {2016, {0.023, 0.015, 0.017, 0.013, 0.0003, 0.010, 0.0009, 0.013}},
+  {2017, {0.018, 0.014, 0.015, 0.010, 0.0003, 0.008, 0.0007, 0.011}},
+  {2018, {0.015, 0.010, 0.011, 0.008, 0.0002, 0.006, 0.0007, 0.008}},
+};
 
 
 void plotSimFitComparison_manual(int q2Bin = 4)
@@ -71,7 +70,8 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   double massConstVal[3*nMassConstPars];
   double massConstErr[3*nMassConstPars];
 
-  string finLogName = "logs_simFit4d/simfit_data_fullAngularMass_Swave_%i_1_0_0_0_0_1_2016_2017_2018.log";
+  string finLogName = "logs_parSub/simfit_data_fullAngularMass_Swave_0_%i_0.out";
+  // string finLogName = "logs_simFit4d/simfit_data_fullAngularMass_Swave_%i_1_0_0_0_0_1_2016_2017_2018.log";
   ifstream fin_log(Form(finLogName.c_str(),q2Bin));
   if ( !fin_log ) {
     cout<<"Log file is problematic!"<<endl;
@@ -104,7 +104,7 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   }
   fin_log.close();
 
-  string finName = "simFitResults4d/simFitResult_data_fullAngularMass_Swave_%s_MCStat_b%i.root";
+  string finName = "simFitResults4d/simFitResult_data_fullAngularMass_Swave_%s_b%i.root";
   string finName2 = "/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%s_fM_";
   if (q2Bin==4) finName2 = finName2 + "Jpsi_newbdt.root";
   else if (q2Bin==6) finName2 = finName2 + "Psi_newbdt.root";
@@ -404,7 +404,9 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   auto hLabM = new TH1S ("hLabM",plotTitleM.c_str(),3*(nMassPars+nMassConstPars),0,3*(nMassPars+nMassConstPars));
   for (int iBin=0; iBin<3*nMassPars; ++iBin)
     hLabM->GetXaxis()->SetBinLabel(iBin+1,Form(massParName[iBin/3].c_str(),year[iBin%3].c_str()));
-  for (int iBin=0; iBin<3*nMassConstPars; ++iBin)
+  for (int iBin=0; iBin<3; ++iBin)
+    hLabM->GetXaxis()->SetBinLabel(iBin+1+3*nMassPars,Form("R^{%s}",year[iBin%3].c_str()));
+  for (int iBin=3; iBin<3*nMassConstPars; ++iBin)
     hLabM->GetXaxis()->SetBinLabel(iBin+1+3*nMassPars,Form(massConstParName[iBin/3].c_str(),year[iBin%3].c_str()));
   double yRangeM = 9;
   if (q2Bin==4) yRangeM = 30;
@@ -444,5 +446,56 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   legM.Draw();
 
   canvM.SaveAs(("plotSimFit4d_d/comparisonSimFit_massParameters_"+shortString+".pdf").c_str());
+
+  // Plot contrained mass parameters with traditional pull plots
+  {
+    double xMass[3*nMassConstPars];
+    double xMasse[3*nMassConstPars];
+
+    double yMassSim [3*nMassConstPars];
+    double yMasseSim[3*nMassConstPars];
+    double yMass [3*nMassConstPars];
+    double yMasse[3*nMassConstPars];
+    double yMassConst [3*nMassConstPars];
+    double yMasseConst[3*nMassConstPars];
+
+    for (int iPar=0; iPar<3*nMassConstPars; ++iPar) {
+      xMass[iPar]  = 0.5+iPar;
+      xMasse[iPar] = 0.5;
+      yMassConst [iPar] = 0.;
+      yMasseConst[iPar] = 1.;
+    }
+    for (int iPar=0; iPar<3*nMassConstPars; ++iPar) {
+      yMass [iPar] = (bestMassConstPar[iPar] - massConstVal[iPar]) / massConstErr[iPar];
+      yMasse[iPar] = errMassConstPar[iPar] / massConstErr[iPar];
+      yMassSim [iPar] = (bestMassConstParSim[iPar] - massConstVal[iPar]) / massConstErr[iPar];
+      yMasseSim[iPar] = errMassConstParSim[iPar] / massConstErr[iPar];
+    }
+
+    TCanvas canvM("canvPull","canvPull",1000,1500);
+    auto vp = canvM.cd();
+    vp->SetGridx();
+
+    string plotTitleM = Form("Pulls of contrained fit parameters - q2 bin %i;(#theta_{fit} - #theta_{constr})/#sigma(#theta)_{constr};",q2Bin);
+    double yRangeM = 9;
+    if (q2Bin==4) yRangeM = 20;
+    auto hLabM = new TH2S ("hLabPull",plotTitleM.c_str(),
+			   1,-1*yRangeM,yRangeM,
+			   3*nMassConstPars,0,3*nMassConstPars);
+    for (int iBin=0; iBin<3; ++iBin)
+      hLabM->GetYaxis()->SetBinLabel(iBin+1,Form("R^{%s}",year[iBin%3].c_str()));
+    for (int iBin=3; iBin<3*nMassConstPars; ++iBin)
+      hLabM->GetYaxis()->SetBinLabel(iBin+1,Form(massConstParName[iBin/3].c_str(),year[iBin%3].c_str()));
+    hLabM->Draw();
+
+    auto grSimM = new TGraphErrors(3*nMassConstPars,yMassSim,xMass,yMasseSim,xMasse);
+    grSimM->SetName("grSimPull");
+    grSimM->SetLineColor(30);
+    grSimM->SetLineWidth(2);
+    grSimM->Draw("P");
+
+    canvM.SaveAs(("plotSimFit4d_d/comparisonSimFit_massParametersPulls_"+shortString+".pdf").c_str());
+
+  }
 
 }
