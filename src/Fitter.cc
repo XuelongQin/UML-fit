@@ -189,7 +189,10 @@ Int_t Fitter::fit()
       return 0;
     }
 
-    if ( runSimpleFit ) return 1; //allow to skip the penalised fit (for full-stat MC and control region fits)
+    if ( runSimpleFit ) { //allow to skip the penalised fit (for full-stat MC and control region fits)
+      if ( result_free->status()==0 && result_free->covQual()==3 ) return 1;
+      return 2;
+    }
     
     usedPenalty = true;
 
@@ -268,7 +271,7 @@ Int_t Fitter::fit()
     }
     
     // if no good fit is found return bad status
-    return 1;
+    return 2;
 
 }
 

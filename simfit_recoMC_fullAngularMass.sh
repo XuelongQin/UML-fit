@@ -23,7 +23,7 @@ if make simfit_recoMC_fullAngularMass; then
 
     while read -a line; do
 	bin=${line[0]}
-	
+
 	# for year in {2016..2018}; do
 	
 	#     ./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} ${year} \

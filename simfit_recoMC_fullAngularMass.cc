@@ -477,12 +477,15 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     fitter = new Fitter (Form("fitter%i",is),Form("fitter%i",is),pars,combData,simPdf,simPdf_penalty,boundary,bound_dist,penTerm,&c_vars);
     vFitter.push_back(fitter);
 
+    // if fitting the fullMC sample, skip the penalty tuning process in case of failing/unphysical free fit (too long and difficult to converge at high statistics)
+    if (nSample==0) fitter->runSimpleFit = true;
+
     subTime.Start(true);
     int status = fitter->fit();
     subTime.Stop();
 
     fitTime=subTime.CpuTime();
-    cout<<"Fit+boundDist time: "<<fitTime<<endl;
+    cout<<(fitter->runSimpleFit?"Fit time: ":"Fit+boundDist time: ")<<fitTime<<endl;
 
     co1=0;
     co4=0;
@@ -494,14 +497,16 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     convCheck = false;
     boundCheck = false;
 
-    if (status==0) {
+    if (status<2) {
       
       convCheck = true;
       boundCheck = boundary->getValV() == 0;
 
       fitter->result()->Print("v");
 
-      boundDistFit = boundDist = fitter->boundDist;
+      if (fitter->runSimpleFit) boundDistFit = boundDist = -1;
+      else boundDistFit = boundDist = fitter->boundDist;
+
       usedPenalty = fitter->usedPenalty;
 	
       if (fitter->usedPenalty) {
