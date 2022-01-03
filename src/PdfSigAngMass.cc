@@ -13,6 +13,62 @@
 ClassImp(PdfSigAngMass) 
 
 PdfSigAngMass::PdfSigAngMass(const char *name, const char *title, 
+			     RooAbsReal& _ctK,
+			     RooAbsReal& _ctL,
+			     RooAbsReal& _phi,
+			     RooAbsReal& _m,
+			     RooAbsReal& _mFrac,
+			     RooAbsReal& _PenTerm,
+			     RooAbsReal& _rtAngTerm,
+			     RooAbsReal& _wtAngTerm,
+			     RooAbsReal& _rtMassTerm,
+			     RooAbsReal& _wtMassTerm
+			     ) :
+  RooAbsPdf(name,title), 
+  ctK("ctK","ctK",this,_ctK),
+  ctL("ctL","ctL",this,_ctL),
+  phi("phi","phi",this,_phi),
+  m("m","m",this,_m),
+  mFrac("mFrac","mFrac",this,_mFrac),
+  PenTerm("PenTerm","PenTerm",this,_PenTerm),
+  rtAngTerm("rtAngTerm","rtAngTerm",this,_rtAngTerm),
+  wtAngTerm("wtAngTerm","wtAngTerm",this,_wtAngTerm),
+  rtMassTerm("rtMassTerm","rtMassTerm",this,_rtMassTerm),
+  wtMassTerm("wtMassTerm","wtMassTerm",this,_wtMassTerm)
+{
+
+  isPenalised = true;
+
+}
+
+PdfSigAngMass::PdfSigAngMass(const char *name, const char *title, 
+			     RooAbsReal& _ctK,
+			     RooAbsReal& _ctL,
+			     RooAbsReal& _phi,
+			     RooAbsReal& _m,
+			     RooAbsReal& _mFrac,
+			     RooAbsReal& _rtAngTerm,
+			     RooAbsReal& _wtAngTerm,
+			     RooAbsReal& _rtMassTerm,
+			     RooAbsReal& _wtMassTerm
+			     ) :
+  RooAbsPdf(name,title), 
+  ctK("ctK","ctK",this,_ctK),
+  ctL("ctL","ctL",this,_ctL),
+  phi("phi","phi",this,_phi),
+  m("m","m",this,_m),
+  mFrac("mFrac","mFrac",this,_mFrac),
+  rtAngTerm("rtAngTerm","rtAngTerm",this,_rtAngTerm),
+  wtAngTerm("wtAngTerm","wtAngTerm",this,_wtAngTerm),
+  rtMassTerm("rtMassTerm","rtMassTerm",this,_rtMassTerm),
+  wtMassTerm("wtMassTerm","wtMassTerm",this,_wtMassTerm)
+{
+
+  isPenalised = false;
+
+}
+
+PdfSigAngMass::PdfSigAngMass(const char *name, const char *title, 
 		     RooAbsReal& _ctK,
 		     RooAbsReal& _ctL,
 		     RooAbsReal& _phi,

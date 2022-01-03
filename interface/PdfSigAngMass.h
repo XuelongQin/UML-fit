@@ -81,7 +81,31 @@ class PdfSigAngMass : public RooAbsPdf {
 
  public:
   PdfSigAngMass() {} ; 
-  // 1 sigma RT, penalty
+  // generic, penalty
+  PdfSigAngMass(const char *name, const char *title,
+		RooAbsReal& _ctK,
+		RooAbsReal& _ctL,
+		RooAbsReal& _phi,
+		RooAbsReal& _m,
+		RooAbsReal& _mFrac,
+		RooAbsReal& _PenTerm,
+		RooAbsReal& _rtAngTerm,
+		RooAbsReal& _wtAngTerm,
+		RooAbsReal& _rtMassTerm,
+		RooAbsReal& _wtMassTerm
+		);
+  // generic, no penalty
+  PdfSigAngMass(const char *name, const char *title,
+		RooAbsReal& _ctK,
+		RooAbsReal& _ctL,
+		RooAbsReal& _phi,
+		RooAbsReal& _m,
+		RooAbsReal& _mFrac,
+		RooAbsReal& _rtAngTerm,
+		RooAbsReal& _wtAngTerm,
+		RooAbsReal& _rtMassTerm,
+		RooAbsReal& _wtMassTerm
+		);
   PdfSigAngMass(const char *name, const char *title,
 	    RooAbsReal& _ctK,
 	    RooAbsReal& _ctL,
