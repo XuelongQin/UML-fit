@@ -374,6 +374,15 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
       		                                              ));
     } 
 
+    auto pdf_sig_ang_mass_mfc = new RooProdPdf(("PDF_sig_ang_mass_mfc_"+shortString+"_"+year).c_str(),
+					       ("PDF_sig_ang_mass_mfc_"+year).c_str(),
+					       *PDF_sig_ang_mass[iy],
+					       *c_fm);
+    auto pdf_sig_ang_mass_penalty_mfc = new RooProdPdf(("PDF_sig_ang_mass_penalty_mfc_"+shortString+"_"+year).c_str(),
+					       ("PDF_sig_ang_mass_penalty_mfc_"+year).c_str(),
+					       *PDF_sig_ang_mass_penalty[iy],
+					       *c_fm);
+
     // insert sample in the category map, to be imported in the combined dataset
     // and associate model with the data
     if (multiSample) for (uint is = firstSample; is <= lastSample; is++) {
@@ -382,8 +391,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 	  return;
 	}
 	map.insert( map.cbegin(), std::pair<const string,RooDataSet*>(("data"+year+Form("_subs%d",is)).c_str(), data[iy][is]) );
-	simPdf        -> addPdf(*PDF_sig_ang_mass[iy],         ("data"+year+Form("_subs%d",is)).c_str());
-	simPdf_penalty-> addPdf(*PDF_sig_ang_mass_penalty[iy], ("data"+year+Form("_subs%d",is)).c_str());
+	simPdf        -> addPdf(*pdf_sig_ang_mass_mfc,         ("data"+year+Form("_subs%d",is)).c_str());
+	simPdf_penalty-> addPdf(*pdf_sig_ang_mass_penalty_mfc, ("data"+year+Form("_subs%d",is)).c_str());
       }
     else {
       if ( !data[iy][0] || data[iy][0]->IsZombie() ) {
@@ -391,8 +400,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 	return;
       }
       map.insert( map.cbegin(), std::pair<const string,RooDataSet*>(("data"+year+Form("_subs%d",firstSample)).c_str(), data[iy][0]) );
-      simPdf        ->addPdf(*PDF_sig_ang_mass[iy],         ("data"+year+Form("_subs%d",firstSample)).c_str());
-      simPdf_penalty->addPdf(*PDF_sig_ang_mass_penalty[iy], ("data"+year+Form("_subs%d",firstSample)).c_str());
+      simPdf        ->addPdf(*pdf_sig_ang_mass_mfc,         ("data"+year+Form("_subs%d",firstSample)).c_str());
+      simPdf_penalty->addPdf(*pdf_sig_ang_mass_penalty_mfc, ("data"+year+Form("_subs%d",firstSample)).c_str());
     }
   
   }
