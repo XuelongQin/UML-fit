@@ -61,6 +61,7 @@ if [ ! -r $HOME/simfit_recoMC_fullAngularMass_toybkg ]; then
     exit 1
 fi
 cp $HOME/simfit_recoMC_fullAngularMass_toybkg .
+cp $HOME/*.pcm .
 
 mkdir simFitResults4d
 mkdir plotSimFit4d_d
@@ -74,14 +75,14 @@ else
 fi
 
 
-if [ ! -d $HOME/simFitResults4d_explCon ]; then
-    mkdir $HOME/simFitResults4d_explCon
+if [ ! -d $HOME/simFitResults4d ]; then
+    mkdir $HOME/simFitResults4d
 fi
-if [ ! -d $HOME/plotSimFit4d_explCon_d ]; then
-    mkdir $HOME/plotSimFit4d_explCon_d
+if [ ! -d $HOME/plotSimFit4d_d ]; then
+    mkdir $HOME/plotSimFit4d_d
 fi
-cp plotSimFit4d_d/* $HOME/plotSimFit_explCon_d/
-cp simFitResults4d/* $HOME/simFitResults_explCon/
+cp plotSimFit4d_d/* $HOME/plotSimFit4d_d/
+cp simFitResults4d/* $HOME/simFitResults4d/
 
 rm -rf plotSimFit4d_d
 rm -rf simFitResults4d
@@ -89,4 +90,3 @@ rm -rf simFitResults4d
 rm simfit_recoMC_fullAngularMass_toybkg
 rm recoMCDataset_b*
 rm KDEeff_b*
-rm simFitResult*
