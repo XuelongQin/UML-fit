@@ -417,8 +417,17 @@ void simfit_recoMC_fullAngularMass_toyeffBin(int q2Bin, int parity, uint nSample
 							*c_dcb_rt[iy], *c_dcb_wt[iy]
 							);
 
-      simPdf        ->addPdf(*PDF_sig_ang_mass[iy],         ("data"+year+Form("_subs%d",firstSample)).c_str());
-      simPdf_penalty->addPdf(*PDF_sig_ang_mass_penalty[iy], ("data"+year+Form("_subs%d",firstSample)).c_str());
+      auto pdf_sig_ang_mass_mfc = new RooProdPdf(("PDF_sig_ang_mass_mfc_"+shortString+"_"+year).c_str(),
+						 ("PDF_sig_ang_mass_mfc_"+year).c_str(),
+						 *PDF_sig_ang_mass[iy],
+						 *c_fm);
+      auto pdf_sig_ang_mass_penalty_mfc = new RooProdPdf(("PDF_sig_ang_mass_penalty_mfc_"+shortString+"_"+year).c_str(),
+							 ("PDF_sig_ang_mass_penalty_mfc_"+year).c_str(),
+							 *PDF_sig_ang_mass_penalty[iy],
+							 *c_fm);
+
+      simPdf        ->addPdf(*PDF_sig_ang_mass_mfc[iy],         ("data"+year+Form("_subs%d",firstSample)).c_str());
+      simPdf_penalty->addPdf(*PDF_sig_ang_mass_penalty_mfc[iy], ("data"+year+Form("_subs%d",firstSample)).c_str());
     }
 
     if (iToy==0) {
