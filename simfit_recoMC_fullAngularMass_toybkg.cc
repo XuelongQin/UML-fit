@@ -242,7 +242,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
     // Read angular pdf for sidebands from external file 
     string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
-    if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
+    filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
     retrieveWorkspace( filename_sb, wsp_sb, "wsb");
 
     RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));
@@ -479,26 +479,36 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
             		                                *ang_rt, *ang_wt,
       		                                        *c_dcb_rt, *c_dcb_wt
       		                                        );
-    } 
+    }
+
+    auto pdf_sig_ang_mass_mfc = new RooProdPdf(("PDF_sig_ang_mass_mfc_"+shortString+"_"+year).c_str(),
+					       ("PDF_sig_ang_mass_mfc_"+year).c_str(),
+					       *pdf_sig_ang_mass,
+					       *c_fm);
+    auto pdf_sig_ang_mass_penalty_mfc = new RooProdPdf(("PDF_sig_ang_mass_penalty_mfc_"+shortString+"_"+year).c_str(),
+						       ("PDF_sig_ang_mass_penalty_mfc_"+year).c_str(),
+						       *pdf_sig_ang_mass_penalty,
+						       *c_fm);
+
     RooRealVar *fsig = new RooRealVar( ("fsig_"+shortString+"_"+year).c_str(), ("fsig_"+shortString+"_"+year).c_str(),0,1 );
     // import signal pdf in order to have initial parameters available in the wsp 
-    wksp->import(*pdf_sig_ang_mass, RecycleConflictNodes());
-    wksp->import(*pdf_sig_ang_mass_penalty, RecycleConflictNodes());
-    RooArgSet *params      = (RooArgSet *)pdf_sig_ang_mass->getParameters(observables);
+    wksp->import(*pdf_sig_ang_mass_mfc, RecycleConflictNodes());
+    wksp->import(*pdf_sig_ang_mass_penalty_mfc, RecycleConflictNodes());
+    RooArgSet *params      = (RooArgSet *)pdf_sig_ang_mass_mfc->getParameters(observables);
     wksp->saveSnapshot(Form("initial_signal_pars_%i",years[iy]), *params, true) ;
 
 
     // sum signal and bkg pdf 
     RooAddPdf* full_pdf = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
                                          ("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
-                                          RooArgList(*pdf_sig_ang_mass, *bkg_pdf),
+                                          RooArgList(*pdf_sig_ang_mass_mfc, *bkg_pdf),
                                           RooArgList(*fsig)
                                        );
     PDF_sig_ang_mass_bkg.push_back(full_pdf);
     
     RooAddPdf* full_pdf_penalty = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
                                                  ("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
-                                                  RooArgList(*pdf_sig_ang_mass_penalty, *bkg_pdf),
+                                                  RooArgList(*pdf_sig_ang_mass_penalty_mfc, *bkg_pdf),
                                                   RooArgList(*fsig)
                                        );
     PDF_sig_ang_mass_bkg_penalty.push_back(full_pdf_penalty);
