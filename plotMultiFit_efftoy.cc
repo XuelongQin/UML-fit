@@ -39,6 +39,8 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
   vector< vector<TH1D*> > vHistErrH (nPars);
   vector< vector<TH1D*> > vHistErrL (nPars);
 
+  vector< vector<TH1D*> > vHistBestDense (nPars);
+
   vector< vector<double> > vHistBestRECO (nPars);
   vector< vector<double> > vHistErrHRECO (nPars);
   vector< vector<double> > vHistErrLRECO (nPars);
@@ -84,29 +86,32 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
 
     int q2Bin = atoi(splitLine[0].c_str());
     if (binIndex>=0 && binIndex!=q2Bin) continue;
-    vq2Bins.push_back(q2Bin);
-
-    if ( q2Bin!=1 && q2Bin!=3 ) continue;
 
     TChain fitResultsTree ("fitResultsTree","");
-    string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/simFitResults4d/simFitResult_recoMC_fullAngularMass_toyeff201620172018_dataStat-0_b%i_good.root",q2Bin);
+    // string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/simFitResults4d/simFitResult_recoMC_fullAngularMass_toyeff201620172018_dataStat-0_b%i_good.root",q2Bin);
+    string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-0_b%i_toyeff*.root",q2Bin);
     // string filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-*_b%i.root",q2Bin);
     // if (plot4dFit==1) filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_dataStat-*_b%i.root",q2Bin);
     // if (plot4dFit==0) filename = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_dataStat-*_b%i.root",q2Bin);
     fitResultsTree.Add(filename.c_str());
 
-    string filename_fR = Form("../UML-fit-integration/simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_dataStat-0_b%i.root",q2Bin);
+    string filename_fR = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-0_b%i.root",q2Bin);
+    // string filename_fR = Form("../UML-fit-integration/simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_dataStat-0_b%i.root",q2Bin);
     // string filename_fR = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_MCStat_b%i.root",q2Bin);
     // if (!ref4dFit) filename_fR = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_MCStat_b%i.root",q2Bin);
     TFile* filein_fR = TFile::Open(filename_fR.c_str());
     TTree* fitResultsTree_fR = (TTree*)filein_fR->Get("fitResultsTree");
     if (!fitResultsTree_fR || fitResultsTree_fR->GetEntries() != 1) {
       cout<<"Error, unexpected numebr of entries in fitResultsTree in file: "<<filename_fR<<endl;
-      return;
+      iColor--;
+      continue;
     }
 
     int nSamp = fitResultsTree.GetEntries();
     cout<<"Number of samples: "<<nSamp<<endl;
+    if (nSamp<2) {iColor--; continue;}
+
+    vq2Bins.push_back(q2Bin);
 
     vector<double> vBest(nPars);
     vector<double> vHigh(nPars);
@@ -123,6 +128,9 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
       fitResultsTree_fR->SetBranchAddress(Form("%s_low" ,parName[iPar].c_str()),&vLow [iPar]);
 
       vHistBest[iPar].push_back( new TH1D(Form("hBest%i%i",q2Bin,iPar),Form("%s results of data-like MC sample fits - q2 bin %i;%s;# of results",parTitle[iPar].c_str(),q2Bin,parTitle[iPar].c_str()),100,parMin[iPar],parMax[iPar]) );
+      vHistBestDense[iPar].push_back( new TH1D(Form("hBestDense%i%i",q2Bin,iPar),"",
+					       (parMax[iPar]-parMin[iPar])*300,
+					       parMin[iPar],parMax[iPar]) );
       vHistErrH[iPar].push_back( new TH1D(Form("hErrH%i%i",q2Bin,iPar),Form("%s MINOS uncertainties of data-like MC sample fits - q2 bin %i;#sigma(%s);# of results",parTitle[iPar].c_str(),q2Bin,parTitle[iPar].c_str()),nUncBins,binsUnc) );
       vHistErrL[iPar].push_back( new TH1D(Form("hErrL%i%i",q2Bin,iPar),Form("%s MINOS uncertainties of data-like MC sample fits - q2 bin %i;#sigma(%s);# of results",parTitle[iPar].c_str(),q2Bin,parTitle[iPar].c_str()),nUncBins,binsUnc) );
 
@@ -146,9 +154,32 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
       vHistErrLRECO[iPar].push_back( vLow [iPar] );
     }
 
+    // Pre-cycle
+    for (int iEn=0; iEn<fitResultsTree.GetEntries(); ++iEn) {
+      fitResultsTree.GetEntry(iEn);
+      for (int iPar=0; iPar<nPars; ++iPar)
+	vHistBestDense[iPar].back()->Fill(vBest[iPar]);
+    }
+
+    // Identification of a ~10 sigma range in which to evaluate the RMS
+    // results of problematic fits that fall outside it will not be used
+    double p[3]={0.16,0.5,0.84};
+    double q[3];
+    vector<double> vRangeMin (nPars);
+    vector<double> vRangeMax (nPars);
+    int nSigma = 10;
+    for (int iPar=0; iPar<nPars; ++iPar) {
+      vHistBestDense[iPar].back()->GetQuantiles(3,q,p);
+      vRangeMin[iPar] = nSigma*q[0] - (nSigma-1)*q[1];
+      vRangeMax[iPar] = nSigma*q[2] - (nSigma-1)*q[1];
+      // cout<<vRangeMin[iPar]<<"\t"<<vRangeMax[iPar]<<endl;
+    }
+
+    vector<int> vNevents (nPars,0);
     for (int iEn=0; iEn<fitResultsTree.GetEntries(); ++iEn) {
       fitResultsTree.GetEntry(iEn);
       for (int iPar=0; iPar<nPars; ++iPar) {
+	if (vBest[iPar]<vRangeMin[iPar] || vBest[iPar]>vRangeMax[iPar]) continue;
 	vHistBest[iPar].back()->Fill(vBest[iPar]);
 	vHistErrH[iPar].back()->Fill(vHigh[iPar]-vBest[iPar]);
 	vHistErrH[iPar].back()->Fill(vBest[iPar]-vLow [iPar]); // To create a stacked histogram
@@ -156,6 +187,7 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
 
 	vMean[iPar].back() += vBest[iPar];
 	vRMS[iPar].back() += vBest[iPar]*vBest[iPar];
+	++vNevents[iPar];
       }
     }
 
@@ -164,10 +196,10 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
 
     for (int iPar=0; iPar<nPars; ++iPar) {
       // cout<<vRMS[iPar].back()<<", "<<vBias[iPar].back()<<"("<<vBias[iPar].back() * vBias[iPar].back()<<") -> "<<( vRMS[iPar].back() - vBias[iPar].back() * vBias[iPar].back() ) / ( fitResultsTree.GetEntries() - 1 )<<endl;
-      vRMS[iPar].back() = sqrt( ( vRMS[iPar].back() - vMean[iPar].back() * vMean[iPar].back() / fitResultsTree.GetEntries() ) / ( fitResultsTree.GetEntries() - 1 ) );
-      vMean[iPar].back() = vMean[iPar].back() / fitResultsTree.GetEntries();
+      vRMS[iPar].back() = sqrt( ( vRMS[iPar].back() - vMean[iPar].back() * vMean[iPar].back() / vNevents[iPar] ) / ( vNevents[iPar] - 1 ) );
+      vMean[iPar].back() = vMean[iPar].back() / vNevents[iPar];
       vBias[iPar].back() = vMean[iPar].back() - vHistBestRECO[iPar].back();
-      vMeanErr[iPar].back() = vRMS[iPar].back() / sqrt( fitResultsTree.GetEntries() );
+      vMeanErr[iPar].back() = vRMS[iPar].back() / sqrt( vNevents[iPar] );
 
       printf("%s:\tBias (wrt RECO result) = %.5f\tRMS deviation: %.5f\n",parName[iPar].c_str(),vBias[iPar].back(),vRMS[iPar].back());
 
@@ -277,7 +309,7 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
     cUncert[iPar]->cd();
     legUnc->Draw();
 
-    string toyConfString = "";
+    string toyConfString = "_toybkg";
     // if (plot4dFit) toyConfString = toyConfString + "_4Dbkg";
     // if (!ref4dFit) toyConfString = toyConfString + "_vs3DfullMC";
 
