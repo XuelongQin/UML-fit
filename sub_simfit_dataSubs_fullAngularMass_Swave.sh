@@ -15,6 +15,7 @@ Arguments   = \$INT(nsamp) \$INT(bin) \$INT(yearConf) \$INT(q2stat) \$INT(save)
 Log         = logs_parSub/sub_\$(ClusterId).log
 Output      = logs_parSub/simfit_data_fullAngularMass_Swave_\$INT(nsamp)_\$INT(bin)_\$INT(yearConf)_\$INT(q2stat).out
 Error       = logs_parSub/simfit_data_fullAngularMass_Swave_\$INT(nsamp)_\$INT(bin)_\$INT(yearConf)_\$INT(q2stat).err
+transfer_output_files = ""
 +JobFlavour = "testmatch"
 EOF
 

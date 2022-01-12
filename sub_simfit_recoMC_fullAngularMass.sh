@@ -12,6 +12,7 @@ Arguments   = \$INT(nsamp) \$INT(bin)
 Log         = logs_parSub/sub_\$(ClusterId).log
 Output      = logs_parSub/simfit_recoMC_fullAngularMass_\$INT(nsamp)_\$INT(bin).out
 Error       = logs_parSub/simfit_recoMC_fullAngularMass_\$INT(nsamp)_\$INT(bin).err
+transfer_output_files = ""
 +JobFlavour = "testmatch"
 EOF
 
