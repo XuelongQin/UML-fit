@@ -408,7 +408,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
   if (nSample>0)   stat = stat + Form("-%i",firstSample);
   if (multiSample) stat = stat + Form("-%i",lastSample);
-  TFile* fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  TFile* fout = 0;
+  if (save) fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
   
   // save initial par values    
   RooArgSet *params      = (RooArgSet *)simPdf->getParameters(observables);
@@ -432,7 +433,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   vector<double> vResult  (pars.getSize());
   vector<double> vConfInterLow  (pars.getSize());
   vector<double> vConfInterHigh (pars.getSize());
-  fout->cd();
+  if (save) fout->cd();
   TTree* fitResultsTree = new TTree("fitResultsTree","fitResultsTree");
   for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
     RooRealVar* par = (RooRealVar*)pars.at(iPar);
@@ -598,9 +599,9 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   if (save) {
     fout->cd();
     fitResultsTree->Write();
+    fout->Close();
   }
 
-  fout->Close();
 
   if (!plot || multiSample) return;
 
@@ -763,23 +764,26 @@ int main(int argc, char** argv)
 
   if (nSample==0) multiSample = false;
 
+  float sigStat = 1;
+  if ( argc > 5 ) sigStat = atoi(argv[5]);
+
   bool localFiles = false;
-  if ( argc > 5 && atoi(argv[5]) > 0 ) localFiles = true;
+  if ( argc > 6 && atoi(argv[6]) > 0 ) localFiles = true;
 
   bool plot = true;
   bool save = true;
 
-  if ( argc > 6 && atoi(argv[6]) == 0 ) plot = false;
-  if ( argc > 7 && atoi(argv[7]) == 0 ) save = false;
+  if ( argc > 7 && atoi(argv[7]) == 0 ) plot = false;
+  if ( argc > 8 && atoi(argv[8]) == 0 ) save = false;
 
   std::vector<int> years;
-  if ( argc > 8 && atoi(argv[8]) != 0 ) years.push_back(atoi(argv[8]));
+  if ( argc > 9 && atoi(argv[9]) != 0 ) years.push_back(atoi(argv[9]));
   else {
     cout << "No specific years selected, using default: 2016" << endl;
     years.push_back(2016);
   }
-  if ( argc > 9  && atoi(argv[9])  != 0 ) years.push_back(atoi(argv[9]));
   if ( argc > 10 && atoi(argv[10]) != 0 ) years.push_back(atoi(argv[10]));
+  if ( argc > 11 && atoi(argv[11]) != 0 ) years.push_back(atoi(argv[11]));
 
   cout <<  "q2Bin       " << q2Bin        << endl;
   cout <<  "parity      " << parity       << endl;
@@ -800,9 +804,15 @@ int main(int argc, char** argv)
   if ( parity==-1 )  cout << "Running both the parity datasets" << endl;
 
   // https://docs.google.com/spreadsheets/d/1gG-qowySO9WJpMmr_bAWmOAu05J8zr95yJXGIYCY9-A/edit?usp=sharing
-  scale_to_data.insert(std::make_pair(2016, 0.006*2 /2.5  )); // *2 since we are using only odd/even events, second factor is "data-driven"
-  scale_to_data.insert(std::make_pair(2017, 0.005*2 /2.05 ));
-  scale_to_data.insert(std::make_pair(2018, 0.007*2 /1.9  ));
+  scale_to_data.insert(std::make_pair(2016, sigStat*0.006*2 /2.5  )); // *2 since we are using only odd/even events, second factor is "data-driven"
+  scale_to_data.insert(std::make_pair(2017, sigStat*0.005*2 /2.05 ));
+  scale_to_data.insert(std::make_pair(2018, sigStat*0.007*2 /1.9  ));
+
+  for (int iy=0; iy<years.size(); ++iy)
+    if ( nSample * scale_to_data[years[iy]] > 1 ) {
+      cout<<"Error! nsamp too large: max in "<<years[iy]<<" is "<<1./scale_to_data[years[iy]]<<endl;
+      return 1;
+    }
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)

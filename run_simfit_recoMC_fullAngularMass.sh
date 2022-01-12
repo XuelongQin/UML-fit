@@ -5,10 +5,11 @@ par=0
 multi=0
 nsam=${1}
 
-plot=1
-save=1
+plot=0
+save=0
 
 ibin=${2}
+sigstat=${3}
 
 export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
 export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
@@ -66,11 +67,11 @@ mkdir simFitResults4d
 mkdir plotSimFit4d_d
 
 if [ "$bin" -lt 8 ]; then
-    echo ./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2016 2017 2018
-    ./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2016 2017 2018
+    echo ./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} ${sigstat} 1 ${plot} ${save} 2016 2017 2018
+    ./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} ${sigstat} 1 ${plot} ${save} 2016 2017 2018
 else
-    echo ./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2016
-    ./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2016
+    echo ./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} ${sigstat} 1 ${plot} ${save} 2016
+    ./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} ${sigstat} 1 ${plot} ${save} 2016
 fi
 
 

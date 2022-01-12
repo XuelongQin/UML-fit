@@ -186,8 +186,13 @@ Int_t Fitter::fit()
     if ( result_free->status()==0 && result_free->covQual()==3 && boundary->getValV() == 0 ) {
       if ( !runSimpleFit ) computeBoundaryDistance(); //allow to skip the boundary-distance computation (for full-stat MC and control region fits)
       fillResultContainers();
+      std::cout<<"statCode - ff 0"<<std::endl;
       return 0;
     }
+    if ( result_free->status()==0 && result_free->covQual()==3 )
+      std::cout<<"statCode - ff 1"<<std::endl;
+    else
+      std::cout<<"statCode - ff 2"<<std::endl;
 
     if ( runSimpleFit ) { //allow to skip the penalised fit (for full-stat MC and control region fits)
       if ( result_free->status()==0 && result_free->covQual()==3 ) return 1;
@@ -259,17 +264,19 @@ Int_t Fitter::fit()
 	// if a good fit is found return good status
 	if ( result_penalty->status()==0 && result_penalty->covQual()==3 ) {
 	  if ( boundary->getValV()==0 ) {
-	    std::cout<<"P "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
+	    std::cout<<"adaCode P "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
 	    computeBoundaryDistance();
 	    fillResultContainers();
+	    std::cout<<"statCode - pf 0"<<std::endl;
 	    return 0;
-	  } else std::cout<<"O "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
-	} else std::cout<<"N "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
+	  } else std::cout<<"adaCode O "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
+	} else std::cout<<"adaCode N "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
 
       }
 
     }
     
+    std::cout<<"statCode - pf 2"<<std::endl;
     // if no good fit is found return bad status
     return 2;
 
