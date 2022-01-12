@@ -46,7 +46,6 @@ using namespace RooFit;
 using namespace std;
 
 static const int nBins = 9;
-std::map<int,float> scale_to_data;
 
 TCanvas* c [4*nBins];
 

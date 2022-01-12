@@ -22,6 +22,7 @@
 #include <RooNumIntConfig.h>
 #include <RooRandom.h>
 
+#include "utils.h"
 #include "ShapeSigAng.h"
 #include "PdfSigAng.h"
 #include "BoundCheck.h"
@@ -41,7 +42,7 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
-void simfit_toy_fullAngularBin(int q2Bin, vector<double> genPars, uint seed, uint nSample, bool localFiles, bool save, std::vector<int> years, std::map<int,float> scale_to_data)
+void simfit_toy_fullAngularBin(int q2Bin, vector<double> genPars, uint seed, uint nSample, bool localFiles, bool save, std::vector<int> years)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
@@ -552,17 +553,11 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )   cout << "Running all the q2 bins" << endl;
 
-  std::map<int,float> scale_to_data;
-  // https://docs.google.com/spreadsheets/d/1gG-qowySO9WJpMmr_bAWmOAu05J8zr95yJXGIYCY9-A/edit?usp=sharing
-  scale_to_data.insert(std::make_pair(2016, 0.006*2 /2.5  )); // *2 since we are using only odd/even events, second factor is "data-driven"
-  scale_to_data.insert(std::make_pair(2017, 0.005*2 /2.05 ));
-  scale_to_data.insert(std::make_pair(2018, 0.007*2 /1.9  ));
-
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      simfit_toy_fullAngularBin(q2Bin, genPars, seed, nSample, localFiles, save, years, scale_to_data);
+      simfit_toy_fullAngularBin(q2Bin, genPars, seed, nSample, localFiles, save, years);
   else
-    simfit_toy_fullAngularBin(q2Bin, genPars, seed, nSample, localFiles, save, years, scale_to_data);
+    simfit_toy_fullAngularBin(q2Bin, genPars, seed, nSample, localFiles, save, years);
 
   return 0;
 

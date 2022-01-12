@@ -48,7 +48,6 @@ using namespace RooFit;
 using namespace std;
 
 static const int nBins = 9;
-std::map<int,float> scale_to_data;
 
 TCanvas* cnll;
 TCanvas* cZoom;
@@ -853,11 +852,6 @@ int main(int argc, char** argv)
     cout<<"The analysis is blind!"<<endl;
     return 1;
   }
-
-  // https://docs.google.com/spreadsheets/d/1gG-qowySO9WJpMmr_bAWmOAu05J8zr95yJXGIYCY9-A/edit?usp=sharing
-  scale_to_data.insert(std::make_pair(2016, 0.006*2 /2.5  )); // *2 since we are using only odd/even events, second factor is "data-driven"
-  scale_to_data.insert(std::make_pair(2017, 0.005*2 /2.05 ));
-  scale_to_data.insert(std::make_pair(2018, 0.007*2 /1.9  ));
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)

@@ -8,7 +8,13 @@
 using namespace std;
 using namespace RooFit;
 
-extern std::map<int, float> scale_to_data;
+std::map<int, float> scale_to_data = {
+  {2016, 0.006 *2 /1.45 },
+  {2017, 0.005 *2 /1.40 },
+  {2018, 0.007 *2 /1.30 }
+// *2 since we are using only odd/even events, second factor is "data-driven":
+// https://docs.google.com/spreadsheets/d/1gG-qowySO9WJpMmr_bAWmOAu05J8zr95yJXGIYCY9-A/edit?usp=sharing
+};
 
 // redo jpsi and psi2s
 std::map<int,std::vector<float>> frt_sigmas = {

@@ -24,6 +24,7 @@
 #include <RooSimultaneous.h>
 #include <RooNumIntConfig.h>
 
+#include "utils.h"
 #include "RooDoubleCBFast.h"
 #include "PdfRT.h"
 #include "PdfWT.h"
@@ -54,7 +55,7 @@ RooPlot* prepareFrame(RooPlot* frame){
 }
 
 
-void simfit4d_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot, bool save, bool datalike, std::vector<int> years, std::map<int,float> scale_to_data)
+void simfit4d_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot, bool save, bool datalike, std::vector<int> years)
 {
   // Load variables and dataset
   // importing the complementary dataset, to fit with statistically uncorrelated efficiency
@@ -385,22 +386,22 @@ void simfit4d_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool
 }
 
 
-void simfit4d_recoMC_singleComponentBin2(int q2Bin, int parity, int tagFlag, bool plot, bool save, bool datalike, std::vector<int> years, std::map<int,float> scale_to_data)
+void simfit4d_recoMC_singleComponentBin2(int q2Bin, int parity, int tagFlag, bool plot, bool save, bool datalike, std::vector<int> years)
 {
   if ( tagFlag==-1 )
     for (tagFlag=0; tagFlag<2; ++tagFlag)
-      simfit4d_recoMC_singleComponentBin(q2Bin, parity, tagFlag, plot, save, datalike,  years, scale_to_data);
+      simfit4d_recoMC_singleComponentBin(q2Bin, parity, tagFlag, plot, save, datalike,  years);
   else
-    simfit4d_recoMC_singleComponentBin(q2Bin, parity, tagFlag, plot, save, datalike, years, scale_to_data);
+    simfit4d_recoMC_singleComponentBin(q2Bin, parity, tagFlag, plot, save, datalike, years);
 }
 
-void simfit4d_recoMC_singleComponentBin1(int q2Bin, int parity, int tagFlag, bool plot, bool save, bool datalike, std::vector<int> years, std::map<int,float> scale_to_data)
+void simfit4d_recoMC_singleComponentBin1(int q2Bin, int parity, int tagFlag, bool plot, bool save, bool datalike, std::vector<int> years)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      simfit4d_recoMC_singleComponentBin2(q2Bin, parity, tagFlag, plot, save, datalike, years, scale_to_data);
+      simfit4d_recoMC_singleComponentBin2(q2Bin, parity, tagFlag, plot, save, datalike, years);
   else
-    simfit4d_recoMC_singleComponentBin2(q2Bin, parity, tagFlag, plot, save, datalike, years, scale_to_data);
+    simfit4d_recoMC_singleComponentBin2(q2Bin, parity, tagFlag, plot, save, datalike, years);
 }
 
 int main(int argc, char** argv)
@@ -450,16 +451,11 @@ int main(int argc, char** argv)
   if ( tagFlag==-1 ) cout << "Running both the tag conditions"  << endl;
   if ( datalike )    cout << "Considering data-like statistics" << endl;
 
-  std::map<int,float> scale_to_data;
-  scale_to_data.insert(std::make_pair(2016, 0.01*2)); // *2 since we are using only odd/even events 
-  scale_to_data.insert(std::make_pair(2017, 0.01*2));
-  scale_to_data.insert(std::make_pair(2018, 0.015*2));
-
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      simfit4d_recoMC_singleComponentBin1(q2Bin, parity, tagFlag, plot, save, datalike, years, scale_to_data);
+      simfit4d_recoMC_singleComponentBin1(q2Bin, parity, tagFlag, plot, save, datalike, years);
   else
-    simfit4d_recoMC_singleComponentBin1(q2Bin, parity, tagFlag, plot, save, datalike, years, scale_to_data);
+    simfit4d_recoMC_singleComponentBin1(q2Bin, parity, tagFlag, plot, save, datalike, years);
 
   return 0;
 
