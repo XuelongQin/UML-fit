@@ -1,0 +1,7 @@
+executable	= runrmctwt_3.sh
+output		= massshapelogs/runrmctwt_3y_width.out
+error			= massshapelogs/runrmctwt_3y_width.error
+log 			= massshapelogs/runrmctwt_3y_width.log
+request_cpus = 1
++JobFlavour = "testmatch"
+queue
