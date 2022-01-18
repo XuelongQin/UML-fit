@@ -21,6 +21,22 @@ EXECUTABLE9 := simfit_recoMC_fullAngularMass_toybkg
 EXECUTABLE10 := simfit_data_fullAngularMass
 EXECUTABLE11 := simfit_data_fullAngularMass_Swave
 EXECUTABLE12 := plot_simfit_data_fullAngularMass_Swave
+EXECUTABLE13 := simfit_data_fullAngularMass_Swave_FlmF
+EXECUTABLE14 := simfit_data_fullAngularMass_Swave_mFtoysys
+EXECUTABLE15 := simfit_recoMC_fullAngularMass_toybkg_misfrac_test
+EXECUTABLE16 := simfit_data_fullAngularMass_Swave_toy
+EXECUTABLE17 := simfit_data_fullAngularMass_noSwave_gentoy
+EXECUTABLE18 := simfit_data_fullAngularMass_Swave_gentoyfit
+EXECUTABLE19 := simfit_data_fullAngularMass_Swave_gentoy1
+EXECUTABLE20 := simfit_data_fullAngularMass_Swave_gentoy2
+EXECUTABLE21 := simfit_data_fullAngularMass_gentoy2
+EXECUTABLE22 := simfit_data_fullAngularMass_Swave_cttoy2
+EXECUTABLE23 := simfit_data_fullAngularMass_noSwave_cttoy2
+EXECUTABLE24 := simfit_data_fullAngularMass_Swavetoy_gentoy2
+EXECUTABLE25 := simfit_data_fullAngularMass_SPwavetoy_gentoy2
+EXECUTABLE25 := simfit_data_fullAngularMass_SPwave_cttoy2
+EXECUTABLE26 := simfit_data_fullAngularMass_SPwave_cttoy2_noMinos
+EXECUTABLE27 := simfit_data_fullAngularMass_SPwave_cttoy2_noMinos_onetoy
 
 EXTRACLASS := RooDataHist.cxx
 CLASS0     := PdfRT
@@ -36,8 +52,15 @@ CLASS9     := PdfSigMass
 CLASS10    := ShapeSigAng
 CLASS11    := Fitter
 CLASS12    := RooBernsteinSideband
+CLASS131   := PdfSigAngMass_mF.cc	
+CLASS132   := PdfSigAngMass_mF.h
+CLASS141   := PdfSwaveAng.cc	
+CLASS142   := PdfSwaveAng.h	
+CLASS15    := ShapeStoyAng
+CLASS16    := ShapeSigAngtest
 
 CLASSDICT  := AngDict
+CLASSDICT1 := AngDict1
 CLASSDICT2 := RooDoubleCBDict
 
 #compiling options
@@ -46,14 +69,17 @@ CXXFLAGS := $(DEBUGFLAGS)
 
 #compile class
 LIBS := $(SOURCEDIR)/$(CLASS0).cc $(SOURCEDIR)/$(CLASS1).cc $(SOURCEDIR)/$(CLASS2).cc $(SOURCEDIR)/$(CLASS3).cc \
-        $(SOURCEDIR)/$(CLASS5).cc $(SOURCEDIR)/$(CLASS6).cc $(SOURCEDIR)/$(CLASS7).cc $(SOURCEDIR)/$(CLASS8).cc \
-        $(SOURCEDIR)/$(CLASS9).cc $(SOURCEDIR)/$(CLASS10).cc $(SOURCEDIR)/$(CLASS11).cc $(SOURCEDIR)/$(CLASS12).cxx $(CLASSDICT).cc $(SOURCEDIR)/$(EXTRACLASS)
+        $(SOURCEDIR)/$(CLASS5).cc $(SOURCEDIR)/$(CLASS6).cc $(SOURCEDIR)/$(CLASS7).cc $(SOURCEDIR)/$(CLASS131) \
+        $(SOURCEDIR)/$(CLASS8).cc $(SOURCEDIR)/$(CLASS9).cc $(SOURCEDIR)/$(CLASS10).cc $(SOURCEDIR)/$(CLASS11).cc \
+		$(SOURCEDIR)/$(CLASS141) $(SOURCEDIR)/$(CLASS15).cc $(SOURCEDIR)/$(CLASS16).cc $(SOURCEDIR)/$(CLASS12).cxx $(CLASSDICT).cc $(SOURCEDIR)/$(EXTRACLASS)
 
 $(CLASSDICT): $(INCLUDEDIR)/$(CLASS0).h $(INCLUDEDIR)/$(CLASS1).h $(INCLUDEDIR)/$(CLASS2).h $(INCLUDEDIR)/$(CLASS3).h \
-              $(INCLUDEDIR)/$(CLASS5).h $(INCLUDEDIR)/$(CLASS6).h $(INCLUDEDIR)/$(CLASS7).h $(INCLUDEDIR)/$(CLASS8).h \
-              $(INCLUDEDIR)/$(CLASS9).h $(INCLUDEDIR)/$(CLASS10).h $(INCLUDEDIR)/$(CLASS11).h $(INCLUDEDIR)/$(CLASS12).h
+              $(INCLUDEDIR)/$(CLASS5).h $(INCLUDEDIR)/$(CLASS6).h $(INCLUDEDIR)/$(CLASS7).h $(INCLUDEDIR)/$(CLASS132) \
+              $(INCLUDEDIR)/$(CLASS8).h $(INCLUDEDIR)/$(CLASS9).h $(INCLUDEDIR)/$(CLASS10).h $(INCLUDEDIR)/$(CLASS11).h \
+			  $(INCLUDEDIR)/$(CLASS142) $(INCLUDEDIR)/$(CLASS15).h $(INCLUDEDIR)/$(CLASS16).h $(INCLUDEDIR)/$(CLASS12).h 
 	@echo "Generating dictionary $@ using rootcint ..."
 	$(ROOTCINT) -f $@.cc -c $^
+
 
 $(CLASSDICT2): $(INCLUDEDIR)/$(CLASS4).h
 	@echo "Generating dictionary $@ using rootcint ..."
@@ -97,6 +123,51 @@ $(EXECUTABLE11): $(EXECUTABLE11).cc
 
 $(EXECUTABLE12): $(EXECUTABLE12).cc 
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE13): $(EXECUTABLE13).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE14): $(EXECUTABLE14).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE15): $(EXECUTABLE15).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE16): $(EXECUTABLE16).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE17): $(EXECUTABLE17).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE18): $(EXECUTABLE18).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE19): $(EXECUTABLE19).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE20): $(EXECUTABLE20).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE21): $(EXECUTABLE21).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
+
+$(EXECUTABLE22): $(EXECUTABLE22).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
+
+$(EXECUTABLE23): $(EXECUTABLE23).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
+
+$(EXECUTABLE24): $(EXECUTABLE24).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
+
+$(EXECUTABLE25): $(EXECUTABLE25).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
+
+$(EXECUTABLE26): $(EXECUTABLE26).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
+
+$(EXECUTABLE27): $(EXECUTABLE27).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
 
 #cleaning options
 .PHONY: clean
