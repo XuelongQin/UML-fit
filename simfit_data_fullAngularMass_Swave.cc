@@ -486,7 +486,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   }
 
   TFile* fout = 0;
-  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_freeSigmas_" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
   RooWorkspace* wsp_out = 0;
 
   // save initial par values    

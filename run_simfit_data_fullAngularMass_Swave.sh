@@ -1,6 +1,6 @@
 #!/bin/bash
 
-par=1
+par=0
 
 multi=0
 nsam=${1}
@@ -109,11 +109,3 @@ if [ ! -d $HOME/plotSimFit_d ]; then
 fi
 cp plotSimFit_d/* $HOME/plotSimFit_d/
 cp simFitResults4d/* $HOME/simFitResults4d/
-# for file in simFitResults/* ; do cp $file $HOME/${file//.root/_${multi}s${nsam}.root}; done
-
-rm -rf plotSimFit_d
-rm -rf simFitResults4d
-
-rm simfit_data_fullAngularMass_Swave
-rm recoDATADataset_b*
-rm KDEeff_b*
