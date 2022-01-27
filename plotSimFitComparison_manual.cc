@@ -1,13 +1,6 @@
-// #include "interface/utils.h"
+#include "interface/utils.h"
 
 string year[3] = {"2016","2017","2018"};
-
-std::map<int,std::vector<float>> fM_sigmas = {
-  {2016, {0.023, 0.015, 0.017, 0.013, 0.0003, 0.010, 0.0009, 0.013}},
-  {2017, {0.018, 0.014, 0.015, 0.010, 0.0003, 0.008, 0.0007, 0.011}},
-  {2018, {0.015, 0.010, 0.011, 0.008, 0.0002, 0.006, 0.0007, 0.008}},
-};
-
 
 void plotSimFitComparison_manual(int q2Bin = 4)
 {

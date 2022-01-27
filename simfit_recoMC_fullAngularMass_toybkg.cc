@@ -537,7 +537,9 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   
   if (nSample>0)   stat = stat + Form("-%i",firstSample);
   if (multiSample) stat = stat + Form("-%i",lastSample);
-  TFile* fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  TFile* fout;
+  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  RooWorkspace* wsp_out = 0;
   
   wksp->import(*simPdf,RecycleConflictNodes());
   wksp->import(*simPdf_penalty,RecycleConflictNodes()); 
@@ -561,7 +563,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   vector<double> vResult  (pars.getSize());
   vector<double> vConfInterLow  (pars.getSize());
   vector<double> vConfInterHigh (pars.getSize());
-  fout->cd();
+  if (save>0) fout->cd();
   TTree* fitResultsTree = new TTree("fitResultsTree","fitResultsTree");
   for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
     RooRealVar* par = (RooRealVar*)pars.at(iPar);
@@ -709,6 +711,12 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
       }
       fitResultsTree->Fill();
 
+      if (save>1 && !multiSample) {
+	wsp_out = new RooWorkspace("wsp_out","wsp_out");
+	wsp_out->import(*combData);
+	wsp_out->import(*simPdf_forFit);
+      }
+
     }
 
     // fill fit-status-dependent counters
@@ -742,11 +750,11 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     fout->cd();
     fitResultsTree->Write();
     // e.g., do not save workspace for all toys -> very space consuming
-    if (save==2) 
-      wksp->Write();
+    // if (save==2) 
+    //   wksp->Write();
+    if (wsp_out) wsp_out->Write();
+    fout->Close();
   }
-
-  fout->Close();
 
   if (!plot || multiSample) return;
 
