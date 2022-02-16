@@ -55,7 +55,7 @@ static const int nRanges = 5;
 double rangeVal[nRanges+1] = {5.00,5.10,5.20,5.35,5.45,5.60};
 string rangeName[nRanges] = {"lsb","ltail","peak","rtail","rsb"};
 
-void plot_simfit_recoMC_fullAngularMass_toybkgBin(int q2Bin, int parity, uint nSample, std::vector<int> years)
+void plot_simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, uint nSample, std::vector<int> years)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
@@ -80,12 +80,11 @@ void plot_simfit_recoMC_fullAngularMass_toybkgBin(int q2Bin, int parity, uint nS
     sample.defineType(("data"+year+Form("_subs%i",nSample)).c_str());
   }
 
-  // string fileDir = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/";
-  string fileDir = "";
-  string fileName = fileDir + "simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg" + all_years + Form("_dataStat-%i_b%i.root", nSample, q2Bin);
+  string fileDir = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/";
+  string fileName = fileDir + "simFitResults4d/simFitResult_recoMC_fullAngularMass" + all_years + Form("_MCStat_b3.root", q2Bin);
+  if (nSample>0) fileName = fileDir + "simFitResults4d/simFitResult_recoMC_fullAngularMass" + all_years + Form("_dataStat-%i_b%i.root", nSample, q2Bin);
   TFile* fin = new TFile(fileName.c_str(),"READ");
   auto wsp_out = (RooWorkspace*)fin->Get("wsp_out");
-  // auto wsp_out = (RooWorkspace*)fin->Get(("ws_"+shortString+Form("_s%i_pow1.0",nSample+1)).c_str());
   auto combData = (RooDataSet*)wsp_out->data("allcombData");
   auto simPdf = (RooSimultaneous*)wsp_out->pdf("simPdf");
   auto mass = (RooRealVar*)wsp_out->var("mass");
@@ -93,7 +92,8 @@ void plot_simfit_recoMC_fullAngularMass_toybkgBin(int q2Bin, int parity, uint nS
   auto ctL = (RooRealVar*)wsp_out->var("ctL");
   auto phi = (RooRealVar*)wsp_out->var("phi");
 
-  string plotString = shortString + "_" + all_years + Form("_s%i",nSample);
+  string plotString = shortString + "_" + all_years;
+  if (nSample>0) plotString = shortString + "_" + all_years + Form("_s%i",nSample);
    
   int confIndex = 2*nBins*parity  + q2Bin;
   string longString  = "Fit to reconstructed events";
@@ -131,33 +131,11 @@ void plot_simfit_recoMC_fullAngularMass_toybkgBin(int q2Bin, int parity, uint nS
 		       Name(("plPDF"+year).c_str()), 
 		       NumCPU(4));
 
-        singleYearPdf->plotOn(frames[fr],
-		       // Slice(sample, ("data"+year+Form("_subs%d",nSample)).c_str()), 
-		       // ProjWData(RooArgSet(sample), *combData), 
-		       LineWidth(1), 
-		       Name(("plPDFbkg"+year).c_str()), 
-		       NumCPU(4),
-		       LineColor(8),
-		       Components( ("bkg_pdf_"+year).c_str() ));
-
-        singleYearPdf->plotOn(frames[fr],
-		       // Slice(sample, ("data"+year+Form("_subs%d",nSample)).c_str()), 
-		       // ProjWData(RooArgSet(sample), *combData), 
-		       LineWidth(1), 
-		       Name(("plPDFsig"+year).c_str()), 
-		       NumCPU(4),
-		       LineColor(880),
-		       Components( ("PDF_sig_ang_mass_"+shortString+"_"+year).c_str() ));
-
         if (fr == 0) { 
           leg->AddEntry(frames[fr]->findObject(("plData"+year).c_str()),
 			"Data",	"lep");
           leg->AddEntry(frames[fr]->findObject(("plPDF"+year ).c_str()),
-			"Total PDF","l");
-          leg->AddEntry(frames[fr]->findObject(("plPDFsig"+year ).c_str()),
-			"Signal","l");
-          leg->AddEntry(frames[fr]->findObject(("plPDFbkg"+year ).c_str()),
-			"Background","l");
+			"Signal PDF","l");
         }
 
         c[confIndex]->cd(iy*4+fr+1);
@@ -167,7 +145,7 @@ void plot_simfit_recoMC_fullAngularMass_toybkgBin(int q2Bin, int parity, uint nS
     }
   }
 
-  c[confIndex]->SaveAs( ("plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_toybkg_" + plotString +  ".pdf").c_str() );
+  c[confIndex]->SaveAs( ("plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_" + plotString +  ".pdf").c_str() );
 
   // for (int i=0; i<nRanges; ++i)
   //   mass->setRange(rangeName[i].c_str(),rangeVal[i],rangeVal[i+1]);
@@ -258,7 +236,7 @@ void plot_simfit_recoMC_fullAngularMass_toybkgBin(int q2Bin, int parity, uint nS
   //     }
   //   }
 
-  //   canv->SaveAs( ("plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_toybkg_" + plotString + "_" + name + ".pdf").c_str() );
+  //   canv->SaveAs( ("plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_" + plotString + "_" + name + ".pdf").c_str() );
     
   // }
 
@@ -268,13 +246,13 @@ void plot_simfit_recoMC_fullAngularMass_toybkgBin(int q2Bin, int parity, uint nS
 
 
 
-void plot_simfit_recoMC_fullAngularMass_toybkgBin1(int q2Bin, int parity, uint nSample, std::vector<int> years)
+void plot_simfit_recoMC_fullAngularMassBin1(int q2Bin, int parity, uint nSample, std::vector<int> years)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      plot_simfit_recoMC_fullAngularMass_toybkgBin(q2Bin, parity, nSample, years);
+      plot_simfit_recoMC_fullAngularMassBin(q2Bin, parity, nSample, years);
   else
-    plot_simfit_recoMC_fullAngularMass_toybkgBin(q2Bin, parity, nSample, years);
+    plot_simfit_recoMC_fullAngularMassBin(q2Bin, parity, nSample, years);
 }
 
 int main(int argc, char** argv)
@@ -319,9 +297,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      plot_simfit_recoMC_fullAngularMass_toybkgBin1(q2Bin, parity, nSample, years);
+      plot_simfit_recoMC_fullAngularMassBin1(q2Bin, parity, nSample, years);
   else
-    plot_simfit_recoMC_fullAngularMass_toybkgBin1(q2Bin, parity, nSample, years);
+    plot_simfit_recoMC_fullAngularMassBin1(q2Bin, parity, nSample, years);
 
   return 0;
 

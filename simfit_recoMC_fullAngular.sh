@@ -6,7 +6,7 @@ multi=${1}
 nsam=${2}
 
 plot=0
-save=1
+save=2
 
 # Create directories for fit logs, results and plots
 if [ ! -d logs_simFit ]; then mkdir logs_simFit; fi
