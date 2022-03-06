@@ -523,3 +523,93 @@ Double_t Fitter::computeBoundaryDistance()
   return boundDist;
 
 }
+
+void Fitter::plotSimFitProjections(const char* filename, std::vector<std::string> catnames, std::vector<int> years, bool is4D)
+{
+
+  auto canv = new TCanvas ("canv","canv",is4D?2000:1500,500*years.size());
+  canv->Divide(is4D?4:3, years.size());
+  std::vector<std::string> catnamesresolv(catnames.size());
+  
+  for (unsigned int iy = 0; iy < years.size(); iy++) {
+
+    for (uint i=0; i<catnames.size(); ++i)
+      catnamesresolv[i] = Form(catnames[i].c_str(),years[iy]);
+
+    auto singleYearPdf = ((RooSimultaneous*)simPdf)->getPdf(catnamesresolv[0].c_str());
+    auto singleYearData = combData->reduce(("sample==sample::"+catnamesresolv[0]).c_str());
+
+    plotProjections(singleYearPdf, singleYearData, catnamesresolv, is4D, canv, iy*(is4D?4:3));
+
+  }
+
+  canv->SaveAs(filename);
+  delete canv;
+
+}
+
+void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearData, std::vector<std::string> catnames, bool is4D, TCanvas* canv, int ipad)
+{
+
+    TLegend* leg = new TLegend (0.60,0.75,0.9,0.9);
+
+    std::vector<std::string> varname(0);
+    if (is4D) varname = {"mass", "ctK", "ctL", "phi"};
+    else varname = {"ctK", "ctL", "phi"};
+
+    std::vector<RooPlot*> frames;
+
+    for (unsigned int fr = 0; fr < varname.size(); fr++){
+
+      auto var = (RooRealVar*)singleYearPdf->getObservables(singleYearData)->find(varname[fr].c_str());
+      frames.push_back( var->frame() );
+    
+      singleYearData->plotOn(frames[fr],
+			     RooFit::MarkerColor(kRed+1),
+			     RooFit::LineColor(kRed+1),
+			     RooFit::Binning(40),
+			     RooFit::Name(Form("plData%i",ipad)) );
+        
+      singleYearPdf->plotOn(frames[fr],
+			    RooFit::LineWidth(1),
+			    RooFit::Name(Form("plPDF%i",ipad)),
+			    RooFit::NumCPU(4));
+
+      if (catnames.size()>1) {
+	singleYearPdf->plotOn(frames[fr],
+			      RooFit::LineWidth(1),
+			      RooFit::Name(Form("plPDFbkg%i",ipad)),
+			      RooFit::NumCPU(4),
+			      RooFit::LineColor(8),
+			      RooFit::Components( catnames[2].c_str() ));
+
+	singleYearPdf->plotOn(frames[fr],
+			      RooFit::LineWidth(1),
+			      RooFit::Name(Form("plPDFsig%i",ipad)),
+			      RooFit::NumCPU(4),
+			      RooFit::LineColor(880),
+			      RooFit::Components( catnames[1].c_str() ));
+      }
+      
+      if (fr == 0) { 
+	leg->AddEntry(frames[fr]->findObject(Form("plData%i",ipad)),
+		      "Data",	"lep");
+	if (catnames.size()>1) {
+	  leg->AddEntry(frames[fr]->findObject(Form("plPDF%i",ipad)),
+			"Total PDF","l");
+	  leg->AddEntry(frames[fr]->findObject(Form("plPDFsig%i",ipad)),
+			"Signal","l");
+	  leg->AddEntry(frames[fr]->findObject(Form("plPDFbkg%i",ipad)),
+			"Background","l");
+	} else
+	  leg->AddEntry(frames[fr]->findObject(Form("plPDF%i",ipad)),
+			"Signal PDF","l");
+      }
+
+      canv->cd(ipad+fr+1);
+      gPad->SetLeftMargin(0.16); 
+      gPad->SetLeftMargin(0.04); 
+      frames[fr]->Draw();
+      if (fr == 0) leg->Draw("same");
+    }
+}

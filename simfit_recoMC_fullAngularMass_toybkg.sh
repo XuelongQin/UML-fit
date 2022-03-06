@@ -5,7 +5,7 @@ par=1
 multi=0
 nsam=${1}
 
-plot=0
+plot=1
 save=2
 
 # Create directories for fit logs, results and plots

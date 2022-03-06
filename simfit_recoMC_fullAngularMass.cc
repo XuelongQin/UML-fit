@@ -465,7 +465,9 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
   for (uint is = firstSample; is <= lastSample; is++) {
 
-    string the_cut = Form("sample==sample::data%d_subs%d", years[0], is);
+    string samplename = Form("_subs%d", is);
+    samplename =  "data%i" + samplename;
+    string the_cut = Form(("sample==sample::"+samplename).c_str(),years[0]);
     if (years.size() > 1){
       for (unsigned int iy=1; iy < years.size(); iy++){
         the_cut = the_cut + Form("|| sample==sample::data%d_subs%d", years[iy], is);
@@ -573,6 +575,15 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 	wsp_out->import(*simPdf);
       }
 
+      if (plot && !multiSample) {
+
+	string plotString = shortString + "_" + all_years;
+	if (nSample>0) plotString = plotString + Form("_s%i",is);
+	string plotname = "plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_" + plotString + ".pdf";
+	fitter->plotSimFitProjections(plotname.c_str(),{samplename},years,true);
+
+      }
+
     }
 
     // fill fit-status-dependent counters
@@ -609,133 +620,6 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     if (wsp_out) wsp_out->Write();
     fout->Close();
   }
-
-  if (!plot || multiSample) return;
-
-  // For plotting the effective penalty term is used
-  Penalty* penTerm_eff = new Penalty(*penTerm,"penTerm_eff");
-  penTerm_eff->setPower(power);
-  RooFormulaVar* penLog = new RooFormulaVar("penLog","penLog","-1.0 * log(penTerm_eff)",RooArgList(*penTerm_eff));
-
-  double xZoom = 200.0;
-  if (nSample>0) xZoom = 2.0;
-
-  cnll  = new TCanvas (("cnll_"+shortString).c_str(),("cnll_"+shortString).c_str(),1800,1800);
-  cZoom = new TCanvas (("cZoom_"+shortString).c_str(),("cZoom_"+shortString).c_str(),1800,1800);
-  cPen = new TCanvas (("cPen_"+shortString).c_str(),("cPen_"+shortString).c_str(),1800,1800);
-  cnll->Divide(3,3);
-  cZoom->Divide(3,3);
-  cPen->Divide(3,3);
-
-  RooPlot* frame [8];
-  RooPlot* fZoom [8];
-  RooPlot* fPenTerm [8];
-
-  for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
-
-    RooRealVar* par = (RooRealVar*)pars.at(iPar);
-
-    frame[iPar] = par->frame(Name(Form("f1%s",par->GetName())),Title(Form("-log(L) scan vs %s",par->GetTitle()))) ;
-    fZoom[iPar] = par->frame(Name(Form("f2%s",par->GetName())),Title(Form("zoom on -log(L) scan vs %s",par->GetTitle())),
-			     Range(TMath::Max(par->getMin(),par->getValV()+xZoom*par->getErrorLo()),
-				   TMath::Min(par->getMax(),par->getValV()+xZoom*par->getErrorHi()) )) ;
-
-    fitter->nll->plotOn(frame[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll->getVal()+10),LineColor(kRed),LineWidth(2)) ;
-    fitter->nll->plotOn(fZoom[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll->getVal()+10),LineColor(kRed),LineWidth(2)) ;
-
-    if (iPar>0) {
-
-      double hMax = frame[iPar]->GetMaximum();
-
-      boundary->plotOn(frame[iPar],LineColor(13),FillColor(13),FillStyle(3545),Normalization(1.1*hMax,RooAbsReal::Raw),DrawOption("LF"),VLines(),LineWidth(2));
-      boundary->plotOn(fZoom[iPar],LineColor(13),FillColor(13),FillStyle(3545),Normalization(1.1*hMax,RooAbsReal::Raw),DrawOption("LF"),VLines(),LineWidth(2));
-
-      if (fitter->usedPenalty) {
-
-	fitter->nll_penalty->plotOn(frame[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll_penalty->getVal()+10),LineColor(kBlue),LineWidth(2));
-	fitter->nll_penalty->plotOn(fZoom[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(fitter->nll_penalty->getVal()+10),LineColor(kBlue),LineWidth(2));
-
-	penLog->plotOn(frame[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(penLog->getVal()+10),LineColor(8),LineWidth(2));
-	penLog->plotOn(fZoom[iPar],PrintEvalErrors(-1),ShiftToZero(),EvalErrorValue(penLog->getVal()+10),LineColor(8),LineWidth(2));
-
-      }  
-
-      frame[iPar]->SetMaximum(hMax);
-
-      fPenTerm[iPar] = par->frame(Name(Form("f3%s",par->GetName())),Title(Form("Penalty term vs %s",par->GetTitle()))) ;
-      penTerm_eff->plotOn(fPenTerm[iPar],LineColor(4),LineWidth(2)) ;
-      double hMaxP = fPenTerm[iPar]->GetMaximum();
-      boundary->plotOn(fPenTerm[iPar],LineColor(13),FillColor(13),FillStyle(3545),Normalization(1.1*hMaxP,RooAbsReal::Raw),DrawOption("LF"),VLines(),LineWidth(2));
-      fPenTerm[iPar]->SetMaximum(hMaxP);
-      cPen->cd(iPar+1);
-      fPenTerm[iPar]->Draw();
-
-    }
-
-    fZoom[iPar]->SetMaximum(0.5*xZoom*xZoom);
-
-    cnll->cd(iPar+1);
-    frame[iPar]->Draw();
-
-    cZoom->cd(iPar+1);
-    fZoom[iPar]->Draw();
-
-
-  }
-
-  string plotString = shortString + "_" + all_years;
-  if (nSample>0) plotString = plotString + Form("_s%i",nSample);
-
-  cnll->Update();
-  cnll->SaveAs( ("plotSimFit4d_d/recoNLL_scan_" + plotString + ".pdf").c_str() );
-
-  cZoom->Update();
-  cZoom->SaveAs( ("plotSimFit4d_d/recoNLL_scan_" + plotString + "_zoom.pdf").c_str() );
-
-  cPen->Update();
-  cPen->SaveAs( ("plotSimFit4d_d/recoPenTerm_" + plotString + ".pdf").c_str() );
-
-   
-  int confIndex = 2*nBins*parity  + q2Bin;
-  string longString  = "Fit to reconstructed events";
-  longString = longString + Form(parity==1?" (q2-bin %i even)":" (q2-bin %i odd)",q2Bin);
-
-  // plot fit projections 
-  c[confIndex] = new TCanvas (("c_"+shortString).c_str(),("Fit to RECO-level MC - "+longString).c_str(),3000,1400);
-  c[confIndex]->Divide(4, years.size());
-  
-  cout<<"plotting 4d canvas"<<endl;
-  for (unsigned int iy = 0; iy < years.size(); iy++) {
-    year.clear(); year.assign(Form("%i",years[iy]));
-  
-    std::vector<RooPlot*> frames;
-    frames.push_back( prepareFrame( mass ->frame(Title((longString+year).c_str()))));
-    frames.push_back( prepareFrame( ctK ->frame(Title((longString+year).c_str())) ));
-    frames.push_back( prepareFrame( ctL ->frame(Title((longString+year).c_str())) ));
-    frames.push_back( prepareFrame( phi ->frame(Title((longString+year).c_str())) ));
-    TLegend* leg = new TLegend (0.25,0.8,0.9,0.9);
-
-    cout<<"canvas ready"<<endl;
-    for (unsigned int fr = 0; fr < frames.size(); fr++){
-        cout<<"fr " << fr<<endl;
-        combData->plotOn(frames[fr], MarkerColor(kRed+1), LineColor(kRed+1), Binning(40), Cut(("sample==sample::data"+year+Form("_subs%d",firstSample)).c_str()), Name(("plData"+year).c_str()));
-        
-        simPdf->plotOn(frames[fr], Slice(sample, ("data"+year+Form("_subs%d",firstSample)).c_str()), 
-                                     ProjWData(RooArgSet(sample), *combData), 
-                                     LineWidth(1), 
-                                     Name(("plPDF"+year).c_str()), 
-                                     NumCPU(4));
-        if (fr == 0) { 
-          leg->AddEntry(frames[fr]->findObject(("plData"+year).c_str()),("Post-selection distribution "+year).c_str() ,"lep");
-          leg->AddEntry(frames[fr]->findObject(("plPDF"+year ).c_str()),("Decay rate x efficiency "+year).c_str(),"l");
-        }
-        c[confIndex]->cd(iy*4+fr+1);
-        gPad->SetLeftMargin(0.19); 
-        frames[fr]->Draw();
-        leg->Draw("same");
-    }
-  }
-  c[confIndex]->SaveAs( ("plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_" + plotString +  ".pdf").c_str() );
 
 }
 

@@ -8,6 +8,8 @@
 #include <TH1D.h>
 #include <TString.h>
 #include <TStopwatch.h>
+#include <TCanvas.h>
+#include <TLegend.h>
 
 #include <RooFitResult.h>
 #include <RooDataSet.h>
@@ -16,6 +18,8 @@
 #include <RooMinimizer.h>
 #include <RooArgList.h>
 #include <RooRealVar.h>
+#include <RooSimultaneous.h>
+#include <RooPlot.h>
 
 #include "BoundCheck.h"
 #include "BoundDist.h"
@@ -53,6 +57,8 @@ class Fitter {
   void fillResultContainers(bool fromImprov = false) ;
 
   Double_t computeBoundaryDistance() ;
+
+  void plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearData, std::vector<std::string> catnames, bool is4D, TCanvas* canv, int ipad);
 
  public:
 
@@ -123,6 +129,8 @@ class Fitter {
   Int_t MinosAng(int seed = 1, int nGenMINOS = 20000) ;
 
   RooFitResult* result () { if (usedPenalty) return result_penalty; return result_free; };
+
+  void plotSimFitProjections(const char* filename, std::vector<std::string> catnames, std::vector<int> years, bool is4D);
 
   ClassDef(Fitter,1) // Code to run the fit and statistical uncertainty
 };
