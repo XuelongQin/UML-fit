@@ -106,9 +106,9 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   gInterpreter->GenerateDictionary("std::pair<std::map<string,RooDataSet*>::iterator, bool>", "map;string;RooDataSet.h");
   std::map<std::string, RooDataSet*> map;
 
-  RooRealVar* ctK = new RooRealVar("ctK", "ctK", -1  , 1  );
-  RooRealVar* ctL = new RooRealVar("ctL", "ctL", -1  , 1  );
-  RooRealVar* phi = new RooRealVar("phi", "phi", -3.14159, 3.14159  );
+  RooRealVar* ctK = new RooRealVar("ctK", "cos(#theta_{K})", -1  , 1  );
+  RooRealVar* ctL = new RooRealVar("ctL", "cos(#theta_{l})", -1  , 1  );
+  RooRealVar* phi = new RooRealVar("phi", "#phi", -3.14159, 3.14159  );
   RooArgList vars (* ctK,* ctL,* phi);
   RooRealVar* mass = new RooRealVar("mass","mass", 5.,5.6,"GeV");
   RooRealVar* rand = new RooRealVar("rand", "rand", 0,1);
@@ -172,7 +172,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
-    if (!localFiles) filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/",years[iy]) + filename;
+    if (!localFiles) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/files/" + filename;
+    // if (!localFiles) filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/",years[iy]) + filename;
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
     if ( !fin_eff[iy] || !fin_eff[iy]->IsOpen() ) {
       cout<<"File not found: "<<filename<<endl;
@@ -381,8 +382,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 						    );
     } 
 
-    auto pdf_sig_ang_mass_mfc = new RooProdPdf(Form(sigpdfname.c_str(),years[iy]),("PDF_sig_ang_mass_mfc_"+shortString+"_"+year).c_str(),
-					       Form(sigpdfname.c_str(),years[iy]),("PDF_sig_ang_mass_mfc_"+year).c_str(),
+    auto pdf_sig_ang_mass_mfc = new RooProdPdf(("PDF_sig_ang_mass_mfc_"+shortString+"_"+year).c_str(),
+					       ("PDF_sig_ang_mass_mfc_"+year).c_str(),
 					       *pdf_sig_ang_mass,
 					       *c_fm);
     auto pdf_sig_ang_mass_penalty_mfc = new RooProdPdf(("PDF_sig_ang_mass_penalty_mfc_"+shortString+"_"+year).c_str(),
@@ -572,7 +573,10 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     fitter = new Fitter (Form("fitter%i",is),Form("fitter%i",is),pars,combData,simPdf,simPdf_penalty,boundary,bound_dist,penTerm,&c_vars);
     vFitter.push_back(fitter);
 
-    if (nSample==0 && (q2Bin==4 || q2Bin==6)) fitter->runSimpleFit = true;
+    if (nSample==0 && (q2Bin==4 || q2Bin==6)) {
+      fitter->runSimpleFit = true;
+      fitter->setNCPU(8);
+    }
 
     subTime.Start(true);
     int status = fitter->fit();

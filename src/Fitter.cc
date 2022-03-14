@@ -130,6 +130,8 @@ void Fitter::SetDefConf()
   vConfInterLow  = std::vector<Double_t>(angPars.getSize(),0);
   vConfInterHigh = std::vector<Double_t>(angPars.getSize(),0);
 
+  nCPU = 1;
+
 }
 
 
@@ -143,12 +145,12 @@ Int_t Fitter::fit()
     // set up free fit
     nll = simPdf->createNLL(*combData,
                             RooFit::Extended(kFALSE),
-                            RooFit::NumCPU(1)
+                            RooFit::NumCPU(nCPU)
                             );
     if ( constrVars != nullptr && constrVars->getSize() > 0  ){
       nll = simPdf->createNLL(*combData,
                               RooFit::Extended(kFALSE),
-                              RooFit::NumCPU(1),
+                              RooFit::NumCPU(nCPU),
                               RooFit::Constrain(*constrVars)
                               );
     }                              
@@ -190,8 +192,13 @@ Int_t Fitter::fit()
     }
 
     if ( runSimpleFit ) { //allow to skip the penalised fit (for full-stat MC and control region fits)
-      if ( result_free->status()==0 && result_free->covQual()==3 ) return 1;
+      if ( result_free->status()==0 && result_free->covQual()==3 ) {
+	fillResultContainers();
+	return 1;
+      }
+
       return 2;
+
     }
     
     usedPenalty = true;
@@ -539,7 +546,10 @@ void Fitter::plotSimFitProjections(const char* filename, std::vector<std::string
     auto singleYearPdf = ((RooSimultaneous*)simPdf)->getPdf(catnamesresolv[0].c_str());
     auto singleYearData = combData->reduce(("sample==sample::"+catnamesresolv[0]).c_str());
 
-    plotProjections(singleYearPdf, singleYearData, catnamesresolv, is4D, canv, iy*(is4D?4:3));
+    std::string frametitle = "%s projection of ";
+    frametitle = frametitle + Form("%i dataset",years[iy]);
+
+    plotProjections(singleYearPdf, singleYearData, catnamesresolv, frametitle, is4D, canv, iy*(is4D?4:3));
 
   }
 
@@ -548,7 +558,7 @@ void Fitter::plotSimFitProjections(const char* filename, std::vector<std::string
 
 }
 
-void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearData, std::vector<std::string> catnames, bool is4D, TCanvas* canv, int ipad)
+void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearData, std::vector<std::string> catnames, std::string frametitle, bool is4D, TCanvas* canv, int ipad)
 {
 
     TLegend* leg = new TLegend (0.60,0.75,0.9,0.9);
@@ -558,11 +568,13 @@ void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearDat
     else varname = {"ctK", "ctL", "phi"};
 
     std::vector<RooPlot*> frames;
+    TLatex Tl;
+    Tl.SetTextSize(0.04);
 
     for (unsigned int fr = 0; fr < varname.size(); fr++){
 
       auto var = (RooRealVar*)singleYearPdf->getObservables(singleYearData)->find(varname[fr].c_str());
-      frames.push_back( var->frame() );
+      frames.push_back( var->frame(RooFit::Title(Form(frametitle.c_str(),var->GetTitle()))) );
     
       singleYearData->plotOn(frames[fr],
 			     RooFit::MarkerColor(kRed+1),
@@ -590,7 +602,7 @@ void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearDat
 			      RooFit::LineColor(880),
 			      RooFit::Components( catnames[1].c_str() ));
       }
-      
+
       if (fr == 0) { 
 	leg->AddEntry(frames[fr]->findObject(Form("plData%i",ipad)),
 		      "Data",	"lep");
@@ -606,10 +618,14 @@ void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearDat
 			"Signal PDF","l");
       }
 
+      double chiSq = frames[fr]->chiSquare(Form("plPDF%i",ipad),Form("plData%i",ipad));
+
       canv->cd(ipad+fr+1);
+      frames[fr]->GetYaxis()->SetTitleOffset(2);
       gPad->SetLeftMargin(0.16); 
-      gPad->SetLeftMargin(0.04); 
+      gPad->SetRightMargin(0.04); 
       frames[fr]->Draw();
+      Tl.DrawLatexNDC(0.2,0.86,Form("#chi^{2}/N_{bins} = %.2f",chiSq));
       if (fr == 0) leg->Draw("same");
     }
 }

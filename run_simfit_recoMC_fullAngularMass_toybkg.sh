@@ -1,6 +1,6 @@
 #!/bin/bash
 
-par=0
+par=1
 
 multi=0
 nsam=${1}
@@ -13,7 +13,7 @@ ibin=${2}
 export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
 export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
 export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE
-export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/files
+export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/files
 
 export WORKDIR=$PWD
 cd $CMSSWDIR
@@ -83,10 +83,3 @@ if [ ! -d $HOME/plotSimFit4d_d ]; then
 fi
 cp plotSimFit4d_d/* $HOME/plotSimFit4d_d/
 cp simFitResults4d/* $HOME/simFitResults4d/
-
-rm -rf plotSimFit4d_d
-rm -rf simFitResults4d
-
-rm simfit_recoMC_fullAngularMass_toybkg
-rm recoMCDataset_b*
-rm KDEeff_b*

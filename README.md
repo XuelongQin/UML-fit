@@ -8,6 +8,7 @@
 [Fit to signal MC](#performFit)  
 * [Fit to angular variables](#angular)  
 * [Fit to angular + mass variables](#angMass)  
+[Plotting macros](#plotMacros)  
 
 <a name="setup"/>
 
@@ -87,3 +88,21 @@ The variable "datalike" sets the statistics to be considered (datalike = 0 -> fu
 
 The code will produce a root file `simFit4dResults/simfit4dResult_recoMC_singleComponentXXXX.root` containing the RooFitResult objects, where XXXX describes the considered datasets.
 Corresponding fit projection plots are created in `plotSimFit4d_d/simfitResult_recoMC_singleComponent_*.pdf`.
+
+<a name="plotMacros"/>
+
+## Plotting macros
+
+Here a list of the macros used to plot the fit results:
+- `plot_simfit_*.cc`: plot the projections of a single fit result, reading the workspace containing PDF and dataset. These plots can also be produced during the fit by activating the plot flag
+- `plotSimFitResults.cc`: crate a graph comparing the angular parameters resulting from one or more fits to RECO MC sample and compare them to the GEN-fit result, as a function of the q2 bin. It also prints out the formatted table for the "efficiency mismodelling" systematics. It reads the workspace with GEN fit result and the TTrees with the RECO fit results
+- `plotMultiFit.cc`: plot distributions of the resulting angular parameters and their uncertainties from fits to a set of data-like samples, and compare them with the full-sample fit results. It also prints out the formatted table for the "fit bias" systematics. It reads the TTrees with the fit results
+- `plotMultiDataFit.cc`: same as above for set of fits to control-region subsamples, comparing them with the full control-region result
+- `plotSimFitComparison.cc`: create a graph with comparison of data simultaneous fit results, with single-year results and the mass constraints. It reads the workspace with resulting PDFs
+- `plotSimFitComparison_manual.cc`: same as above, but read the simultaneous fit result from the log file (needed for Jpsi control region)
+
+### Outdated macros
+
+To use the following macros with the latest version of the fit results, some changes are necessary:
+- `plotMultiResults.cc`: plot 1D and 2D distribution of set of MC subsample fits, together with boundary slice and slice of the log-likelihood from full-MC fit. It allows also to plot 2D slices of individual requirements composing the boundary
+- `plotPulls.cc`: plot the pull plot of a set of toy fit results and compute the coverage of the confidence interval (not recently tested, it may still work with the latest version of [simfit_toy_fullAngular.cc](simfit_toy_fullAngular.cc)

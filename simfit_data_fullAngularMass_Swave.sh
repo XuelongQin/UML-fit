@@ -1,13 +1,13 @@
 #!/bin/bash
 
-par=1
+par=0
 
 multi=0
 nsam=0
 q2stat=0
 
-plot=0
-save=1
+plot=1
+save=2
 
 bin=${1}
 yearConf=${2}

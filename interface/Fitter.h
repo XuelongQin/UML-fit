@@ -10,6 +10,7 @@
 #include <TStopwatch.h>
 #include <TCanvas.h>
 #include <TLegend.h>
+#include <TLatex.h>
 
 #include <RooFitResult.h>
 #include <RooDataSet.h>
@@ -54,11 +55,13 @@ class Fitter {
   Double_t base4_corr;
   Double_t min_base;
 
+  Int_t nCPU;
+
   void fillResultContainers(bool fromImprov = false) ;
 
   Double_t computeBoundaryDistance() ;
 
-  void plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearData, std::vector<std::string> catnames, bool is4D, TCanvas* canv, int ipad);
+  void plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearData, std::vector<std::string> catnames, std::string frametitle, bool is4D, TCanvas* canv, int ipad);
 
  public:
 
@@ -131,6 +134,8 @@ class Fitter {
   RooFitResult* result () { if (usedPenalty) return result_penalty; return result_free; };
 
   void plotSimFitProjections(const char* filename, std::vector<std::string> catnames, std::vector<int> years, bool is4D);
+
+  void setNCPU(Int_t _nCPU = 1) { nCPU=_nCPU; };
 
   ClassDef(Fitter,1) // Code to run the fit and statistical uncertainty
 };

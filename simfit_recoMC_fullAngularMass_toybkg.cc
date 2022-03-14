@@ -108,11 +108,11 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   gInterpreter->GenerateDictionary("std::pair<std::map<string,RooDataSet*>::iterator, bool>", "map;string;RooDataSet.h");
   std::map<std::string, RooDataSet*> map;
 
-  RooRealVar* ctK = new RooRealVar("ctK", "ctK", -1  , 1  );
-  RooRealVar* ctL = new RooRealVar("ctL", "ctL", -1  , 1  );
-  RooRealVar* phi = new RooRealVar("phi", "phi", -3.14159, 3.14159  );
+  RooRealVar* ctK = new RooRealVar("ctK", "cos(#theta_{K})", -1  , 1  );
+  RooRealVar* ctL = new RooRealVar("ctL", "cos(#theta_{l})", -1  , 1  );
+  RooRealVar* phi = new RooRealVar("phi", "#phi", -3.14159, 3.14159  );
   RooArgList vars (* ctK,* ctL,* phi);
-  RooRealVar* mass = new RooRealVar("mass","mass", 5.,5.6);
+  RooRealVar* mass = new RooRealVar("mass","m(#mu#muK#pi)", 5.,5.6,"GeV");
   RooRealVar* rand = new RooRealVar("rand", "rand", 0,1);
   RooArgSet reco_vars (*ctK, *ctL, *phi, *mass, *rand);
   RooArgSet observables (*ctK, *ctL, *phi, *mass);
@@ -177,7 +177,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
-    if (!localFiles) filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/",years[iy]) + filename;
+    if (!localFiles) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/files/" + filename;
+    // if (!localFiles) filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/",years[iy]) + filename;
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
     if ( !fin_eff[iy] || !fin_eff[iy]->IsOpen() ) {
       cout<<"File not found: "<<filename<<endl;

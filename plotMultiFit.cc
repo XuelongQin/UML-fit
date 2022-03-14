@@ -28,12 +28,15 @@ int colors [12] = { 633, 417, 879, 857, 839, 801, 921, 607, 807, 419, 907, 402 }
 double diffMax = 0.0999;
 // double diffMax = 0.0499;
 
-void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref4dFit = true)
+void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref4dFit = false)
 {
 
   // whichSamples=0 -> plot fit results to 3D MC subsamples
   // whichSamples=1 -> plot fit results to 4D MC subsamples
   // whichSamples=2 -> plot fit results to 4D MC subsamples + toy background
+  string fitName = "3D fits to data-like signal MC subsamples";
+  if (whichSamples==1) fitName = "4D fits to data-like signal MC subsamples";
+  if (whichSamples==2) fitName = "4D fits to signal MC + toy bkg samples";
   
   vector< vector<TH1D*> > vHistBest (nPars);
   vector< vector<TH1D*> > vHistErrH (nPars);
@@ -49,6 +52,8 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
   vector< vector<double> > vMeanErr (nPars);
 
   vector<int> vq2Bins (0);
+
+  vector<string> table (0);
 
   binsUnc[0]=0.006;
   for (int i=0; i<nUncBins; ++i)
@@ -83,12 +88,12 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
 
     TChain fitResultsTree ("fitResultsTree","");
     string filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-*_b%i.root",q2Bin);
-    if (plot4dFit==1) filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_dataStat-*_b%i.root",q2Bin);
-    if (plot4dFit==0) filename = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_dataStat-*_b%i.root",q2Bin);
+    if (whichSamples==1) filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_dataStat-*_b%i.root",q2Bin);
+    if (whichSamples==0) filename = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_dataStat-*_b%ip%i.root",q2Bin,parity);
     fitResultsTree.Add(filename.c_str());
 
     string filename_fR = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_MCStat_b%i.root",q2Bin);
-    if (!ref4dFit) filename_fR = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_MCStat_b%i.root",q2Bin);
+    if (!ref4dFit) filename_fR = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_MCStat_b%ip%i.root",q2Bin,parity);
     TFile* filein_fR = TFile::Open(filename_fR.c_str());
     TTree* fitResultsTree_fR = (TTree*)filein_fR->Get("fitResultsTree");
     if (!fitResultsTree_fR || fitResultsTree_fR->GetEntries() != 1) {
@@ -150,6 +155,9 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
       }
     }
 
+    string firstLine = "\\textbf{$q^2$-bin}";
+    string line = Form("%i",q2Bin);
+    
     for (int iPar=0; iPar<nPars; ++iPar) {
       // cout<<vRMS[iPar].back()<<", "<<vBias[iPar].back()<<"("<<vBias[iPar].back() * vBias[iPar].back()<<") -> "<<( vRMS[iPar].back() - vBias[iPar].back() * vBias[iPar].back() ) / ( fitResultsTree.GetEntries() - 1 )<<endl;
       vRMS[iPar].back() = sqrt( ( vRMS[iPar].back() - vMean[iPar].back() * vMean[iPar].back() / fitResultsTree.GetEntries() ) / ( fitResultsTree.GetEntries() - 1 ) );
@@ -158,7 +166,21 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
       vMeanErr[iPar].back() = vRMS[iPar].back() / sqrt( fitResultsTree.GetEntries() );
 
       printf("%s:\tBias (wrt RECO result) = %.5f\tRMS deviation: %.5f\n",parName[iPar].c_str(),vBias[iPar].back(),vRMS[iPar].back());
+
+      firstLine = firstLine +  " & \\textbf{$" + parTitle[iPar] + "$}";
+      if (fabs(vBias[iPar].back())<0.0005)
+	line = line + " & < 0.001";
+      else
+	line = line + Form(" & $\\pm %.3f$",fabs(vBias[iPar].back()));
+
     }
+
+    if (table.size()==0) {
+      firstLine = firstLine + " \\\\ \\hline";
+      table.push_back(firstLine);
+    }
+    line = line + " \\\\";
+    table.push_back(line);
 
   } while (++iColor);
 
@@ -209,8 +231,8 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
       legUnc = new TLegend(0.67,0.57,0.87,0.87,"q^{2} bin");
     legUnc->SetNColumns(2);
     if (nPlotBins>1) {
-      vHistBest[iPar][0]->SetTitle( Form("%s results of data-like MC sample fits",parTitle[iPar].c_str()) );
-      vHistErrH[iPar][0]->SetTitle( Form("%s MINOS uncertainties of data-like MC sample fits",parTitle[iPar].c_str()) );
+      vHistBest[iPar][0]->SetTitle( Form("%s results of %s",parTitle[iPar].c_str(),fitName.c_str()) );
+      vHistErrH[iPar][0]->SetTitle( Form("%s MINOS uncertainties of %s",parTitle[iPar].c_str(),fitName.c_str()) );
       leg->SetBorderSize(0);
       leg->AddEntry(vHistBest[iPar][0],Form("%i [Bias:%.3f RMS:%.3f]",vq2Bins[0],vBias[iPar][0],vRMS[iPar][0]),"l");
     }
@@ -260,12 +282,14 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
     cUncert[iPar]->cd();
     legUnc->Draw();
 
-    string toyConfString = "";
-    if (plot4dFit) toyConfString = toyConfString + "_4Dbkg";
-    if (!ref4dFit) toyConfString = toyConfString + "_vs3DfullMC";
+    string toyConfString = "fullAngular";
+    if (whichSamples==1) toyConfString = "fullAngularMass";
+    if (whichSamples==2) toyConfString = "fullAngularMass_toybkg";
+    if (ref4dFit) toyConfString = toyConfString + "_vs4DfullMC";
+    else toyConfString = toyConfString + "_vs3DfullMC";
 
-    cDistr[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_%s_dist%s.pdf",parName[iPar].c_str(),toyConfString.c_str()));
-    cUncert[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_%s_uncert%s.pdf",parName[iPar].c_str(),toyConfString.c_str()));
+    cDistr[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_%s_dist-%s_p%i.pdf",toyConfString.c_str(),parName[iPar].c_str(),parity));
+    cUncert[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_%s_uncert-%s_p%i.pdf",toyConfString.c_str(),parName[iPar].c_str(),parity));
 
     // Plot resutls vs q2
 
@@ -327,7 +351,7 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
 
     auto GrReco = new TGraphAsymmErrors(nBins, q2Val, aReco, q2Err, q2Err, aRecoErrL, aRecoErrH);
     GrReco->SetName(Form("GrReco%i",iPar));
-    GrReco->SetTitle(Form("%s results from fit to data-like MC subsamples",parTitle[iPar].c_str()));
+    GrReco->SetTitle(Form("%s results from %s",parTitle[iPar].c_str(),fitName.c_str()));
     GrReco->GetYaxis()->SetTitle(parTitle[iPar].c_str());
     auto Gr = new TGraphErrors(nBins, q2Val, aMean, q2Err, aMeanErr);
     Gr->SetName(Form("Gr%i",iPar));    
@@ -381,7 +405,7 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
     legRes->SetFillColor(1);
     legRes->SetFillStyle(0);
     legRes->SetTextSize(0.032);
-    legRes->AddEntry(GrReco,"Fit to full-MC sample","lep");
+    legRes->AddEntry(GrReco,ref4dFit?"4D fit to full-MC sample":"3D fit to full-MC sample","lep");
     legRes->AddEntry(Gr,"Mean of fit to data-like MC samples","lep");
     legRes->AddEntry(GrQuantIn,"Central 68\% of the results","f");
     legRes->AddEntry(GrQuantOut,"Central 95\% of the results","f");
@@ -458,8 +482,12 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
     line->Draw();
     resDiffCover->Draw("e2");
 
-    cResult[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_%s_results%s.pdf",parName[iPar].c_str(),toyConfString.c_str()));
+    cResult[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_%s_results-%s_p%i.pdf",toyConfString.c_str(),parName[iPar].c_str(),parity));
 
   }
+
+  cout<<"===== Formatted bias table ========"<<endl;
+  for (int iLine=0; iLine<table.size(); ++iLine)
+    cout<<table[iLine]<<endl;
 
 }

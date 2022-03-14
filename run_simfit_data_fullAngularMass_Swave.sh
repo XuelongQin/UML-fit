@@ -1,12 +1,12 @@
 #!/bin/bash
 
-par=1
+par=0
 
 multi=0
 nsam=${1}
 q2stat=${4}
 
-plot=0
+plot=1
 save=${5}
 
 bin=${2}
@@ -17,6 +17,7 @@ yearConf=${3}
 export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
 export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
 export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE
+export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/files
 
 export WORKDIR=$PWD
 cd $CMSSWDIR
@@ -37,45 +38,38 @@ cd $WORKDIR
 
 echo 'now submitting for bin ' ${bin}
 
-if [ ! -r $SAMPLEDIR/2016/lmnr/newphi/recoDATADataset_b${bin}_2016.root ]; then
-    echo $SAMPLEDIR/2016/lmnr/newphi/recoDATADataset_b${bin}_2016.root not found
-    exit 1
+if [ "${par}" == 0 ]; then
+    parstr="ev"
+else
+    parstr="od"
 fi
-if [ ! -r $SAMPLEDIR/2017/lmnr/newphi/recoDATADataset_b${bin}_2017.root ]; then
-    echo $SAMPLEDIR/2017/lmnr/newphi/recoDATADataset_b${bin}_2017.root not found
-    exit 1
-fi
-if [ ! -r $SAMPLEDIR/2018/lmnr/newphi/recoDATADataset_b${bin}_2018.root ]; then
-    echo $SAMPLEDIR/2018/lmnr/newphi/recoDATADataset_b${bin}_2018.root not found
-    exit 1
-fi
-if [ ! -r $SAMPLEDIR/2016/lmnr/newphi/KDEeff_b${bin}_od_2016.root ]; then
-    echo $SAMPLEDIR/2016/lmnr/newphi/KDEeff_b${bin}_od_2016.root not found
-    exit 1
-fi
-if [ ! -r $SAMPLEDIR/2017/lmnr/newphi/KDEeff_b${bin}_od_2017.root ]; then
-    echo $SAMPLEDIR/2017/lmnr/newphi/KDEeff_b${bin}_od_2017.root not found
-    exit 1
-fi
-if [ ! -r $SAMPLEDIR/2018/lmnr/newphi/KDEeff_b${bin}_od_2018.root ]; then
-    echo $SAMPLEDIR/2018/lmnr/newphi/KDEeff_b${bin}_od_2018.root not found
-    exit 1
-fi
+
+for iy in {2016..2018}
+do
+    [ "$yearConf" -gt 0 ] && [ "$((${yearConf}+2015))" != "$iy" ] && continue
+    dataname="${SAMPLEDIR}/${iy}/lmnr/newphi/recoDATADataset_b${bin}_${iy}.root"
+    effname="${EFFDIR}/KDEeff_b${bin}_${parstr}_${iy}.root"
+    if [ ! -r "${dataname}" ]; then
+	echo "${dataname}" not found
+	exit 1
+    fi
+    if [ ! -r "${effname}" ]; then
+	echo "${effname}" not found
+	exit 1
+    fi
+    cp "${dataname}" .
+    cp "${effname}" .
+done
+
 if [ ! -r $HOME/simfit_data_fullAngularMass_Swave ]; then
     echo $HOME/simfit_data_fullAngularMass_Swave not found
     exit 1
 fi
-
-cp $SAMPLEDIR/2016/lmnr/newphi/recoDATADataset_b${bin}_2016.root .
-cp $SAMPLEDIR/2017/lmnr/newphi/recoDATADataset_b${bin}_2017.root .
-cp $SAMPLEDIR/2018/lmnr/newphi/recoDATADataset_b${bin}_2018.root .
-cp $SAMPLEDIR/2016/lmnr/newphi/KDEeff_b${bin}_od_2016.root .
-cp $SAMPLEDIR/2017/lmnr/newphi/KDEeff_b${bin}_od_2017.root .
-cp $SAMPLEDIR/2018/lmnr/newphi/KDEeff_b${bin}_od_2018.root .
 cp $HOME/simfit_data_fullAngularMass_Swave .
+cp $HOME/*.pcm .
 
 mkdir simFitResults4d
-mkdir plotSimFit_d
+mkdir plotSimFit4d_d
 
 case "$yearConf" in
 
@@ -104,16 +98,8 @@ esac
 if [ ! -d $HOME/simFitResults4d ]; then
     mkdir $HOME/simFitResults4d
 fi
-if [ ! -d $HOME/plotSimFit_d ]; then
-    mkdir $HOME/plotSimFit_d
+if [ ! -d $HOME/plotSimFit4d_d ]; then
+    mkdir $HOME/plotSimFit4d_d
 fi
-cp plotSimFit_d/* $HOME/plotSimFit_d/
+cp plotSimFit4d_d/* $HOME/plotSimFit4d_d/
 cp simFitResults4d/* $HOME/simFitResults4d/
-# for file in simFitResults/* ; do cp $file $HOME/${file//.root/_${multi}s${nsam}.root}; done
-
-rm -rf plotSimFit_d
-rm -rf simFitResults4d
-
-rm simfit_data_fullAngularMass_Swave
-rm recoDATADataset_b*
-rm KDEeff_b*

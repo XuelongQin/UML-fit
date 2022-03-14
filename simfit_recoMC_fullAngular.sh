@@ -5,7 +5,7 @@ par=1
 multi=${1}
 nsam=${2}
 
-plot=0
+plot=1
 save=2
 
 # Create directories for fit logs, results and plots
@@ -20,12 +20,12 @@ if make simfit_recoMC_fullAngular; then
     while read -a line; do
 	bin=${line[0]}
 	
-	# for year in {2016..2018}; do
+	for year in {2016..2018}; do
 	
-	#     ./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} ${year} \
-	# 	&>logs_simFit/simfit_recoMC_fullAngular_${bin}_${par}_${multi}_${nsam}_${year}.out &
+	    ./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} ${year} \
+		&>logs_simFit/simfit_recoMC_fullAngular_${bin}_${par}_${multi}_${nsam}_${year}.out &
 	
-	# done
+	done
 
 	./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2016 2017 2018 \
 	    &>logs_simFit/simfit_recoMC_fullAngular_${bin}_${par}_${multi}_${nsam}_2016_2017_2018.out &

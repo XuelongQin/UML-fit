@@ -78,9 +78,9 @@ void simfit_toy_fullAngularBin(int q2Bin, vector<double> genPars, uint seed, uin
   gInterpreter->GenerateDictionary("std::pair<std::map<string,RooDataSet*>::iterator, bool>", "map;string;RooDataSet.h");
   std::map<std::string, RooDataSet*> map;
 
-  RooRealVar* ctK = new RooRealVar("ctK", "ctK", -1  , 1  );
-  RooRealVar* ctL = new RooRealVar("ctL", "ctL", -1  , 1  );
-  RooRealVar* phi = new RooRealVar("phi", "phi", -3.14159, 3.14159  );
+  RooRealVar* ctK = new RooRealVar("ctK", "cos(#theta_{K})", -1  , 1  );
+  RooRealVar* ctL = new RooRealVar("ctL", "cos(#theta_{l})", -1  , 1  );
+  RooRealVar* phi = new RooRealVar("phi", "#phi", -3.14159, 3.14159  );
   RooArgList vars (* ctK,* ctL,* phi);
   RooRealVar* rand = new RooRealVar("rand", "rand", 0,1);
   RooRealVar* mass = new RooRealVar("mass","mass", 5.,5.6);
