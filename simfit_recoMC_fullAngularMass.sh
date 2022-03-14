@@ -21,9 +21,9 @@ if [ ! -d plotSimFit4d_d ]; then mkdir plotSimFit4d_d; fi
 # make AngDict
 if make simfit_recoMC_fullAngularMass; then
 
-    # while read -a line; do
-    # 	bin=${line[0]}
-    bin=3
+    while read -a line; do
+	bin=${line[0]}
+
 	# for year in {2016..2018}; do
 	
 	#     ./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} ${year} \
@@ -34,6 +34,6 @@ if make simfit_recoMC_fullAngularMass; then
 	./simfit_recoMC_fullAngularMass ${bin} ${par} ${multi} ${nsam} 0 ${plot} ${save} 2016 2017 2018 \
 	    &>logs_simFit/simfit_recoMC_fullAngularMass_${bin}_${par}_${multi}_${nsam}_2016_2017_2018.out &
 
-    # done < ../confSF/KDE_SF.list
+    done < ../confSF/KDE_SF.list
 
 fi
