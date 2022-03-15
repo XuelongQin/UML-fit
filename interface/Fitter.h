@@ -78,6 +78,9 @@ class Fitter {
   // MINOS parameters
   double widthScale;
 
+  // boolean to control whether distance from boundary calculation and penalised fit should be run
+  bool runSimpleFit;
+
   std::vector<Double_t> vFitResult;
   std::vector<Double_t> vFitErrLow;
   std::vector<Double_t> vFitErrHigh;

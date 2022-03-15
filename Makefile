@@ -18,6 +18,11 @@ EXECUTABLE6 := simfit_toy_fullAngular
 EXECUTABLE7 := simfit_recoMC_fullAngularMass
 EXECUTABLE8 := simfit_recoMC_fullMass
 EXECUTABLE9 := simfit_recoMC_fullAngularMass_toybkg
+EXECUTABLE10 := simfit_data_fullAngularMass
+EXECUTABLE11 := simfit_data_fullAngularMass_Swave
+EXECUTABLE12 := plot_simfit_data_fullAngularMass_Swave
+EXECUTABLE13 := plot_simfit_recoMC_fullAngularMass_toybkg
+EXECUTABLE14 := plot_simfit_recoMC_fullAngularMass
 
 EXTRACLASS := RooDataHist.cxx
 CLASS0     := PdfRT
@@ -84,6 +89,21 @@ $(EXECUTABLE8): $(EXECUTABLE8).cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
 
 $(EXECUTABLE9): $(EXECUTABLE9).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE10): $(EXECUTABLE10).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE11): $(EXECUTABLE11).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE12): $(EXECUTABLE12).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE13): $(EXECUTABLE13).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE14): $(EXECUTABLE14).cc 
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
 
 #cleaning options

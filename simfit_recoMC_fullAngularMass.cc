@@ -45,7 +45,6 @@ using namespace RooFit;
 using namespace std;
 
 static const int nBins = 9;
-std::map<int,float> scale_to_data;
 
 TCanvas* cnll;
 TCanvas* cZoom;
@@ -54,7 +53,7 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
-void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, bool save, std::vector<int> years)
+void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, int save, std::vector<int> years)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
@@ -374,6 +373,15 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
       		                                              ));
     } 
 
+    auto pdf_sig_ang_mass_mfc = new RooProdPdf(("PDF_sig_ang_mass_mfc_"+shortString+"_"+year).c_str(),
+					       ("PDF_sig_ang_mass_mfc_"+year).c_str(),
+					       *PDF_sig_ang_mass[iy],
+					       *c_fm);
+    auto pdf_sig_ang_mass_penalty_mfc = new RooProdPdf(("PDF_sig_ang_mass_penalty_mfc_"+shortString+"_"+year).c_str(),
+					       ("PDF_sig_ang_mass_penalty_mfc_"+year).c_str(),
+					       *PDF_sig_ang_mass_penalty[iy],
+					       *c_fm);
+
     // insert sample in the category map, to be imported in the combined dataset
     // and associate model with the data
     if (multiSample) for (uint is = firstSample; is <= lastSample; is++) {
@@ -382,8 +390,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 	  return;
 	}
 	map.insert( map.cbegin(), std::pair<const string,RooDataSet*>(("data"+year+Form("_subs%d",is)).c_str(), data[iy][is]) );
-	simPdf        -> addPdf(*PDF_sig_ang_mass[iy],         ("data"+year+Form("_subs%d",is)).c_str());
-	simPdf_penalty-> addPdf(*PDF_sig_ang_mass_penalty[iy], ("data"+year+Form("_subs%d",is)).c_str());
+	simPdf        -> addPdf(*pdf_sig_ang_mass_mfc,         ("data"+year+Form("_subs%d",is)).c_str());
+	simPdf_penalty-> addPdf(*pdf_sig_ang_mass_penalty_mfc, ("data"+year+Form("_subs%d",is)).c_str());
       }
     else {
       if ( !data[iy][0] || data[iy][0]->IsZombie() ) {
@@ -391,15 +399,17 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 	return;
       }
       map.insert( map.cbegin(), std::pair<const string,RooDataSet*>(("data"+year+Form("_subs%d",firstSample)).c_str(), data[iy][0]) );
-      simPdf        ->addPdf(*PDF_sig_ang_mass[iy],         ("data"+year+Form("_subs%d",firstSample)).c_str());
-      simPdf_penalty->addPdf(*PDF_sig_ang_mass_penalty[iy], ("data"+year+Form("_subs%d",firstSample)).c_str());
+      simPdf        ->addPdf(*pdf_sig_ang_mass_mfc,         ("data"+year+Form("_subs%d",firstSample)).c_str());
+      simPdf_penalty->addPdf(*pdf_sig_ang_mass_penalty_mfc, ("data"+year+Form("_subs%d",firstSample)).c_str());
     }
   
   }
 
   if (nSample>0)   stat = stat + Form("-%i",firstSample);
   if (multiSample) stat = stat + Form("-%i",lastSample);
-  TFile* fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  TFile* fout;
+  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  RooWorkspace* wsp_out = 0;
   
   // save initial par values    
   RooArgSet *params      = (RooArgSet *)simPdf->getParameters(observables);
@@ -423,7 +433,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   vector<double> vResult  (pars.getSize());
   vector<double> vConfInterLow  (pars.getSize());
   vector<double> vConfInterHigh (pars.getSize());
-  fout->cd();
+  if (save>0) fout->cd();
   TTree* fitResultsTree = new TTree("fitResultsTree","fitResultsTree");
   for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
     RooRealVar* par = (RooRealVar*)pars.at(iPar);
@@ -477,12 +487,15 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     fitter = new Fitter (Form("fitter%i",is),Form("fitter%i",is),pars,combData,simPdf,simPdf_penalty,boundary,bound_dist,penTerm,&c_vars);
     vFitter.push_back(fitter);
 
+    // if fitting the fullMC sample, skip the penalty tuning process in case of failing/unphysical free fit (too long and difficult to converge at high statistics)
+    if (nSample==0) fitter->runSimpleFit = true;
+
     subTime.Start(true);
     int status = fitter->fit();
     subTime.Stop();
 
     fitTime=subTime.CpuTime();
-    cout<<"Fit+boundDist time: "<<fitTime<<endl;
+    cout<<(fitter->runSimpleFit?"Fit time: ":"Fit+boundDist time: ")<<fitTime<<endl;
 
     co1=0;
     co4=0;
@@ -494,14 +507,16 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     convCheck = false;
     boundCheck = false;
 
-    if (status==0) {
+    if (status<2) {
       
       convCheck = true;
       boundCheck = boundary->getValV() == 0;
 
       fitter->result()->Print("v");
 
-      boundDistFit = boundDist = fitter->boundDist;
+      if (fitter->runSimpleFit) boundDistFit = boundDist = -1;
+      else boundDistFit = boundDist = fitter->boundDist;
+
       usedPenalty = fitter->usedPenalty;
 	
       if (fitter->usedPenalty) {
@@ -552,6 +567,12 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
       }
       fitResultsTree->Fill();
 
+      if (save>1 && !multiSample) {
+	wsp_out = new RooWorkspace("wsp_out","wsp_out");
+	wsp_out->import(*combData);
+	wsp_out->import(*simPdf);
+      }
+
     }
 
     // fill fit-status-dependent counters
@@ -581,12 +602,13 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     cout<<"Bad fits: "<<cnt[3]<<" converging outside physical region, "<<cnt[5]+cnt[7]<<" not converged ("<<cnt[5]<<" in ph region)"<<endl;
   }
 
-  if (save) {
+  if (save>0) {
     fout->cd();
     fitResultsTree->Write();
+    // e.g., do not save workspace for all toys -> very space consuming
+    if (wsp_out) wsp_out->Write();
+    fout->Close();
   }
-
-  fout->Close();
 
   if (!plot || multiSample) return;
 
@@ -719,7 +741,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
 
 
-void simfit_recoMC_fullAngularMassBin1(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, bool save, std::vector<int> years)
+void simfit_recoMC_fullAngularMassBin1(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, int save, std::vector<int> years)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
@@ -753,10 +775,10 @@ int main(int argc, char** argv)
   if ( argc > 5 && atoi(argv[5]) > 0 ) localFiles = true;
 
   bool plot = true;
-  bool save = true;
+  int save = 0;
 
   if ( argc > 6 && atoi(argv[6]) == 0 ) plot = false;
-  if ( argc > 7 && atoi(argv[7]) == 0 ) save = false;
+  if ( argc > 7 ) save = atoi(argv[7]);
 
   std::vector<int> years;
   if ( argc > 8 && atoi(argv[8]) != 0 ) years.push_back(atoi(argv[8]));
@@ -784,11 +806,6 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )   cout << "Running all the q2 bins" << endl;
   if ( parity==-1 )  cout << "Running both the parity datasets" << endl;
-
-  // https://docs.google.com/spreadsheets/d/1gG-qowySO9WJpMmr_bAWmOAu05J8zr95yJXGIYCY9-A/edit?usp=sharing
-  scale_to_data.insert(std::make_pair(2016, 0.006*2 /2.5  )); // *2 since we are using only odd/even events, second factor is "data-driven"
-  scale_to_data.insert(std::make_pair(2017, 0.005*2 /2.05 ));
-  scale_to_data.insert(std::make_pair(2018, 0.007*2 /1.9  ));
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
