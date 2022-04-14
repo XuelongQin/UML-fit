@@ -165,7 +165,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     year.clear(); year.assign(Form("%i",years[iy]));
     string filename_data = Form("recoDATADataset_b%i_%i.root", q2Bin, years[iy]);
     // string filename_data = Form("recoMCDataset_b%i_%i.root", q2Bin, years[iy]);
-    if (!localFiles) filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/", years[iy]) + filename_data;
+    if (!localFiles) filename_data = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/" + filename_data;
+    // if (!localFiles) filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/", years[iy]) + filename_data;
 
     // import data (or MC as data proxy)
     retrieveWorkspace( filename_data, wsp, Form("ws_b%ip0", q2Bin ));
@@ -239,8 +240,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     // Mass Component
     // import mass PDF from fits to the MC
     string filename_mc_mass = "";
-    if (q2Bin==4) filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%i_fM_Jpsi_newbdt.root",years[iy]);
-    else if (q2Bin==6) filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%i_fM_Psi_newbdt.root",years[iy]);
+    if (q2Bin==4) filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/results_fits_%i_fM_Jpsi_fixBug.root",years[iy]);
+    else if (q2Bin==6) filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/results_fits_%i_fM_Psi_fixBug.root",years[iy]);
     else filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%i_fM_newbdt.root",years[iy]);
     if (!retrieveWorkspace( filename_mc_mass, wsp_mcmass, "w"))  return;
 
@@ -396,7 +397,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     // string filename_sb = Form("savesb_%i_b%i_v2.root", years[iy], q2Bin );
     // string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
     // string filename_sb = Form("/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit/savesb_%i_b%i.root", years[iy], q2Bin );
-    string filename_sb = Form("/eos/cms/store/user/fiorendi/p5prime/sidebands/apr30version/savesb_%i_b%i_renamed.root", years[iy], q2Bin );
+   // string filename_sb = Form("/eos/cms/store/user/fiorendi/p5prime/sidebands/apr30version/savesb_%i_b%i_renamed.root", years[iy], q2Bin );
+   string filename_sb = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/savesb_%i_b%i_renamed.root", years[iy], q2Bin );
     // string filename_sb = Form("savesb-%i-Q2Bin-%i-Bins-60-60-60-BernDeg-5-8-8-WSBL-5-2dot7-WSBR-2dot7-5dot6-SigmaProb.root", years[iy], q2Bin );
     // filename_sb = "/afs/cern.ch/user/d/dini/public/SidebandBin%i-preapp-cov/", + filename_sb;
     // if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;

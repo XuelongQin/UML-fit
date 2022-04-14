@@ -7,8 +7,8 @@ if [ ! -d logs_parSub ]; then mkdir logs_parSub; fi
 cat << EOF > temp_sub_simfit_data_fullAngularMass_Swave_oneBin.sub
 Executable  = run_simfit_data_fullAngularMass_Swave.sh
 nsamp       = 0
-bin         = ( \$(ProcId) / 4 ) * 2 + 4
-yearConf    = \$(ProcId) % 4
+bin         = 4
+yearConf    = 3
 q2stat      = 5
 save	    = 2
 Arguments   = \$INT(nsamp) \$INT(bin) \$INT(yearConf) \$INT(q2stat) \$INT(save)
@@ -22,10 +22,13 @@ EOF
 if [ "${USER}" == "fiorendi" ]; then
     echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_simfit_data_fullAngularMass_Swave_oneBin.sub
 fi
-echo 'Queue 8'>>temp_sub_simfit_data_fullAngularMass_Swave_oneBin.sub
+echo 'Queue 1'>>temp_sub_simfit_data_fullAngularMass_Swave_oneBin.sub
 
 # Compilation, submission and file removal
 if make simfit_data_fullAngularMass_Swave
 then condor_submit temp_sub_simfit_data_fullAngularMass_Swave_oneBin.sub
 fi
 rm temp_sub_simfit_data_fullAngularMass_Swave_oneBin.sub
+
+# bin         = ( \$(ProcId) / 4 ) * 2 + 4
+# yearConf    = \$(ProcId) % 4

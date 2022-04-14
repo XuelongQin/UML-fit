@@ -16,7 +16,7 @@ yearConf=${3}
 
 export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
 export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
-export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE
+export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4
 export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/files
 
 export WORKDIR=$PWD
@@ -47,7 +47,8 @@ fi
 for iy in {2016..2018}
 do
     [ "$yearConf" -gt 0 ] && [ "$((${yearConf}+2015))" != "$iy" ] && continue
-    dataname="${SAMPLEDIR}/${iy}/lmnr/newphi/recoDATADataset_b${bin}_${iy}.root"
+    dataname="${SAMPLEDIR}/recoDATADataset_b${bin}_${iy}.root"
+    # dataname="${SAMPLEDIR}/${iy}/lmnr/newphi/recoDATADataset_b${bin}_${iy}.root"
     effname="${EFFDIR}/KDEeff_b${bin}_${parstr}_${iy}.root"
     if [ ! -r "${dataname}" ]; then
 	echo "${dataname}" not found
