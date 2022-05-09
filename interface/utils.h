@@ -24,10 +24,15 @@ std::map<int,std::vector<float>> frt_sigmas = {
 };
 
 std::map<int,std::vector<float>> fM_sigmas = {
-  {2016, {0.023, 0.015, 0.017, 0.013, 0.0003, 0.010, 0.0009, 0.013}},
-  {2017, {0.018, 0.014, 0.015, 0.010, 0.0003, 0.008, 0.0007, 0.011}},
-  {2018, {0.015, 0.010, 0.011, 0.008, 0.0002, 0.006, 0.0007, 0.008}},
+  {2016, {0.023, 0.015, 0.017, 0.013, 0.0005 , 0.010, 0.0018, 0.013}},
+  {2017, {0.018, 0.014, 0.015, 0.010, 0.0004 , 0.008, 0.0016, 0.011}},
+  {2018, {0.015, 0.010, 0.011, 0.008, 0.00027, 0.006, 0.0011, 0.008}},
 };
+// std::map<int,std::vector<float>> fM_sigmas = {
+//   {2016, {0.023, 0.015, 0.017, 0.013, 0.0003, 0.010, 0.0009, 0.013}},
+//   {2017, {0.018, 0.014, 0.015, 0.010, 0.0003, 0.008, 0.0007, 0.011}},
+//   {2018, {0.015, 0.010, 0.011, 0.008, 0.0002, 0.006, 0.0007, 0.008}},
+//};
 
 
 std::map<int,std::vector<float>> nbkg_years = {
@@ -115,11 +120,15 @@ bool retrieveWorkspace(string filename, std::vector<RooWorkspace*> &ws, std::str
     if ( !f || !f->IsOpen() ) {
       cout << "File not found: " << filename << endl;
       return false;
+    }else{
+      cout << "Opening: " << filename << endl;
     }
     RooWorkspace* open_w = (RooWorkspace*)f->Get(ws_name.c_str());
     if ( !open_w || open_w->IsZombie() ) {
       cout<<"Workspace "<< ws_name <<  "not found in file: " << filename << endl;
       return false;
+    }else{
+     cout<<"Workspace "<< ws_name <<  " FOUND!!! in file: " << filename << endl;
     }
     ws.push_back( open_w );
     f->Close();
