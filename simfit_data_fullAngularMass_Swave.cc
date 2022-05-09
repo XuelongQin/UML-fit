@@ -28,11 +28,13 @@
 // #include <RooGaussian.h>
 #include <RooAddPdf.h>
 #include <RooProdPdf.h>
+#include <RooProduct.h>
 #include <RooCBShape.h>
 #include "RooDoubleCBFast.h"
 #include "RooExponential.h"
 #include "RooPolynomial.h"
 #include "RooGenericPdf.h"
+#include "RooBernstein.h"
 
 #include "utils.h"
 #include "PdfSigRTMass.h"
@@ -62,7 +64,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
-
+  
   string shortString = Form("b%ip%i",q2Bin,parity);
   cout<<"Conf: "<<shortString<<endl;
 
@@ -86,7 +88,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   string bkgpdfname = "bkg_pdf_%i";
 
   std::vector<TFile*> fin_eff;
-  std::vector<RooWorkspace*> wsp, wsp_mcmass, wsp_sb;
+  std::vector<RooWorkspace*> wsp, wsp_mcmass, wsp_sb, wsp_Z4430;
   std::vector<std::vector<RooDataSet*>> data;
   std::vector<RooAbsReal*> effC, effW;
   std::vector<TH3D*> effCHist, effWHist;
@@ -132,6 +134,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   RooRealVar* A7s = new RooRealVar("A7s","A_{7}^{S}",0,-1,1);
   RooRealVar* A8s = new RooRealVar("A8s","A_{8}^{S}",0,-1,1);
 
+  RooRealVar* AZ  = new RooRealVar("AZ","A_{Z}",0.,0.,1.);
+
   // Fs->setConstant(true);
 
   RooCategory sample ("sample", "sample");
@@ -160,6 +164,31 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   // Random generators
   RooRandom::randomGenerator()->SetSeed(1);
 
+  //
+  // retrive Z4430 model workspace form file
+  //
+  RooAbsPdf* Z4430_ang_pdf=0;
+  RooArgSet* Z4430_ang_params =0;
+  if (q2Bin==6){
+   string filename_Z4430 = "HistZ4430.root";
+   retrieveWorkspace( filename_Z4430, wsp_Z4430, "wZ4430");
+  //    RooAbsPdf* BernPhi_Z4430  = (RooAbsPdf*) wsp_Z4430[0]->pdf("BernPhi_Z4430");
+  //    RooAbsPdf* BernCosL_Z4430 = (RooAbsPdf*) wsp_Z4430[0]->pdf("BernCosL_Z4430");
+   Z4430_ang_pdf    = (RooAbsPdf*) wsp_Z4430[0]->pdf("Z4430_ang_pdf");
+   Z4430_ang_params = (RooArgSet*) Z4430_ang_pdf->getParameters(RooArgSet(*ctK,*ctL,*phi));
+   auto iter = Z4430_ang_params->createIterator();
+   RooRealVar* ivar =  (RooRealVar*)iter->Next();
+   int  iii=1;
+   while (ivar) {
+     ivar->setConstant(true);
+  //       if(iii!=6) ivar->setConstant(true);
+  //       if(iii!=6&&iii!=8&&iii>4) ivar->setConstant(true);
+  //       if(iii==5) ivar->setVal(1.);
+     ivar = (RooRealVar*) iter->Next();
+     iii++;
+   }
+  }
+//
   // loop on the various datasets
   for (unsigned int iy = 0; iy < years.size(); iy++) {
     year.clear(); year.assign(Form("%i",years[iy]));
@@ -240,9 +269,16 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     // Mass Component
     // import mass PDF from fits to the MC
     string filename_mc_mass = "";
-    if (q2Bin==4) filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/results_fits_%i_fM_Jpsi_fixBug.root",years[iy]);
-    else if (q2Bin==6) filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/results_fits_%i_fM_Psi_fixBug.root",years[iy]);
-    else filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%i_fM_newbdt.root",years[iy]);
+    
+    if      (q2Bin==4) filename_mc_mass = Form("results_fits_%i_fM_Jpsi.root",years[iy]);
+    else if (q2Bin==6) filename_mc_mass = Form("results_fits_%i_fM_Psi.root",years[iy]);
+    else               filename_mc_mass = Form("results_fits_%i_fM_lmnr.root",years[iy]);
+    
+    if (!localFiles){
+     if      (q2Bin==4) filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/results_fits_%i_fM_Jpsi_fixBug.root",years[iy]);
+     else if (q2Bin==6) filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/results_fits_%i_fM_Psi_fixBug.root",years[iy]);
+     else               filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%i_fM_newbdt.root",years[iy]);
+    }
     if (!retrieveWorkspace( filename_mc_mass, wsp_mcmass, "w"))  return;
 
     wsp_mcmass[iy]->loadSnapshot(Form("reference_fit_RT_%i",q2Bin));
@@ -314,6 +350,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
                                         RooConst(1.) , 
                                         RooConst(frac_sigma)
                                         );
+//
+    RooConstVar *FracZ4430WT = new RooConstVar  (Form("FracZ4430WT^{%i}",years[iy]),"FracZ4430WT", fraction);
 //    cout << fraction << " +/- " << fM_sigmas[years[iy]][q2Bin] << " ---> 1 +/- " << frac_sigma << endl;                                    
     c_vars.add(*mFrac); 
 
@@ -395,13 +433,13 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
     // Read angular pdf for sidebands from external file 
     // string filename_sb = Form("savesb_%i_b%i_v2.root", years[iy], q2Bin );
-    // string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
+    string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
     // string filename_sb = Form("/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit/savesb_%i_b%i.root", years[iy], q2Bin );
    // string filename_sb = Form("/eos/cms/store/user/fiorendi/p5prime/sidebands/apr30version/savesb_%i_b%i_renamed.root", years[iy], q2Bin );
-   string filename_sb = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/savesb_%i_b%i_renamed.root", years[iy], q2Bin );
+   //string filename_sb = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/savesb_%i_b%i_renamed.root", years[iy], q2Bin );
     // string filename_sb = Form("savesb-%i-Q2Bin-%i-Bins-60-60-60-BernDeg-5-8-8-WSBL-5-2dot7-WSBR-2dot7-5dot6-SigmaProb.root", years[iy], q2Bin );
     // filename_sb = "/afs/cern.ch/user/d/dini/public/SidebandBin%i-preapp-cov/", + filename_sb;
-    // if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
+    if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
     retrieveWorkspace( filename_sb, wsp_sb, "wsb");
     // auto covSB = (TMatrixT<double>*)wsp_sb[iy]->obj("covMatrix_bin4_2016");
     // covSB->Print();
@@ -420,54 +458,80 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     // read mass pdf for background
     RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , -5., -10., 0.);
     // RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , wsp_sb[iy]->var("slope")->getVal(), -10., 0.);
-    RooExponential* bkg_mass1 = new RooExponential(Form("bkg_mass1_%i",years[iy]),  Form("bkg_mass1_%i",years[iy]) ,  *slope,   *mass  );
 
-    // RooRealVar* p1_bkg_mass = new RooRealVar(Form("p1-bkg-mass-%i",years[iy]),  Form("p1-bkg-mass^{%i}",years[iy]) , 0. , -100.0 , 100.0 );
-    // RooRealVar* p2_bkg_mass = new RooRealVar(Form("p2-bkg-mass-%i",years[iy]),  Form("p2-bkg-mass^{%i}",years[iy]) , 0. , -100.0 , 100.0 );
-    // RooRealVar* p3_bkg_mass = new RooRealVar(Form("p3-bkg-mass-%i",years[iy]),  Form("p3-bkg-mass^{%i}",years[iy]) , 0. , -100.0 , 100.0 );
-    // RooAbsPdf* bkg_mass = new RooPolynomial(Form("bkg_mass_%i",years[iy]),
-    // 					    Form("bkg_mass_%i",years[iy]) ,
-    // 					    *mass,
-    // 					    RooArgList(*p1_bkg_mass,*p2_bkg_mass,*p3_bkg_mass) );
 
-    // RooAbsPdf* bkg_mass = wsp_sb[iy]->pdf(Form("bkg_mass_sb_bin%i_%i", q2Bin, years[iy]));
+    RooAbsPdf* bkg_mass1 = 0;
+    double pol_bmax =1.;
+    RooRealVar*    b0_bkg_mass = new RooRealVar(Form("b0_bkg_mass-%i",years[iy]) , Form("b0_bkg_mass-%i",years[iy])  ,    pol_bmax  );
+    RooRealVar*    b1_bkg_mass = new RooRealVar(Form("b1_bkg_mass-%i",years[iy]) , Form("b1_bkg_mass-%i",years[iy])  ,    0.1,  0., pol_bmax);
+    RooRealVar*    b2_bkg_mass = new RooRealVar(Form("b2_bkg_mass-%i",years[iy]) , Form("b2_bkg_mass-%i",years[iy])  ,    0.1,  0., pol_bmax);
+    RooRealVar*    b3_bkg_mass = new RooRealVar(Form("b3_bkg_mass-%i",years[iy]) , Form("b3_bkg_mass-%i",years[iy])  ,    0.0 );
+    RooRealVar*    b4_bkg_mass = new RooRealVar(Form("b4_bkg_mass-%i",years[iy]) , Form("b4_bkg_mass-%i",years[iy])  ,    0.1 , 0., pol_bmax);
+    if(q2Bin==4){
+     b0_bkg_mass->setConstant(kTRUE);
+     b3_bkg_mass->setConstant(kTRUE);
+     bkg_mass1 = new RooBernstein(Form("bkg_mass1_%i",years[iy]),Form("bkg_mass1_%i",years[iy]),  *mass, RooArgList(*b0_bkg_mass, *b1_bkg_mass, *b2_bkg_mass, *b3_bkg_mass,* b4_bkg_mass));
+    }else{ 
+     bkg_mass1 = new RooExponential(Form("bkg_mass1_%i",years[iy]),  Form("bkg_mass1_%i",years[iy]) ,  *slope,   *mass  );
+    } 
 
-    // RooRealVar* p1_bkg_mass = new RooRealVar(Form("p1-bkg-mass-%i",years[iy]),  Form("p1-bkg-mass^{%i}",years[iy]) , 4.95 , 4. , 5. );
-    // RooRealVar* p2_bkg_mass = new RooRealVar(Form("p2-bkg-mass-%i",years[iy]),  Form("p2-bkg-mass^{%i}",years[iy]) , 0.2 , 0. , 1. );
-    // RooAbsPdf* bkg_mass2 = new RooGenericPdf(Form("bkg_mass2_%i",years[iy]),Form("bkg_mass2_%i",years[iy]),"(@0-@1)^@2",RooArgList(*mass,*p1_bkg_mass,*p2_bkg_mass));
 
-    // RooRealVar* p1_bkg_mass = new RooRealVar(Form("p1-bkg-mass-%i",years[iy]),  Form("p1-bkg-mass^{%i}",years[iy]) , 5.1 , 5. , 5.3 );
-    // RooRealVar* p2_bkg_mass = new RooRealVar(Form("p2-bkg-mass-%i",years[iy]),  Form("p2-bkg-mass^{%i}",years[iy]) , 0.05 , 1e-9 , 0.1 );
-    // RooRealVar* p3_bkg_mass = new RooRealVar(Form("p3-bkg-mass-%i",years[iy]),  Form("p3-bkg-mass^{%i}",years[iy]) , 1. , 1e-9 , 100. );
-    // RooAbsPdf* bkg_mass2 = new RooGenericPdf(Form("bkg_mass2_%i",years[iy]),Form("bkg_mass2_%i",years[iy]),"1/(1+(2^@3-1)*exp((@0-@1)/@2))^(1/@3)",RooArgList(*mass,*p1_bkg_mass,*p2_bkg_mass,*p3_bkg_mass));
 
-    // create 4D pdf  for background and import to workspace
-    // auto fBkg = new RooRealVar( ("fBkg_"+shortString+"_"+year).c_str(),
-    // 				("fBkg_"+shortString+"_"+year).c_str(),
-    // 				0.5, 0, 1 );
-    // auto bkg_mass = new RooAddPdf(Form("bkg_mass_%i",years[iy]),
-    // 				 Form("bkg_mass_%i",years[iy]),
-    // 				 *bkg_mass1,*bkg_mass2,*fBkg);
     RooProdPdf* bkg_pdf = new RooProdPdf(Form(bkgpdfname.c_str(),years[iy]),
-					 Form(bkgpdfname.c_str(),years[iy]),
-					 RooArgList(*bkg_ang_pdf,*bkg_mass1));
-    // RooProdPdf* bkg_pdf = new RooProdPdf(Form("bkg_pdf_%i",years[iy]), Form("bkg_pdf_%i",years[iy]), RooArgList(*bkg_ang_pdf,*bkg_mass,*bkg_mass2));
+    					 Form(bkgpdfname.c_str(),years[iy]),
+    					 RooArgList(*bkg_ang_pdf,*bkg_mass1));
 
-
-    // sum signal and bkg pdf 
+    // sum signal and bkg pdf
     RooRealVar *fsig = new RooRealVar( ("fsig_"+shortString+"_"+year).c_str(), ("fsig_"+shortString+"_"+year).c_str(),0,1 );
-    RooAddPdf* full_pdf = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
-                                         ("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
-                                          RooArgList(*pdf_sig_ang_mass_mfc, *bkg_pdf),
-                                          RooArgList(*fsig)
-                                       );
+//
+    RooAddPdf* full_pdf =0;
+    RooAddPdf* full_pdf_penalty =0;
+    if(q2Bin==6){
+      RooProduct*  mass_Frac   = new RooProduct( Form("mass_Frac_%i",years[iy]), Form("mass_Frac_%i",years[iy]), RooArgList(*FracZ4430WT,*c_fm));
+      RooAddPdf*    Mass_All   = new RooAddPdf(  Form("Mass_All_%i",years[iy]), Form("Mass_All_%i",years[iy]),RooArgList(*c_dcb_wt,*c_dcb_rt),*mass_Frac);
+      RooProdPdf*  Z4430_pdf   = new RooProdPdf( Form("Z4430_pdf_%i",years[iy]), Form("Z4430_ang_pdf_%i",years[iy]),RooArgList(*Z4430_ang_pdf,*Mass_All) );
+//      
+
+      RooAddPdf*pdf_z_sig_ang_mass_mfc          = new RooAddPdf( ("PDF1_sig_ang_mass_"+shortString+"_"+year).c_str(),
+					      ("PDF1_sig_ang_mass_"+year).c_str(),
+//					      RooArgList(*pdf_sig_ang_mass,*Z4430_pdf),
+   					      RooArgList(*Z4430_pdf,*pdf_sig_ang_mass_mfc),
+ 					      RooArgList( *AZ)
+					);
+      RooAddPdf*pdf_z_sig_ang_mass_mfc_penalty  = new RooAddPdf( ("PDF1_sig_ang_mass_penalty _"+shortString+"_"+year).c_str(),
+					      ("PDF1_sig_ang_mass_penalty _"+year).c_str(),
+//					      RooArgList( *pdf_sig_ang_mass,*Z4430_pdf),
+   					      RooArgList(*Z4430_pdf,*pdf_sig_ang_mass_penalty_mfc),
+ 					      RooArgList( *AZ)
+					);
+      full_pdf         = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
+ 	     				("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
+ 	     				 RooArgList(*pdf_z_sig_ang_mass_mfc, *bkg_pdf),
+ 	     				 RooArgList(*fsig)
+      	     		     );
+      full_pdf_penalty = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
+        				("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
+        			       RooArgList(*pdf_z_sig_ang_mass_mfc_penalty, *bkg_pdf),
+        			       RooArgList(*fsig)
+        		     );
+
+					      
+    }else{
+
+
+      full_pdf         = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
+      	     			("PDF_sig_ang_fullAngularMass_bkg_"+shortString+"_"+year).c_str(),
+      	     			 RooArgList(*pdf_sig_ang_mass_mfc, *bkg_pdf),
+      	     			 RooArgList(*fsig)
+      	     		      );
+  
+      full_pdf_penalty = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
+      	     				("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
+      	     				 RooArgList(*pdf_sig_ang_mass_penalty_mfc, *bkg_pdf),
+      	     				 RooArgList(*fsig)
+      	     		      );
+    }
     PDF_sig_ang_mass_bkg.push_back(full_pdf);
-    
-    RooAddPdf* full_pdf_penalty = new RooAddPdf( ("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
-                                                 ("PDF_sig_ang_fullAngularMass_bkg_penalty_"+shortString+"_"+year).c_str(),
-                                                  RooArgList(*pdf_sig_ang_mass_penalty_mfc, *bkg_pdf),
-                                                  RooArgList(*fsig)
-                                       );
     PDF_sig_ang_mass_bkg_penalty.push_back(full_pdf_penalty);
 
     // insert sample in the category map, to be imported in the combined dataset
@@ -573,12 +637,14 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
     // run the fit
     fitter = new Fitter (Form("fitter%i",is),Form("fitter%i",is),pars,combData,simPdf,simPdf_penalty,boundary,bound_dist,penTerm,&c_vars);
+    fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF)/2,8);
+//    fitter->setNCPU(sysconf(_SC_NPROCESSORS_ONLN));
     vFitter.push_back(fitter);
 
-    if (nSample==0 && (q2Bin==4 || q2Bin==6)) {
-      fitter->runSimpleFit = true;
-      fitter->setNCPU(8);
-    }
+     if (nSample==0 && (q2Bin==4 || q2Bin==6)) {
+       fitter->runSimpleFit = true;
+       fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF)/2,8);
+     }
 
     subTime.Start(true);
     int status = fitter->fit();
@@ -602,7 +668,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
       convCheck = true;
       boundCheck = boundary->getValV() == 0;
 
-      fitter->result()->Print("v");
+      fitter->result()->Print("Verbose");
 
       if (fitter->runSimpleFit) boundDistFit = boundDist = -1;
       else boundDistFit = boundDist = fitter->boundDist;
@@ -671,7 +737,16 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
       }
 
+    }else{
+      cout<<"Warning: Status =  "<<status<<" !"<<endl;
+      if (plot && !multiSample) { 
+        string sstatus = Form("status_%i",status);
+	string plotString = shortString + "_" + all_years + stat + "_" + sstatus;
+	string plotname = "plotSimFit4d_d/simFitResult_data_fullAngularMass_Swave_" + plotString + ".pdf";
+	fitter->plotSimFitProjections(plotname.c_str(),{samplename,sigpdfname,bkgpdfname},years,true);
+      }
     }
+    
 
     // fill fit-status-dependent counters
     ++cnt[8];

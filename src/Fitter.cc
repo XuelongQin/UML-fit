@@ -130,7 +130,7 @@ void Fitter::SetDefConf()
   vConfInterLow  = std::vector<Double_t>(angPars.getSize(),0);
   vConfInterHigh = std::vector<Double_t>(angPars.getSize(),0);
 
-  nCPU = 1;
+//  nCPU = 1;
 
 }
 
@@ -159,10 +159,10 @@ Int_t Fitter::fit()
     m.optimizeConst (kTRUE); // do not recalculate constant terms
     m.setOffsetting(kTRUE);  //  Enable internal likelihood offsetting for enhanced numeric precision.
     // m.setVerbose(kTRUE);
-    m.setPrintLevel(-1);
-    m.setPrintEvalErrors(-1);
+    m.setPrintLevel(2);
+    m.setPrintEvalErrors(2);
     //  Minuit2.setEps(1e-16) ;
-    m.setMinimizerType("Minuit2");
+    m.setMinimizerType("Minuit");
 
     // free fit
     m.setStrategy(0);
@@ -585,20 +585,20 @@ void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearDat
       singleYearPdf->plotOn(frames[fr],
 			    RooFit::LineWidth(1),
 			    RooFit::Name(Form("plPDF%i",ipad)),
-			    RooFit::NumCPU(4));
+			    RooFit::NumCPU(nCPU_Plot));
 
       if (catnames.size()>1) {
 	singleYearPdf->plotOn(frames[fr],
 			      RooFit::LineWidth(1),
 			      RooFit::Name(Form("plPDFbkg%i",ipad)),
-			      RooFit::NumCPU(4),
+			      RooFit::NumCPU(nCPU_Plot),
 			      RooFit::LineColor(8),
 			      RooFit::Components( catnames[2].c_str() ));
 
 	singleYearPdf->plotOn(frames[fr],
 			      RooFit::LineWidth(1),
 			      RooFit::Name(Form("plPDFsig%i",ipad)),
-			      RooFit::NumCPU(4),
+			      RooFit::NumCPU(nCPU_Plot),
 			      RooFit::LineColor(880),
 			      RooFit::Components( catnames[1].c_str() ));
       }

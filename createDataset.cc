@@ -4,6 +4,7 @@ using namespace std;
 static const int nBins = 9;
 float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
 
+double PDGBpMass = 5.2791;
 double PDGB0Mass = 5.27958;
 double PDGJpsiMass = 3.096916;
 double PDGPsiPrimeMass = 3.686109;
@@ -88,7 +89,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, bool plot = false)
   double recoB0Mass;
   t_num->SetBranchAddress( "tagged_mass", &recoB0Mass );
 
-  bool passB0Psi_lmnr, passB0Psi_jpsi, passB0Psi_psip;
+  Int_t passB0Psi_lmnr, passB0Psi_jpsi, passB0Psi_psip;
   t_num->SetBranchAddress( "passB0Psi_lmnr", &passB0Psi_lmnr );
   t_num->SetBranchAddress( "passB0Psi_jpsi", &passB0Psi_jpsi );
   t_num->SetBranchAddress( "passB0Psi_psip", &passB0Psi_psip );
@@ -186,7 +187,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, bool plot = false)
       if (xBin<0) continue;
       
       // apply cut for bin 4 
-      bool XCut= (( (PDGB0Mass - wt_mass) - y0Cut ) / (y1Cut-y0Cut)) < (((wt_kstarmass-PDGKstMass)-x0Cut) / (x1Cut-x0Cut)) && \
+      bool XCut= (( (PDGBpMass - wt_mass) - y0Cut ) / (y1Cut-y0Cut)) < (((wt_kstarmass-PDGKstMass)-x0Cut) / (x1Cut-x0Cut)) && \
                     kaonPt > pionPt && \
                     (wt_kstarmass-PDGKstMass)>0 && \
                     (mmpiMass > CutX1 && mmpiMass < CutX2) && \
@@ -397,7 +398,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, bool plot = false)
       if (xBin<0) continue;
 
       // apply cut for bin 4 
-      bool XCut= (( (PDGB0Mass - wt_mass) - y0Cut ) / (y1Cut-y0Cut)) < (((wt_kstarmass-PDGKstMass)-x0Cut) / (x1Cut-x0Cut)) && \
+      bool XCut= (( (PDGBpMass - wt_mass) - y0Cut ) / (y1Cut-y0Cut)) < (((wt_kstarmass-PDGKstMass)-x0Cut) / (x1Cut-x0Cut)) && \
                     kaonPt > pionPt && \
                     (wt_kstarmass-PDGKstMass)>0 && \
                     (mmpiMass > CutX1 && mmpiMass < CutX2) && \
