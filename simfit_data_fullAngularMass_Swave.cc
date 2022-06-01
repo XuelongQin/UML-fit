@@ -134,7 +134,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   RooRealVar* A7s = new RooRealVar("A7s","A_{7}^{S}",0,-1,1);
   RooRealVar* A8s = new RooRealVar("A8s","A_{8}^{S}",0,-1,1);
 
-  RooRealVar* AZ  = new RooRealVar("AZ","A_{Z}",0.,0.,1.);
+  RooRealVar* AZ  = new RooRealVar("AZ","A_{Z}",0.05,0.,1.);
 
   // Fs->setConstant(true);
 
@@ -182,7 +182,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
    while (ivar) {
      ivar->setConstant(true);
   //       if(iii!=6) ivar->setConstant(true);
-  //       if(iii!=6&&iii!=8&&iii>4) ivar->setConstant(true);
+//         if(iii!=6&&iii!=8&&iii>4) ivar->setConstant(true);
+//         if(iii==6||iii==7) ivar->setConstant(false);
   //       if(iii==5) ivar->setVal(1.);
      ivar = (RooRealVar*) iter->Next();
      iii++;
@@ -467,7 +468,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     RooRealVar*    b2_bkg_mass = new RooRealVar(Form("b2_bkg_mass-%i",years[iy]) , Form("b2_bkg_mass-%i",years[iy])  ,    0.1,  0., pol_bmax);
     RooRealVar*    b3_bkg_mass = new RooRealVar(Form("b3_bkg_mass-%i",years[iy]) , Form("b3_bkg_mass-%i",years[iy])  ,    0.0 );
     RooRealVar*    b4_bkg_mass = new RooRealVar(Form("b4_bkg_mass-%i",years[iy]) , Form("b4_bkg_mass-%i",years[iy])  ,    0.1 , 0., pol_bmax);
-    if(q2Bin==4){
+    if(q2Bin==4 ){
      b0_bkg_mass->setConstant(kTRUE);
      b3_bkg_mass->setConstant(kTRUE);
      bkg_mass1 = new RooBernstein(Form("bkg_mass1_%i",years[iy]),Form("bkg_mass1_%i",years[iy]),  *mass, RooArgList(*b0_bkg_mass, *b1_bkg_mass, *b2_bkg_mass, *b3_bkg_mass,* b4_bkg_mass));
@@ -487,9 +488,10 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     RooAddPdf* full_pdf =0;
     RooAddPdf* full_pdf_penalty =0;
     if(q2Bin==6){
-      RooProduct*  mass_Frac   = new RooProduct( Form("mass_Frac_%i",years[iy]), Form("mass_Frac_%i",years[iy]), RooArgList(*FracZ4430WT,*c_fm));
+      RooProduct*  mass_Frac   = new RooProduct( Form("mass_Frac_%i",years[iy]), Form("mass_Frac_%i",years[iy]), RooArgList(*FracZ4430WT,*mFrac));
+//      RooProduct*  mass_Frac   = new RooProduct( Form("mass_Frac_%i",years[iy]), Form("mass_Frac_%i",years[iy]), RooArgList(*FracZ4430WT,*c_fm));
       RooAddPdf*    Mass_All   = new RooAddPdf(  Form("Mass_All_%i",years[iy]), Form("Mass_All_%i",years[iy]),RooArgList(*c_dcb_wt,*c_dcb_rt),*mass_Frac);
-      RooProdPdf*  Z4430_pdf   = new RooProdPdf( Form("Z4430_pdf_%i",years[iy]), Form("Z4430_ang_pdf_%i",years[iy]),RooArgList(*Z4430_ang_pdf,*Mass_All) );
+      RooProdPdf*  Z4430_pdf   = new RooProdPdf( Form("Z4430_pdf_%i",years[iy]), Form("Z4430_ang_pdf_%i",years[iy]),RooArgList(*Z4430_ang_pdf,*Mass_All,*c_fm) );
 //      
 
       RooAddPdf*pdf_z_sig_ang_mass_mfc          = new RooAddPdf( ("PDF1_sig_ang_mass_"+shortString+"_"+year).c_str(),
@@ -637,13 +639,14 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
     // run the fit
     fitter = new Fitter (Form("fitter%i",is),Form("fitter%i",is),pars,combData,simPdf,simPdf_penalty,boundary,bound_dist,penTerm,&c_vars);
-    fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF)/2,8);
+    fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF)/2,4);
 //    fitter->setNCPU(sysconf(_SC_NPROCESSORS_ONLN));
     vFitter.push_back(fitter);
 
      if (nSample==0 && (q2Bin==4 || q2Bin==6)) {
        fitter->runSimpleFit = true;
-       fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF)/2,8);
+       fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF),4);
+//       fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF)/2,4);
      }
 
     subTime.Start(true);

@@ -130,7 +130,8 @@ void Fitter::SetDefConf()
   vConfInterLow  = std::vector<Double_t>(angPars.getSize(),0);
   vConfInterHigh = std::vector<Double_t>(angPars.getSize(),0);
 
-//  nCPU = 1;
+  nCPU = 1;
+  nCPU_Plot=4;
 
 }
 
@@ -138,6 +139,7 @@ void Fitter::SetDefConf()
 Int_t Fitter::fit()
 {
 
+    std::cout<<"Setting number of CPU ="<<nCPU<<std::endl;
     coeff1 = 0;
     coeff4 = 0;
     coeff5 = 0;
@@ -560,6 +562,7 @@ void Fitter::plotSimFitProjections(const char* filename, std::vector<std::string
 
 void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearData, std::vector<std::string> catnames, std::string frametitle, bool is4D, TCanvas* canv, int ipad)
 {
+    std::cout<<"Setting number of CPU for plots ="<<nCPU_Plot<<std::endl;
 
     TLegend* leg = new TLegend (0.60,0.75,0.9,0.9);
 
@@ -580,6 +583,7 @@ void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearDat
 			     RooFit::MarkerColor(kRed+1),
 			     RooFit::LineColor(kRed+1),
 			     RooFit::Binning(40),
+//			     RooFit::NumCPU(nCPU_Plot),
 			     RooFit::Name(Form("plData%i",ipad)) );
         
       singleYearPdf->plotOn(frames[fr],
