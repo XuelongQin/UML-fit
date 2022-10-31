@@ -32,7 +32,7 @@ if make simfit_recoMC_fullAngular; then
     done
 
     ./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} ${vers} 0 ${plot} ${save} 2016 2017 2018 \
-	&>logs_simFit/simfit_recoMC_fullAngular_XGBv4_${bin}_${par}_${multi}_${nsam}_${vers}_2016_2017_2018.out &
+	&>logs_simFit/simfit_recoMC_fullAngular_${bin}_${par}_${multi}_${nsam}_${vers}_2016_2017_2018.out &
 
     # done < ../confSF/KDE_SF.list
 

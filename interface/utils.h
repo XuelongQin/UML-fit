@@ -137,27 +137,22 @@ std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastS
     if (nSample>0){  
       for (uint is = firstSample; is <= lastSample; is++) {
 
-	RooDataSet* isample = new RooDataSet(("data_"+shortString + Form("_subs%i", is)).c_str(), 
-					     ("data_"+shortString + Form("_subs%i", is)).c_str(), 
-					     RooArgSet(reco_vars));
-
         dataCT = (RooDataSet*)ws->data(Form((parity==1?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin))
           ->reduce( RooArgSet(vars), Form("rand > %f && rand < %f", is*scale_to_data[year], (is+1)*scale_to_data[year] )) ;
         dataWT = (RooDataSet*)ws->data(Form((parity==1?"data_wtRECO_ev_b%i":"data_wtRECO_od_b%i"),q2Bin))
           ->reduce( RooArgSet(vars), Form("rand > %f && rand < %f", is*scale_to_data[year], (is+1)*scale_to_data[year] )) ;
 
-        isample->append(*dataCT);
+	RooDataSet* isample = new RooDataSet(*dataCT,("data_"+shortString + Form("_subs%i", is)).c_str());
         isample->append(*dataWT);
         datasample.push_back (isample);
       }
     }
     else{
-      RooDataSet* isample = new RooDataSet(("data_"+shortString + "_subs0").c_str(), 
-					   ("data_"+shortString + "_subs0").c_str(), 
-					   RooArgSet(vars));
+
       dataCT = (RooDataSet*)ws->data(Form((parity==1?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin)) ;
       dataWT = (RooDataSet*)ws->data(Form((parity==1?"data_wtRECO_ev_b%i":"data_wtRECO_od_b%i"),q2Bin)) ;
-      isample->append(*dataCT);
+
+      RooDataSet* isample = new RooDataSet( *dataCT, ("data_"+shortString + "_subs0").c_str() );
       isample->append(*dataWT);
       /* isample->append(*((RooDataSet*)dataCT->reduce(EventRange(0,0.1*dataCT->numEntries())))); */
       /* isample->append(*((RooDataSet*)dataWT->reduce(EventRange(0,0.1*dataWT->numEntries())))); */
