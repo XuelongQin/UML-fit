@@ -23,16 +23,16 @@ std::map<int,std::vector<float>> frt_sigmas = {
   {2018, {0.013, 0.010, 0.011, 0.007, 0.006, 0.006, 0.006, 0.007}},
 };
 
+// std::map<int,std::vector<float>> fM_sigmas = {
+//   {2016, {0.023, 0.015, 0.017, 0.013, 0.0003, 0.010, 0.0009, 0.013}},
+//   {2017, {0.018, 0.014, 0.015, 0.010, 0.0003, 0.008, 0.0007, 0.011}},
+//   {2018, {0.015, 0.010, 0.011, 0.008, 0.0002, 0.006, 0.0007, 0.008}},
+// };
 std::map<int,std::vector<float>> fM_sigmas = {
   {2016, {0.023, 0.015, 0.017, 0.013, 0.0005 , 0.010, 0.0018, 0.013}},
   {2017, {0.018, 0.014, 0.015, 0.010, 0.0004 , 0.008, 0.0016, 0.011}},
   {2018, {0.015, 0.010, 0.011, 0.008, 0.00027, 0.006, 0.0011, 0.008}},
 };
-// std::map<int,std::vector<float>> fM_sigmas = {
-//   {2016, {0.023, 0.015, 0.017, 0.013, 0.0003, 0.010, 0.0009, 0.013}},
-//   {2017, {0.018, 0.014, 0.015, 0.010, 0.0003, 0.008, 0.0007, 0.011}},
-//   {2018, {0.015, 0.010, 0.011, 0.008, 0.0002, 0.006, 0.0007, 0.008}},
-//};
 
 
 std::map<int,std::vector<float>> nbkg_years = {
@@ -120,15 +120,11 @@ bool retrieveWorkspace(string filename, std::vector<RooWorkspace*> &ws, std::str
     if ( !f || !f->IsOpen() ) {
       cout << "File not found: " << filename << endl;
       return false;
-    }else{
-      cout << "Opening: " << filename << endl;
     }
     RooWorkspace* open_w = (RooWorkspace*)f->Get(ws_name.c_str());
     if ( !open_w || open_w->IsZombie() ) {
       cout<<"Workspace "<< ws_name <<  "not found in file: " << filename << endl;
       return false;
-    }else{
-     cout<<"Workspace "<< ws_name <<  " FOUND!!! in file: " << filename << endl;
     }
     ws.push_back( open_w );
     f->Close();
@@ -146,27 +142,22 @@ std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastS
     if (nSample>0){  
       for (uint is = firstSample; is <= lastSample; is++) {
 
-	RooDataSet* isample = new RooDataSet(("data_"+shortString + Form("_subs%i", is)).c_str(), 
-					     ("data_"+shortString + Form("_subs%i", is)).c_str(), 
-					     RooArgSet(reco_vars));
-
         dataCT = (RooDataSet*)ws->data(Form((parity==1?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin))
           ->reduce( RooArgSet(vars), Form("rand > %f && rand < %f", is*scale_to_data[year], (is+1)*scale_to_data[year] )) ;
         dataWT = (RooDataSet*)ws->data(Form((parity==1?"data_wtRECO_ev_b%i":"data_wtRECO_od_b%i"),q2Bin))
           ->reduce( RooArgSet(vars), Form("rand > %f && rand < %f", is*scale_to_data[year], (is+1)*scale_to_data[year] )) ;
 
-        isample->append(*dataCT);
+	RooDataSet* isample = new RooDataSet(*dataCT,("data_"+shortString + Form("_subs%i", is)).c_str());
         isample->append(*dataWT);
         datasample.push_back (isample);
       }
     }
     else{
-      RooDataSet* isample = new RooDataSet(("data_"+shortString + "_subs0").c_str(), 
-					   ("data_"+shortString + "_subs0").c_str(), 
-					   RooArgSet(vars));
+
       dataCT = (RooDataSet*)ws->data(Form((parity==1?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin)) ;
       dataWT = (RooDataSet*)ws->data(Form((parity==1?"data_wtRECO_ev_b%i":"data_wtRECO_od_b%i"),q2Bin)) ;
-      isample->append(*dataCT);
+
+      RooDataSet* isample = new RooDataSet( *dataCT, ("data_"+shortString + "_subs0").c_str() );
       isample->append(*dataWT);
       /* isample->append(*((RooDataSet*)dataCT->reduce(EventRange(0,0.1*dataCT->numEntries())))); */
       /* isample->append(*((RooDataSet*)dataWT->reduce(EventRange(0,0.1*dataWT->numEntries())))); */
