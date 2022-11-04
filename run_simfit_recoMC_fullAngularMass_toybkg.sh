@@ -13,7 +13,7 @@ ibin=${2}
 export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
 export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
 export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE
-export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/files
+export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/files
 
 export WORKDIR=$PWD
 cd $CMSSWDIR

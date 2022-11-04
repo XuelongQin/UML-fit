@@ -152,7 +152,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
-    if (!localFiles) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v4/files/" + filename;
+    if (!localFiles) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/files/" + filename;
     // if (!localFiles) filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/",years[iy]) + filename;
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
     if ( !fin_eff[iy] || !fin_eff[iy]->IsOpen() ) {
