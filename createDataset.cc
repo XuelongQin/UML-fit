@@ -24,7 +24,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
   if ( year<6 || year>8 ) return;
 
   string XGBstr = "";
-  if (XGBv>0) XGBstr = Form("_XGBv%i",XGBv);
+  if (XGBv>0 && XGBv<6) XGBstr = Form("_XGBv%i",XGBv);
 
   bool isJpsi = false;
   bool isPsi  = false;
@@ -62,39 +62,58 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
   }
 
   // Load ntuples
-  TChain* t_num = new TChain();
   string year_str = Form("201%i", year);
-  if (data==0 && isLMNR)
-    t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
-  else if (data==0 && isJpsi) {
-    if (XGBv==2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/reweightV2/201%iMC_JPSI_withMCw_v2_addxcutvariable.root/ntuple", year, year));
-    else if (XGBv>2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/reweightV%i/201%iMC_JPSI_v%i_MCw_addxcutvariable.root/ntuple",year,XGBv,year,XGBv));
-    else t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
+  auto f_num = TFile::Open(Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/%s/201%i.root",data==0?Form("MC-%s%s",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBstr.c_str()):"data",year));
+  auto t_num = (TTree*)f_num->Get("ntuple");
+  if (data==0 && XGBv>9) {
+    t_num->AddFriend("wTree",Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s-TMVAv%i/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBv-10,year));
+    XGBstr = Form("_TMVAv%i",XGBv-10);
+  } else if (data==0 && XGBv>5) {
+    t_num->AddFriend("wTree",Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s-XGBv%i/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBv,year));
+    XGBstr = Form("_XGBv%i",XGBv);
   }
-  else if (data==0 && isPsi)
-    t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
-  else
-    t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%idata_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
+
+  // TChain* t_num = new TChain();
+  // if (data==0 && isLMNR)
+  //   t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
+  // else if (data==0 && isJpsi) {
+  //   if (XGBv==2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/reweightV2/201%iMC_JPSI_withMCw_v2_addxcutvariable.root/ntuple", year, year));
+  //   else if (XGBv>2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/reweightV%i/201%iMC_JPSI_v%i_MCw_addxcutvariable.root/ntuple",year,XGBv,year,XGBv));
+  //   else t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
+  // }
+  // else if (data==0 && isPsi)
+  //   t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
+  // else
+  //   t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%idata_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
   int numEntries = t_num->GetEntries();
-  std::cout << numEntries << std::endl;
+  cout << "Reading tree with nr. of events = " << numEntries << endl;
   int counter;
 
+  t_num->SetBranchStatus("*",0);
   // Import branches from ntuples:
   // angular variables
   double recoCosThetaK, recoCosThetaL, recoPhi;
+  t_num->SetBranchStatus("cos_theta_k",1);
+  t_num->SetBranchStatus("cos_theta_l",1);
+  t_num->SetBranchStatus("phi_kst_mumu",1);
   t_num->SetBranchAddress( "cos_theta_k"     , &recoCosThetaK );
   t_num->SetBranchAddress( "cos_theta_l"     , &recoCosThetaL );
   t_num->SetBranchAddress( "phi_kst_mumu"    , &recoPhi       );
 
   // dimuon mass variables
   double recoDimuMass;
+  t_num->SetBranchStatus("mumuMass",1);
   t_num->SetBranchAddress( "mumuMass", &recoDimuMass );
 
   // B0 mass variable
   double recoB0Mass;
+  t_num->SetBranchStatus("tagged_mass",1);
   t_num->SetBranchAddress( "tagged_mass", &recoB0Mass );
 
   int passB0Psi_lmnr, passB0Psi_jpsi, passB0Psi_psip;
+  t_num->SetBranchStatus("passB0Psi_lmnr",1);
+  t_num->SetBranchStatus("passB0Psi_jpsi",1);
+  t_num->SetBranchStatus("passB0Psi_psip",1);
   t_num->SetBranchAddress( "passB0Psi_lmnr", &passB0Psi_lmnr );
   t_num->SetBranchAddress( "passB0Psi_jpsi", &passB0Psi_jpsi );
   t_num->SetBranchAddress( "passB0Psi_psip", &passB0Psi_psip );
@@ -105,15 +124,19 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
   // t_num->SetBranchAddress( "bEta"   , &recoB0eta );
 
   double tagB0;
+  t_num->SetBranchStatus("tagB0",1);
   t_num->SetBranchAddress( "tagB0"    , &tagB0     );
 
   // event number for even/odd splitting
   Long64_t eventN;
+  t_num->SetBranchStatus("eventN",1);
   t_num->SetBranchAddress( "eventN", &eventN     );
 
-
-  int XCut;
-  t_num->SetBranchAddress( "xcut", &XCut );
+  int XCut = 0;
+  if (isJpsi) {
+    t_num->SetBranchStatus("xcut",1);
+    t_num->SetBranchAddress( "xcut", &XCut );
+  }
 
   int xBin;
 
@@ -121,21 +144,29 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
   if (data==0) {
     // flavour tagging variables
     double genSignal;
+    t_num->SetBranchStatus("genSignal",1);
     t_num->SetBranchAddress( "genSignal", &genSignal );
   
     std::cout << "is MC"  << std::endl;
-    bool isWeightFloat = true;
-    if (year==6) isWeightFloat = false;
-    double PUweight = 1; 	// nj6, np6
-    float fPUweight = 1;	// nj7, nj8, np7, np8
-    if (isWeightFloat)
-      t_num->SetBranchAddress( "weight", &fPUweight );
-    else
-      t_num->SetBranchAddress( "weight", &PUweight );
+    float PUweight = 1;
+    t_num->SetBranchStatus("weight",1);
+    t_num->SetBranchAddress( "weight", &PUweight );
 
-    // XGB MC weight
-    float XGBweight = 1;
-    if (XGBv>0) t_num->SetBranchAddress( "sf_to_data", &XGBweight );
+    // MC weights
+    double XGBweight = 1;
+    float fXGBweight = 1;
+    if (XGBv>9) {
+      t_num->SetBranchStatus("MCw",1);
+      t_num->SetBranchAddress( "MCw", &XGBweight );
+    }
+    else if (XGBv>5) {
+      t_num->SetBranchStatus("MCw",1);
+      t_num->SetBranchAddress( "MCw", &fXGBweight );
+    }
+    else if (XGBv>0) {
+      t_num->SetBranchStatus("sf_to_data",1);
+      t_num->SetBranchAddress( "sf_to_data", &fXGBweight );
+    }
 
     // Define datasets for five efficiency terms
     RooDataSet* data_ctRECO_ev [nBins];
@@ -177,7 +208,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
       if (xBin<0) continue;
       
       // apply cut for bin 4 
-      if (XCut>0 && xBin == 4) continue;
+    if (isJpsi && XCut>0) continue;
 
       // status display
       if ( iCand > 1.0*counter*numEntries/100 ) {
@@ -191,22 +222,12 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
       phi.setVal(recoPhi);
       mass.setVal(recoB0Mass);
       rand.setVal(rand_gen.Uniform(1));
-      if (isWeightFloat) {
-	if (genSignal != tagB0+1) { // correctly tagged events
-	  if (eventN%2==0) data_ctRECO_ev[xBin]->add(reco_vars,fPUweight*XGBweight);
-	  else data_ctRECO_od[xBin]->add(reco_vars,fPUweight*XGBweight);
-	} else { // wrongly tagged events
-	  if (eventN%2==0) data_wtRECO_ev[xBin]->add(reco_vars,fPUweight*XGBweight);
-	  else data_wtRECO_od[xBin]->add(reco_vars,fPUweight*XGBweight);
-	}
-      } else {
-	if (genSignal != tagB0+1) { // correctly tagged events
-	  if (eventN%2==0) data_ctRECO_ev[xBin]->add(reco_vars,PUweight*XGBweight);
-	  else data_ctRECO_od[xBin]->add(reco_vars,PUweight*XGBweight);
-	} else { // wrongly tagged events
-	  if (eventN%2==0) data_wtRECO_ev[xBin]->add(reco_vars,PUweight*XGBweight);
-	  else data_wtRECO_od[xBin]->add(reco_vars,PUweight*XGBweight);
-	}
+      if (genSignal != tagB0+1) { // correctly tagged events
+	if (eventN%2==0) data_ctRECO_ev[xBin]->add(reco_vars,PUweight*XGBweight*fXGBweight);
+	else data_ctRECO_od[xBin]->add(reco_vars,PUweight*XGBweight*fXGBweight);
+      } else { // wrongly tagged events
+	if (eventN%2==0) data_wtRECO_ev[xBin]->add(reco_vars,PUweight*XGBweight*fXGBweight);
+	else data_wtRECO_od[xBin]->add(reco_vars,PUweight*XGBweight*fXGBweight);
       }
     }
     cout<<"Dataset prepared"<<endl;
@@ -391,7 +412,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
       if (xBin<0) continue;
 
       // apply cut for bin 4 
-      if (XCut>0 && xBin == 4) continue;
+      if (isJpsi && XCut>0) continue;
 
       // status display
       if ( iCand > 1.0*counter*numEntries/100 ) {
@@ -403,6 +424,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
       ctL.setVal(recoCosThetaL);
       phi.setVal(recoPhi);
       mass.setVal(recoB0Mass);
+      rand.setVal(rand_gen.Uniform(1));
       data[xBin]->add(reco_vars);
     }
     cout<<"Dataset prepared"<<endl;
