@@ -57,7 +57,7 @@ class Fitter {
 
   Int_t nCPU;
 
-  void fillResultContainers(bool fromImprov = false) ;
+  void fillResultContainers(bool fromImprov = false, bool isFree = false) ;
 
   Double_t computeBoundaryDistance() ;
 
@@ -90,6 +90,9 @@ class Fitter {
   // boolean to control whether distance from boundary calculation and penalised fit should be run
   bool runSimpleFit;
 
+  std::vector<Double_t> vFreeFitResult;
+  std::vector<Double_t> vFreeFitErrLow;
+  std::vector<Double_t> vFreeFitErrHigh;
   std::vector<Double_t> vFitResult;
   std::vector<Double_t> vFitErrLow;
   std::vector<Double_t> vFitErrHigh;

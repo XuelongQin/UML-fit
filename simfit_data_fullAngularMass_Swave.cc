@@ -58,7 +58,7 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
-void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, int save, std::vector<int> years)
+void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, int save, std::vector<int> years, int XGBv)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
@@ -84,6 +84,10 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
   string sigpdfname = "PDF_sig_ang_mass_"+shortString+"_%i";
   string bkgpdfname = "bkg_pdf_%i";
+
+  string XGBstr = "";
+  if (XGBv>9) XGBstr = Form("-TMVAv%i",XGBv-10);
+  else if (XGBv>0) XGBstr = Form("-XGBv%i",XGBv);
 
   std::vector<TFile*> fin_eff;
   std::vector<RooWorkspace*> wsp, wsp_mcmass, wsp_sb;
@@ -173,7 +177,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
-    if (!localFiles) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/files/" + filename;
+    filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff%s/",XGBstr.c_str()) + filename;
+    // if (!localFiles) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/files/" + filename;
     // if (!localFiles) filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/",years[iy]) + filename;
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
     if ( !fin_eff[iy] || !fin_eff[iy]->IsOpen() ) {
@@ -239,11 +244,14 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
     // Mass Component
     // import mass PDF from fits to the MC
-    string filename_mc_mass = "";
-    if (q2Bin==4) filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/results_fits_%i_fM_Jpsi_fixBug.root",years[iy]);
-    else if (q2Bin==6) filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/results_fits_%i_fM_Psi_fixBug.root",years[iy]);
-    else filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%i_fM_newbdt.root",years[iy]);
-    if (!retrieveWorkspace( filename_mc_mass, wsp_mcmass, "w"))  return;
+    string filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-%s/%i.root",q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"LMNR"),years[iy]);
+    // if (q2Bin==4) filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/results_fits_%i_fM_Jpsi_fixBug.root",years[iy]);
+    // else if (q2Bin==6) filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/results_fits_%i_fM_Psi_fixBug.root",years[iy]);
+    // else filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%i_fM_newbdt.root",years[iy]);
+    if (!retrieveWorkspace( filename_mc_mass, wsp_mcmass, "w")) {
+      cout<<"Workspace not found in mass-fit file: "<<filename_mc_mass<<endl;
+      return;
+    }
 
     wsp_mcmass[iy]->loadSnapshot(Form("reference_fit_RT_%i",q2Bin));
     RooRealVar* mean_rt       = new RooRealVar (Form("mean_{RT}^{%i}",years[iy])    , "massrt"      , wsp_mcmass[iy]->var(Form("mean_{RT}^{%i}",q2Bin))->getVal()     ,      5,    6, "GeV");
@@ -398,7 +406,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     // string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
     // string filename_sb = Form("/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit/savesb_%i_b%i.root", years[iy], q2Bin );
     // string filename_sb = Form("/eos/cms/store/user/fiorendi/p5prime/sidebands/apr30version/savesb_%i_b%i_renamed.root", years[iy], q2Bin );
-    string filename_sb = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/savesb_%i_b%i_renamed.root", years[iy], q2Bin );
+    string filename_sb = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/sidebands/b%i_%i.root", q2Bin, years[iy]);
     // string filename_sb = Form("savesb-%i-Q2Bin-%i-Bins-60-60-60-BernDeg-5-8-8-WSBL-5-2dot7-WSBR-2dot7-5dot6-SigmaProb.root", years[iy], q2Bin );
     // filename_sb = "/afs/cern.ch/user/d/dini/public/SidebandBin%i-preapp-cov/", + filename_sb;
     // if (!localFiles) filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
@@ -494,7 +502,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   }
 
   TFile* fout = 0;
-  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + stat + Form("_b%i%s.root", q2Bin, XGBstr.c_str())).c_str(),"RECREATE");
   RooWorkspace* wsp_out = 0;
 
   // save initial par values    
@@ -519,6 +527,9 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   vector<double> vResult  (pars.getSize());
   vector<double> vConfInterLow  (pars.getSize());
   vector<double> vConfInterHigh (pars.getSize());
+  vector<double> vFreeResult  (pars.getSize());
+  vector<double> vFreeConfInterLow  (pars.getSize());
+  vector<double> vFreeConfInterHigh (pars.getSize());
   if (save>0) fout->cd();
   TTree* fitResultsTree = new TTree("fitResultsTree","fitResultsTree");
   for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
@@ -526,6 +537,9 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     fitResultsTree->Branch(Form("%s_low",par->GetName()),&vConfInterLow[iPar]);
     fitResultsTree->Branch(Form("%s_high",par->GetName()),&vConfInterHigh[iPar]);
     fitResultsTree->Branch(Form("%s_best",par->GetName()),&vResult[iPar]);
+    fitResultsTree->Branch(Form("%s_free_low",par->GetName()),&vFreeConfInterLow[iPar]);
+    fitResultsTree->Branch(Form("%s_free_high",par->GetName()),&vFreeConfInterHigh[iPar]);
+    fitResultsTree->Branch(Form("%s_free_best",par->GetName()),&vFreeResult[iPar]);
   }
   fitResultsTree->Branch("fitTime",&fitTime);
   fitResultsTree->Branch("imprTime",&imprTime);
@@ -597,7 +611,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     convCheck = false;
     boundCheck = false;
 
-    if (status==0) {
+    if (status<2) {
       
       convCheck = true;
       boundCheck = boundary->getValV() == 0;
@@ -647,12 +661,15 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
       // save results in tree
       for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
       	vResult[iPar] = fitter->vResult[iPar];
+      	vFreeResult[iPar] = fitter->vFreeFitResult[iPar];
       	if (nSample>0) {
       	  vConfInterLow[iPar] = fitter->vConfInterLow[iPar];
       	  vConfInterHigh[iPar] = fitter->vConfInterHigh[iPar];
       	} else {
       	  vConfInterLow[iPar] = fitter->vFitErrLow[iPar];
       	  vConfInterHigh[iPar] = fitter->vFitErrHigh[iPar];
+      	  vFreeConfInterLow[iPar] = fitter->vFreeFitErrLow[iPar];
+      	  vFreeConfInterHigh[iPar] = fitter->vFreeFitErrHigh[iPar];
       	}
       }
       fitResultsTree->Fill();
@@ -665,7 +682,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
       if (plot && !multiSample) {
 
-	string plotString = shortString + "_" + all_years + stat;
+	string plotString = shortString + "_" + all_years + stat + XGBstr;
 	string plotname = "plotSimFit4d_d/simFitResult_data_fullAngularMass_Swave_" + plotString + ".pdf";
 	fitter->plotSimFitProjections(plotname.c_str(),{samplename,sigpdfname,bkgpdfname},years,true);
 
@@ -711,13 +728,13 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
 
 
-void simfit_data_fullAngularMass_SwaveBin1(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, int save, std::vector<int> years)
+void simfit_data_fullAngularMass_SwaveBin1(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, int save, std::vector<int> years, int XGBv)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years);
+      simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years, XGBv);
   else
-    simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years);
+    simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years, XGBv);
 }
 
 int main(int argc, char** argv)
@@ -743,23 +760,26 @@ int main(int argc, char** argv)
 
   if (nSample==0) multiSample = false;
 
+  int XGBv = 0;
+  if ( argc > 6 ) XGBv = atoi(argv[6]);
+
   bool localFiles = false;
-  if ( argc > 6 && atoi(argv[6]) > 0 ) localFiles = true;
+  if ( argc > 7 && atoi(argv[7]) > 0 ) localFiles = true;
 
   bool plot = true;
   int save = true;
 
-  if ( argc > 7 && atoi(argv[7]) == 0 ) plot = false;
-  if ( argc > 8 ) save = atoi(argv[8]);
+  if ( argc > 8 && atoi(argv[8]) == 0 ) plot = false;
+  if ( argc > 9 ) save = atoi(argv[9]);
 
   std::vector<int> years;
-  if ( argc > 9 && atoi(argv[9]) != 0 ) years.push_back(atoi(argv[9]));
+  if ( argc > 10 && atoi(argv[10]) != 0 ) years.push_back(atoi(argv[10]));
   else {
     cout << "No specific years selected, using default: 2016" << endl;
     years.push_back(2016);
   }
-  if ( argc > 10 && atoi(argv[10]) != 0 ) years.push_back(atoi(argv[10]));
   if ( argc > 11 && atoi(argv[11]) != 0 ) years.push_back(atoi(argv[11]));
+  if ( argc > 12 && atoi(argv[12]) != 0 ) years.push_back(atoi(argv[12]));
 
   cout <<  "q2Bin       " << q2Bin        << endl;
   cout <<  "parity      " << parity       << endl;
@@ -779,6 +799,8 @@ int main(int argc, char** argv)
 
   if ( q2stat  <  0 || q2stat  >= nBins ) return 1;
 
+  if ( XGBv < 0 ) return 1;
+
   // Protectrion against accidental unblinding
   if ( q2Bin != 4 && q2Bin != 6 ) {
     cout<<"The analysis is blind!"<<endl;
@@ -790,9 +812,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years);
+      simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years, XGBv);
   else
-    simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years);
+    simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years, XGBv);
 
   return 0;
 

@@ -121,6 +121,9 @@ void Fitter::SetDefConf()
   minParError = 0.01;
   widthScale = 0.1;
 
+  vFreeFitResult = std::vector<Double_t>(angPars.getSize(),0);
+  vFreeFitErrLow  = std::vector<Double_t>(angPars.getSize(),0);
+  vFreeFitErrHigh = std::vector<Double_t>(angPars.getSize(),0);
   vFitResult = std::vector<Double_t>(angPars.getSize(),0);
   vFitErrLow  = std::vector<Double_t>(angPars.getSize(),0);
   vFitErrHigh = std::vector<Double_t>(angPars.getSize(),0);
@@ -187,13 +190,13 @@ Int_t Fitter::fit()
     // if free fit is good return its result
     if ( result_free->status()==0 && result_free->covQual()==3 && boundary->getValV() == 0 ) {
       if ( !runSimpleFit ) computeBoundaryDistance(); //allow to skip the boundary-distance computation (for full-stat MC and control region fits)
-      fillResultContainers();
+      fillResultContainers(false,true);
       return 0;
     }
 
     if ( runSimpleFit ) { //allow to skip the penalised fit (for full-stat MC and control region fits)
       if ( result_free->status()==0 && result_free->covQual()==3 ) {
-	fillResultContainers();
+	fillResultContainers(false,true);
 	return 1;
       }
 
@@ -490,7 +493,7 @@ Int_t Fitter::MinosAng(int seed, int nGenMINOS)
 }
 
 
-void Fitter::fillResultContainers(bool fromImprov)
+void Fitter::fillResultContainers(bool fromImprov, bool isFree)
 {
 
   // fill results' containers
@@ -501,9 +504,18 @@ void Fitter::fillResultContainers(bool fromImprov)
     vResult[iPar] = par->getValV();
 
     if (!fromImprov) {
-      vFitResult[iPar] = vResult[iPar];
-      vFitErrLow[iPar] = par->getErrorLo();
-      vFitErrHigh[iPar] = par->getErrorHi();
+      if (isFree) {
+	vFreeFitResult[iPar] = vResult[iPar];
+	vFreeFitErrLow[iPar] = par->getErrorLo();
+	vFreeFitErrHigh[iPar] = par->getErrorHi();
+	vFitResult[iPar] = vResult[iPar];
+	vFitErrLow[iPar] = vFreeFitErrLow[iPar];
+	vFitErrHigh[iPar] = vFreeFitErrHigh[iPar];
+      } else {
+	vFitResult[iPar] = vResult[iPar];
+	vFitErrLow[iPar] = par->getErrorLo();
+	vFitErrHigh[iPar] = par->getErrorHi();
+      }
     } else vImprovResult[iPar] = vResult[iPar];
 
   }
