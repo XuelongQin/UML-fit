@@ -53,13 +53,17 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
-void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, int save, std::vector<int> years)
+void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, uint nSample, int XGBv, bool localFiles, bool plot, int save, std::vector<int> years)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
 
   string shortString = Form("b%ip%i",q2Bin,parity);
   cout<<"Conf: "<<shortString<<endl;
+
+  string XGBstr = "";
+  if (XGBv>0) XGBstr = Form("_XGBv%i",XGBv);
+  cout<<"Using XGB? "<<XGBstr<<endl;
 
   // Load variables and dataset
   // importing the complementary dataset, to fit with statistically uncorrelated efficiency
@@ -100,10 +104,11 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   RooRealVar* ctL = new RooRealVar("ctL", "cos(#theta_{l})", -1  , 1  );
   RooRealVar* phi = new RooRealVar("phi", "#phi", -3.14159, 3.14159  );
   RooArgList vars (* ctK,* ctL,* phi);
-  RooRealVar* mass = new RooRealVar("mass","m(#mu#muK#pi)", 5.,5.6,"GeV");
   RooRealVar* rand = new RooRealVar("rand", "rand", 0,1);
-  RooArgSet reco_vars (*ctK, *ctL, *phi, *mass, *rand);
-  RooArgSet observables (*ctK, *ctL, *phi, *mass);
+  RooRealVar* mass = new RooRealVar("mass","m(#mu#muK#pi)", 5.,5.6,"GeV");
+  RooRealVar* wei  = new RooRealVar("weight","weight",1);
+  RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass, *wei);
+  RooArgSet observables (*ctK, *ctL, *phi, *mass, *wei);
 
   // define angular parameters with ranges from positiveness requirements on the decay rate
   RooRealVar* Fl    = new RooRealVar("Fl","F_{L}",0.5,0,1);
@@ -144,16 +149,19 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   // loop on the various datasets
   for (unsigned int iy = 0; iy < years.size(); iy++) {
     year.clear(); year.assign(Form("%i",years[iy]));
-    string filename_data = Form("recoMCDataset_b%i_%i.root", q2Bin, years[iy]);
-    if (!localFiles) filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/", years[iy]) + filename_data;
+    string filename_data = Form("recoMCDataset_b%i_%i%s.root", q2Bin, years[iy], XGBstr.c_str());
+    if (!localFiles) filename_data = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-datasets/" + filename_data;
 
     // import data (or MC as data proxy)
     retrieveWorkspace( filename_data, wsp, Form("ws_b%ip%i", q2Bin, 1-parity ));
 
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
-    if (!localFiles) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/files/" + filename;
-    // if (!localFiles) filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/",years[iy]) + filename;
+    if (!localFiles) {
+      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v6/files/" + filename;
+      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v6-XGBv%i/files/",XGBv) + filename;
+    }
+
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
     if ( !fin_eff[iy] || !fin_eff[iy]->IsOpen() ) {
       cout<<"File not found: "<<filename<<endl;
@@ -219,7 +227,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     string channelStr = "";
     if (q2Bin==4) channelStr= "_Jpsi";
     if (q2Bin==6) channelStr= "_Psi";
-    string filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%i_fM%s_newbdt.root",years[iy],channelStr.c_str());
+    string filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/noIP2D/xgbv8/results_fits_%i_fM%s_noIP2D_MCw_xgbv8.root",years[iy],channelStr.c_str());
     if (!retrieveWorkspace( filename_mc_mass, wsp_mcmass, "w"))  return;
 
     wsp_mcmass[iy]->Print();
@@ -409,7 +417,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   if (nSample>0)   stat = stat + Form("-%i",firstSample);
   if (multiSample) stat = stat + Form("-%i",lastSample);
   TFile* fout = 0;
-  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  if (save>0) fout = new TFile(("simFitResults4d/xgbv8/simFitResult_recoMC_fullAngularMass" + all_years + stat + Form("_b%i", q2Bin) + XGBstr + ".root").c_str(),"RECREATE");
   RooWorkspace* wsp_out = 0;
   
   // save initial par values    
@@ -581,9 +589,9 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
       if (plot && !multiSample) {
 
-	string plotString = shortString + "_" + all_years;
+	string plotString = shortString + "_" + all_years + XGBstr;
 	if (nSample>0) plotString = plotString + Form("_s%i",is);
-	string plotname = "plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_" + plotString + ".pdf";
+	string plotname = "plotSimFit4d_d/xgbv8/simFitResult_recoMC_fullAngularMass_" + plotString + ".pdf";
 	fitter->plotSimFitProjections(plotname.c_str(),{samplename},years,true);
 
       }
@@ -629,13 +637,13 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
 
 
-void simfit_recoMC_fullAngularMassBin1(int q2Bin, int parity, bool multiSample, uint nSample, bool localFiles, bool plot, int save, std::vector<int> years)
+void simfit_recoMC_fullAngularMassBin1(int q2Bin, int parity, bool multiSample, uint nSample, int XGBv, bool localFiles, bool plot, int save, std::vector<int> years)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      simfit_recoMC_fullAngularMassBin(q2Bin, parity, multiSample, nSample, localFiles, plot, save, years);
+      simfit_recoMC_fullAngularMassBin(q2Bin, parity, multiSample, nSample, XGBv, localFiles, plot, save, years);
   else
-    simfit_recoMC_fullAngularMassBin(q2Bin, parity, multiSample, nSample, localFiles, plot, save, years);
+    simfit_recoMC_fullAngularMassBin(q2Bin, parity, multiSample, nSample, XGBv, localFiles, plot, save, years);
 }
 
 int main(int argc, char** argv)
@@ -659,23 +667,26 @@ int main(int argc, char** argv)
 
   if (nSample==0) multiSample = false;
 
+  int XGBv = 0; 
+  if ( argc > 5 ) XGBv = atoi(argv[5]);
+
   bool localFiles = false;
-  if ( argc > 5 && atoi(argv[5]) > 0 ) localFiles = true;
+  if ( argc > 6 && atoi(argv[6]) > 0 ) localFiles = true;
 
   bool plot = true;
   int save = 0;
 
-  if ( argc > 6 && atoi(argv[6]) == 0 ) plot = false;
-  if ( argc > 7 ) save = atoi(argv[7]);
+  if ( argc > 7 && atoi(argv[7]) == 0 ) plot = false;
+  if ( argc > 8 ) save = atoi(argv[8]);
 
   std::vector<int> years;
-  if ( argc > 8 && atoi(argv[8]) != 0 ) years.push_back(atoi(argv[8]));
+  if ( argc > 9 && atoi(argv[9]) != 0 ) years.push_back(atoi(argv[9]));
   else {
     cout << "No specific years selected, using default: 2016" << endl;
     years.push_back(2016);
   }
-  if ( argc > 9  && atoi(argv[9])  != 0 ) years.push_back(atoi(argv[9]));
   if ( argc > 10 && atoi(argv[10]) != 0 ) years.push_back(atoi(argv[10]));
+  if ( argc > 11 && atoi(argv[11]) != 0 ) years.push_back(atoi(argv[11]));
 
   cout <<  "q2Bin       " << q2Bin        << endl;
   cout <<  "parity      " << parity       << endl;
@@ -697,9 +708,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      simfit_recoMC_fullAngularMassBin1(q2Bin, parity, multiSample, nSample, localFiles, plot, save, years);
+      simfit_recoMC_fullAngularMassBin1(q2Bin, parity, multiSample, nSample, XGBv, localFiles, plot, save, years);
   else
-    simfit_recoMC_fullAngularMassBin1(q2Bin, parity, multiSample, nSample, localFiles, plot, save, years);
+    simfit_recoMC_fullAngularMassBin1(q2Bin, parity, multiSample, nSample, XGBv, localFiles, plot, save, years);
 
   return 0;
 
