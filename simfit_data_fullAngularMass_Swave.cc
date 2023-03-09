@@ -289,6 +289,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     RooRealVar* alpha_rt2     = new RooRealVar (Form("#alpha_{RT2}^{%i}",years[iy] ), "alphart2"    , wsp_mcmass[iy]->var(Form("#alpha_{RT2}^{%i}", q2Bin))->getVal() ,    -10,   10 );
     RooRealVar* n_rt1         = new RooRealVar (Form("n_{RT1}^{%i}",years[iy])      , "nrt1"        , wsp_mcmass[iy]->var(Form("n_{RT1}^{%i}", q2Bin))->getVal()      ,      0.01,  100.);
     RooRealVar* n_rt2         = new RooRealVar (Form("n_{RT2}^{%i}",years[iy])      , "nrt2"        , wsp_mcmass[iy]->var(Form("n_{RT2}^{%i}", q2Bin))->getVal()      ,      0.01,  100.);
+    double mean_rt_err=wsp_mcmass[iy]->var(Form("mean_{RT}^{%i}", q2Bin))->getError(); 
 
     RooAbsPdf* dcb_rt;
     RooRealVar* sigma_rt2 = new RooRealVar (Form("#sigma_{RT2}^{%i}",years[iy] ), "sigmaRT2"  ,   0 , 0,   0.12, "GeV");
@@ -314,16 +315,31 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     /// create WT component
     wsp_mcmass[iy]->loadSnapshot(Form("reference_fit_WT_%i",q2Bin));
 
-    RooRealVar* mean_wt     = new RooRealVar (Form("mean_{WT}^{%i}",years[iy])      , "masswt"     ,  wsp_mcmass[iy]->var(Form("mean_{WT}^{%i}", q2Bin))->getVal()    ,      5,    6, "GeV");
+//    RooRealVar* mean_wt     = new RooRealVar (Form("mean_{WT}^{%i}",years[iy])      , "masswt"     ,  wsp_mcmass[iy]->var(Form("mean_{WT}^{%i}", q2Bin))->getVal()    ,      5,    6, "GeV");
     RooRealVar* sigma_wt    = new RooRealVar (Form("#sigma_{WT1}^{%i}",years[iy])   , "sigmawt"    ,  wsp_mcmass[iy]->var(Form("#sigma_{WT1}^{%i}", q2Bin))->getVal() ,      0,    1, "GeV");
     RooRealVar* alpha_wt1   = new RooRealVar (Form("#alpha_{WT1}^{%i}",years[iy] )  , "alphawt1"   ,  wsp_mcmass[iy]->var(Form("#alpha_{WT1}^{%i}", q2Bin))->getVal() ,      0,   10 );
     RooRealVar* alpha_wt2   = new RooRealVar (Form("#alpha_{WT2}^{%i}",years[iy] )  , "alphawt2"   ,  wsp_mcmass[iy]->var(Form("#alpha_{WT2}^{%i}", q2Bin))->getVal() ,      0,   10 );
     RooRealVar* n_wt1       = new RooRealVar (Form("n_{WT1}^{%i}",years[iy])        , "nwt1"       ,  wsp_mcmass[iy]->var(Form("n_{WT1}^{%i}", q2Bin))->getVal()      ,      0.01, 100.);
     RooRealVar* n_wt2       = new RooRealVar (Form("n_{WT2}^{%i}",years[iy])        , "nwt2"       ,  wsp_mcmass[iy]->var(Form("n_{WT2}^{%i}", q2Bin))->getVal()      ,      0.01, 100.);
+    double mean_wt_val=wsp_mcmass[iy]->var(Form("mean_{WT}^{%i}", q2Bin))->getVal(); 
+    double mean_wt_err=wsp_mcmass[iy]->var(Form("mean_{WT}^{%i}", q2Bin))->getError(); 
 
     RooAbsPdf* dcb_wt;
+    double deltaPeakValue=mean_rt->getVal()-mean_wt_val;
+    double deltaPeakError=sqrt(mean_rt_err*mean_rt_err+mean_wt_err*mean_wt_err); 
+//
+    RooRealVar* deltaPeakVar = new RooRealVar ( Form("deltaPeakVar^{%i}", years[iy]),Form("deltaPeakVar^{%i}", years[iy]), deltaPeakValue, 0., 0.2) ;
+    RooGaussian* c_deltaPeaks = new RooGaussian(Form("deltaPeaks^{%i}"  , years[iy]) , "c_deltaPeaks", *deltaPeakVar, RooConst( deltaPeakValue ), RooConst(deltaPeakError )); // value to be checked
+    RooFormulaVar*mWT_data = new  RooFormulaVar(Form("mWT_data^{%i}",years[iy]), "@0 + @1", RooArgList(*mean_rt, *deltaPeakVar));
+    RooRealVar* mean_wt     = (RooRealVar*)mWT_data;
+    
+    c_pdfs_wt.add(*c_deltaPeaks);
+    c_vars_wt.add(*deltaPeakVar);
+//
     if (nSample==0) dcb_wt = createWTMassShape(q2Bin, mass, mean_wt, sigma_wt, alpha_wt1, alpha_wt2, n_wt1, n_wt2 , wsp_mcmass[iy], years[iy], true, c_vars_wt, c_pdfs_wt );
     else dcb_wt = createWTMassShape(q2Bin, mass, mean_wt, sigma_wt, alpha_wt1, alpha_wt2, n_wt1, n_wt2 , wsp_mcmass[iy], years[iy], true, c_vars_wt, c_pdfs_wt, q2stat );
+//  if (nSample==0) dcb_wt = createWTMassShape(q2Bin, mass, (RooRealVar*)mWT_data, sigma_wt, alpha_wt1, alpha_wt2, n_wt1, n_wt2 , wsp_mcmass[iy], years[iy], true, c_vars_wt, c_pdfs_wt );
+//  else dcb_wt = createWTMassShape(q2Bin, mass, (RooRealVar*)mWT_data, sigma_wt, alpha_wt1, alpha_wt2, n_wt1, n_wt2 , wsp_mcmass[iy], years[iy], true, c_vars_wt, c_pdfs_wt, q2stat );
 
     /// create constrained PDF for WT mass
     RooArgList constr_wt_list = RooArgList(c_pdfs_wt);
@@ -339,6 +355,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 //                                                 RooConst( 0.0005 ) 
 //                                                ) );
 //     c_vars.add(*deltaPeaks);       c_pdfs.add(*c_deltaPeaks[iy]);
+//
 
     RooRealVar* mFrac = new RooRealVar(Form("f_{M}^{%i}",years[iy]),"mistag fraction",1, 0, 15);
     /// create constraint on mFrac (mFrac = 1, constraint derived from stat scaling)
@@ -491,7 +508,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
       RooProduct*  mass_Frac   = new RooProduct( Form("mass_Frac_%i",years[iy]), Form("mass_Frac_%i",years[iy]), RooArgList(*FracZ4430WT,*mFrac));
 //      RooProduct*  mass_Frac   = new RooProduct( Form("mass_Frac_%i",years[iy]), Form("mass_Frac_%i",years[iy]), RooArgList(*FracZ4430WT,*c_fm));
       RooAddPdf*    Mass_All   = new RooAddPdf(  Form("Mass_All_%i",years[iy]), Form("Mass_All_%i",years[iy]),RooArgList(*c_dcb_wt,*c_dcb_rt),*mass_Frac);
-      RooProdPdf*  Z4430_pdf   = new RooProdPdf( Form("Z4430_pdf_%i",years[iy]), Form("Z4430_ang_pdf_%i",years[iy]),RooArgList(*Z4430_ang_pdf,*Mass_All,*c_fm) );
+      RooProdPdf*  Z4430_pdf   = new RooProdPdf( Form("Z4430_pdf_%i",years[iy]), Form("Z4430_pdf_%i",years[iy]),RooArgList(*Z4430_ang_pdf,*Mass_All,*c_fm) );
 //      
 
       RooAddPdf*pdf_z_sig_ang_mass_mfc          = new RooAddPdf( ("PDF1_sig_ang_mass_"+shortString+"_"+year).c_str(),
@@ -643,8 +660,13 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 //    fitter->setNCPU(sysconf(_SC_NPROCESSORS_ONLN));
     vFitter.push_back(fitter);
 
-     if (nSample==0 && (q2Bin==4 || q2Bin==6)) {
+     if (nSample==0 && (q2Bin==4)) {
        fitter->runSimpleFit = true;
+       fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF),4);
+//       fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF)/2,4);
+     }
+     if (nSample==0 && (q2Bin==6)) {
+       fitter->runSimpleFit = false;
        fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF),4);
 //       fitter->setNCPU(sysconf(_SC_NPROCESSORS_CONF)/2,4);
      }
