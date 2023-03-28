@@ -33,6 +33,8 @@ double diffMax = 0.0499;
 void plotMultiDataFit ()
 {
 
+  gROOT->SetBatch(true);
+
   vector< vector<TH1D*> > vHistBest (nPars);
   vector< vector<TH1D*> > vHistPull (nPars);
   vector< vector<TH1D*> > vHistErrH (nPars);
@@ -69,10 +71,10 @@ void plotMultiDataFit ()
     vq2Bins.push_back(q2stat);
 
     TChain fitResultsTree ("fitResultsTree","");
-    string filename = Form("simFitResults4d/simFitResult_data_fullAngularMass_Swave_201620172018_b%istat-*_b%i.root",q2stat,q2Bin);
+    string filename = Form("simFitResults4d/simFitResult_data_fullAngularMass_Swave_201620172018_b%istat-*_b%i-XGBv8.root",q2stat,q2Bin);
     fitResultsTree.Add(filename.c_str());
 
-    string filename_fR = Form("/eos/user/a/aboletti/BdToKstarMuMu/dataCR-results/simFitResult_data_fullAngularMass_Swave_201620172018_b%i.root",q2Bin);
+    string filename_fR = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/simFitResults/simFitResult_data_fullAngularMass_Swave_201620172018_b%ip1_XGBv8.root",q2Bin); // to update
     TFile* filein_fR = TFile::Open(filename_fR.c_str());
     TTree* fitResultsTree_fR = (TTree*)filein_fR->Get("fitResultsTree");
     if (!fitResultsTree_fR || fitResultsTree_fR->GetEntries() != 1) {
@@ -340,6 +342,6 @@ void plotMultiDataFit ()
     leg.AddEntry(gr[iStat],Form("q2-bin %i stat",aq2stat[iStat]),"lep");
   leg.Draw();
 
-  canv.SaveAs("plotSimFit_d/simfit_dataCRsub_results.pdf");
+  canv.SaveAs("plotSimFit_d/simfit_dataCRsub_results_xgbv8.pdf");
 
 }

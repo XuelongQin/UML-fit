@@ -28,9 +28,11 @@ int colors [12] = { 633, 417, 879, 857, 839, 801, 921, 607, 807, 419, 907, 402 }
 double diffMax = 0.0999;
 // double diffMax = 0.0499;
 
+
 void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref4dFit = false)
 {
 
+  gROOT->SetBatch(true);
   // whichSamples=0 -> plot fit results to 3D MC subsamples
   // whichSamples=1 -> plot fit results to 4D MC subsamples
   // whichSamples=2 -> plot fit results to 4D MC subsamples + toy background
@@ -87,13 +89,13 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
     vq2Bins.push_back(q2Bin);
 
     TChain fitResultsTree ("fitResultsTree","");
-    string filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-*_b%i.root",q2Bin);
-    if (whichSamples==1) filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_dataStat-*_b%i.root",q2Bin);
-    if (whichSamples==0) filename = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_dataStat-*_b%ip%i.root",q2Bin,parity);
+    string filename = Form("simFitResults4d/xgbv8/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-*_b%i.root",q2Bin);
+    if (whichSamples==1) filename = Form("simFitResults4d/xgbv8/simFitResult_recoMC_fullAngularMass201620172018_dataStat-*_b%i_XGBv8.root",q2Bin);
+    if (whichSamples==0) filename = Form("simFitResults/xgbv8/simFitResult_recoMC_fullAngular201620172018_dataStat-*_b%ip%i.root",q2Bin,parity);
     fitResultsTree.Add(filename.c_str());
 
     string filename_fR = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_MCStat_b%i.root",q2Bin);
-    if (!ref4dFit) filename_fR = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_MCStat_b%ip%i.root",q2Bin,parity);
+    if (!ref4dFit) filename_fR = Form("/eos/user/a/aboletti/BdToKstarMuMu/simFitResults/simFitResult_recoMC_fullAngular201620172018_MCStat_b%ip%i_XGBv8.root",q2Bin,parity);
     TFile* filein_fR = TFile::Open(filename_fR.c_str());
     TTree* fitResultsTree_fR = (TTree*)filein_fR->Get("fitResultsTree");
     if (!fitResultsTree_fR || fitResultsTree_fR->GetEntries() != 1) {
@@ -345,6 +347,7 @@ void plotMultiFit (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref
       aQuantInnerCenter[vq2Bins[iBin]] = 0.5 * ( quantVal[1] + quantVal[2] );
       aQuantOuterCenter[vq2Bins[iBin]] = 0.5 * ( quantVal[0] + quantVal[3] );
       aQuantInnerError[vq2Bins[iBin]] = 0.5 * fabs( quantVal[1] - quantVal[2] );
+      std::cout << "bin " << iBin << " aQuantInnerError[vq2Bins]: " << aQuantInnerError[vq2Bins[iBin]] << std::endl;
       aQuantOuterError[vq2Bins[iBin]] = 0.5 * fabs( quantVal[0] - quantVal[3] );
     }
 
