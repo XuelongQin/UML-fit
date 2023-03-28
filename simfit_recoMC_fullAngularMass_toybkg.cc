@@ -252,8 +252,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     int nbkg_togen = nbkg_years[years[iy]][q2Bin];
 
     // Read angular pdf for sidebands from external file 
-    string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
-    filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
+    string filename_sb = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/sidebands/b%i_%i.root", q2Bin, years[iy]);
     retrieveWorkspace( filename_sb, wsp_sb, "wsb");
 
     RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));
@@ -574,7 +573,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   if (nSample>0)   stat = stat + Form("-%i",firstSample);
   if (multiSample) stat = stat + Form("-%i",lastSample);
   TFile* fout = 0;
-  if (save>0) fout = new TFile(("simFitResults4d/xgbv8/simFitResult_recoMC_fullAngularMass_toybkg" + all_years + stat + Form("_b%i.root", q2Bin)).c_str(),"RECREATE");
+  if (save>0) fout = new TFile(("simFitResults4d/xgbv8/simFitResult_recoMC_fullAngularMass_toybkg" + all_years + stat + Form("_p%s_b%i.root", parity, q2Bin)).c_str(),"RECREATE");
   RooWorkspace* wsp_out = 0;
   
   wksp->import(*simPdf,RecycleConflictNodes());

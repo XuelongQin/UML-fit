@@ -8,7 +8,7 @@ nbins=$(wc -l ../confSF/KDE_SF_all.list | cut -d " " -f1)
 while read -a line; do
     bin=${line[0]}
     # Creation of the submit HTCondor file
-    cat << EOF > temp_sub_simfit_recoMC_fullAngularMass_toybkg_oneBin.sub
+    cat << EOF > temp_sub_simfit_recoMC_fullAngularMass_toybkg_oneBin${bin}.sub
 Executable  = run_simfit_recoMC_fullAngularMass_toybkg.sh
 nsamp       = \$(ProcId)
 Arguments   = \$INT(nsamp) ${bin} 
@@ -27,8 +27,8 @@ EOF
 
     # Compilation, submission and file removal
     if make simfit_recoMC_fullAngularMass_toybkg
-    then condor_submit temp_sub_simfit_recoMC_fullAngularMass_toybkg_oneBin.sub
+    then condor_submit temp_sub_simfit_recoMC_fullAngularMass_toybkg_oneBin${bin}.sub
     fi
-    rm temp_sub_simfit_recoMC_fullAngularMass_toybkg_oneBin.sub
+    rm temp_sub_simfit_recoMC_fullAngularMass_toybkg_oneBin${bin}.sub
 done < ../confSF/KDE_SF_all.list
     
