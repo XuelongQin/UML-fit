@@ -9,10 +9,10 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   static const int nPars = 8;
   string parName[nPars] = {"Fl","P1","P2","P3","P4p","P5p","P6p","P8p"};
 
-  static const int nMassPars = 3;
+  static const int nMassPars = 2;
   string massParName[nMassPars] = {"mean_{RT}^{%s}",
-				   "fsig_"+shortString+"_%s",
-				   "slope^{%s}"};
+				   "fsig_"+shortString+"_%s"};
+				   // "slope^{%s}"};
 
   static const int nMassConstPars = 14;
   string massConstParName[nMassConstPars] = {"f_{M}^{%s}",
@@ -26,7 +26,7 @@ void plotSimFitComparison_manual(int q2Bin = 4)
 					     "#alpha_{WT1}^{%s}",
 					     "#alpha_{WT2}^{%s}",
 					     "#sigma_{WT1}^{%s}",
-					     "mean_{WT}^{%s}",
+					     "deltaPeakVar^{%s}",
 					     "n_{WT1}^{%s}",
 					     "n_{WT2}^{%s}"};
 
@@ -63,7 +63,8 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   double massConstVal[3*nMassConstPars];
   double massConstErr[3*nMassConstPars];
 
-  string finLogName = "logs_parSub/simfit_data_fullAngularMass_Swave_0_%i_0.out";
+  string finLogName = "/afs/cern.ch/work/d/dini/public/ResonantXGBv8/Bin4SimBern/allYears-bin%i.log";
+  // string finLogName = "logs_parSub/simfit_data_fullAngularMass_Swave_0_%i_0.out";
   // string finLogName = "logs_simFit4d/simfit_data_fullAngularMass_Swave_%i_1_0_0_0_0_1_2016_2017_2018.log";
   ifstream fin_log(Form(finLogName.c_str(),q2Bin));
   if ( !fin_log ) {
@@ -77,7 +78,7 @@ void plotSimFitComparison_manual(int q2Bin = 4)
     istream_iterator<string> end;
     vector<string> vec(begin, end);
     if (vec.size()<1) continue;
-    cout<<vec[0]<<endl;
+    // cout<<vec[0]<<endl;
     for (int iPar = 0; iPar<nSPars; ++iPar)
       if ( vec[0].compare(sParName[iPar]) == 0 ) {
 	bestSParSim[iPar] = atof(vec[2].c_str());
@@ -97,11 +98,15 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   }
   fin_log.close();
 
-  string finName = "simFitResults4d/simFitResult_data_fullAngularMass_Swave_%s_b%i.root";
-  string finName2 = "/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%s_fM_";
-  if (q2Bin==4) finName2 = finName2 + "Jpsi_newbdt.root";
-  else if (q2Bin==6) finName2 = finName2 + "Psi_newbdt.root";
-  else finName2 = finName2 + "newbdt.root";
+  string finName = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/simFitResults/simFitResult_data_fullAngularMass_Swave_%s_b%ip1_XGBv8.root";
+  // string finName = "simFitResults4d/simFitResult_data_fullAngularMass_Swave_%s_b%i.root";
+  string finName2 = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-LMNR-XGBv8/%s.root";
+  if (q2Bin==4) finName2 = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-Jpsi-XGBv8/%s.root";
+  else if (q2Bin==6) finName2 = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-Psi-XGBv8/%s.root";
+  // string finName2 = "/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%s_fM_";
+  // if (q2Bin==4) finName2 = finName2 + "Jpsi_newbdt.root";
+  // else if (q2Bin==6) finName2 = finName2 + "Psi_newbdt.root";
+  // else finName2 = finName2 + "newbdt.root";
 
   auto finSim = TFile::Open(Form(finName.c_str(),"201620172018",q2Bin));
   if ( !finSim || finSim->IsZombie() ) {
@@ -166,16 +171,31 @@ void plotSimFitComparison_manual(int q2Bin = 4)
     }
     for (int iPar=0; iPar<nMassPars; ++iPar) {
       auto par = (RooRealVar*)ws->var(Form(massParName[iPar].c_str(),year[iy].c_str()));
+      if (!par) {
+	cout<<"Error: "<<massParName[iPar]<<" not found in file "<<Form(finName.c_str(),year[iy].c_str(),q2Bin)<<endl;
+	return;
+      }
       bestMassPar[iPar*3+iy] = par->getValV();
       errMassPar [iPar*3+iy] = par->getError();
     }
     ws2->loadSnapshot(Form("reference_fit_RT_%i",q2Bin));
+    double mean_rt_val = ws2->var(Form("mean_{RT}^{%i}", q2Bin))->getVal(); 
+    double mean_rt_err = ws2->var(Form("mean_{RT}^{%i}", q2Bin))->getError(); 
     for (int iPar=0; iPar<nMassConstPars; ++iPar) {
       auto par = (RooRealVar*)ws->var(Form(massConstParName[iPar].c_str(),year[iy].c_str()));
+      if (!par) {
+	cout<<"Error: "<<massConstParName[iPar]<<" not found in file "<<Form(finName.c_str(),year[iy].c_str(),q2Bin)<<endl;
+	return;
+      }
       bestMassConstPar[iPar*3+iy] = par->getValV();
       errMassConstPar [iPar*3+iy] = par->getError();
       if (iPar==8) ws2->loadSnapshot(Form("reference_fit_WT_%i",q2Bin));
-      if (iPar>0) {
+      if (iPar==11) {
+	double mean_wt_val = ws2->var(Form("mean_{WT}^{%i}", q2Bin))->getVal(); 
+	double mean_wt_err = ws2->var(Form("mean_{WT}^{%i}", q2Bin))->getError(); 
+	massConstVal[iPar*3+iy] = mean_rt_val-mean_wt_val;
+	massConstErr[iPar*3+iy] = sqrt(mean_rt_err*mean_rt_err+mean_wt_err*mean_wt_err); 
+      } else if (iPar>0) {
 	auto par2 = (RooRealVar*)ws2->var(Form(massConstParName[iPar].c_str(),Form("%i",q2Bin)));
 	if ( !par2 || par2->IsZombie() ) {
 	  cout<<Form(massConstParName[iPar].c_str(),year[iy].c_str())<<" constraint not found"<<endl;
@@ -289,7 +309,7 @@ void plotSimFitComparison_manual(int q2Bin = 4)
     leg.AddEntry(gr[iy],("Result "+year[iy]).c_str(),"lep");
   leg.Draw();
 
-  canv.SaveAs(("plotSimFit4d_d/comparisonSimFit_result_"+shortString+".pdf").c_str());
+  canv.SaveAs(("plotSimFit4d_d/comparisonSimFit_result_"+shortString+"_XGBv8.pdf").c_str());
 
   // Plot S-wave parameters
   double xS[3][nSPars];
@@ -327,7 +347,7 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   for (int iBin=0; iBin<nSPars; ++iBin)
     hLabS->GetXaxis()->SetBinLabel(iBin+1,sParName[iBin].c_str());
   double yRangeS = 0.2;
-  if (q2Bin==4) yRangeS = 0.05;
+  if (q2Bin==4) yRangeS = 0.1;
   hLabS->SetMinimum(-1*yRangeS);
   hLabS->SetMaximum(yRangeS);
   hLabS->Draw();
@@ -358,7 +378,7 @@ void plotSimFitComparison_manual(int q2Bin = 4)
     legS.AddEntry(grS[iy],("Result "+year[iy]).c_str(),"lep");
   legS.Draw();
 
-  canvS.SaveAs(("plotSimFit4d_d/comparisonSimFit_Swave_"+shortString+".pdf").c_str());
+  canvS.SaveAs(("plotSimFit4d_d/comparisonSimFit_Swave_"+shortString+"_XGBv8.pdf").c_str());
 
   // Plot mass parameters
   double xMass[3*(nMassPars+nMassConstPars)];
@@ -438,7 +458,7 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   legM.AddEntry(grConst,"Constraint","fp");
   legM.Draw();
 
-  canvM.SaveAs(("plotSimFit4d_d/comparisonSimFit_massParameters_"+shortString+".pdf").c_str());
+  canvM.SaveAs(("plotSimFit4d_d/comparisonSimFit_massParameters_"+shortString+"_XGBv8.pdf").c_str());
 
   // Plot contrained mass parameters with traditional pull plots
   {
@@ -487,7 +507,7 @@ void plotSimFitComparison_manual(int q2Bin = 4)
     grSimM->SetLineWidth(2);
     grSimM->Draw("P");
 
-    canvM.SaveAs(("plotSimFit4d_d/comparisonSimFit_massParametersPulls_"+shortString+".pdf").c_str());
+    canvM.SaveAs(("plotSimFit4d_d/comparisonSimFit_massParametersPulls_"+shortString+"_XGBv8.pdf").c_str());
 
   }
 
