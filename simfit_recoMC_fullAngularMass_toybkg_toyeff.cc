@@ -115,8 +115,10 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
   RooRealVar* rand = new RooRealVar("rand", "rand", 0,1);
   RooRealVar* mass = new RooRealVar("mass","m(#mu#muK#pi)", 5.,5.6,"GeV");
   RooRealVar* wei  = new RooRealVar("weight","weight",1);
-  RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass, *wei);
-  RooArgSet observables (*ctK, *ctL, *phi, *mass, *wei);
+  RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass);
+  RooArgSet observables (*ctK, *ctL, *phi, *mass);
+  // RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass, *wei);
+  // RooArgSet observables (*ctK, *ctL, *phi, *mass, *wei);
   wksp->defineSet("observables", observables, true);
 
   // define angular parameters with ranges from positiveness requirements on the decay rate
@@ -175,9 +177,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
     retrieveWorkspace( filename_data, wsp, Form("ws_b%ip%i", q2Bin, 1-parity ));
 
     // import KDE efficiency histograms and partial integral histograms
-    string filename_toyeff = Form((parity==0 ? "KDEeff_b%i_ev_%i_toy%i.root" : "KDEeff_b%i_od_%i_toy%i.root"),q2Bin,years[iy],nEff);
-    if (XGBv<1) filename_toyeff = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff/" + filename_toyeff;
-    else filename_toyeff = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff-XGBv%i/",XGBv) + filename_toyeff;
+    string filename_toyeff = Form((parity==0 ? "KDEeff_b%i_ev_%i_toy%i_v%s7.root" : "KDEeff_b%i_od_%i_toy%i_v%s7.root"),q2Bin,years[iy],nEff,XGBv>0?Form("%i",XGBv):"");
+    filename_toyeff = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta/files/" + filename_toyeff;
     auto fin_toyeff = new TFile( filename_toyeff.c_str(), "READ" );
     if ( !fin_toyeff || !fin_toyeff->IsOpen() ) {
       cout<<"File not found: "<<filename_toyeff<<endl;
@@ -191,6 +192,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
       return;
     }
 
+    cout<<"eff"<<endl;
     // create efficiency functions
     RooDataHist* effCData = new RooDataHist(("effCData_"+shortString+"_"+year).c_str(),"effCData",vars,effCHist[iy]);
     RooDataHist* effWData = new RooDataHist(("effWData_"+shortString+"_"+year).c_str(),"effWData",vars,effWHist[iy]);
@@ -205,17 +207,18 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
                                     *effWData,
                                     1));
 
+    cout<<"integ"<<endl;
     // import precomputed integrals and fill a std::vector
-    intCHist.push_back( (TH1D*)fin_eff[iy]->Get(intCHistString.c_str()));
-    intWHist.push_back( (TH1D*)fin_eff[iy]->Get(intWHistString.c_str()));
+    intCHist.push_back( (TH1D*)fin_toyeff->Get(intCHistString.c_str()));
+    intWHist.push_back( (TH1D*)fin_toyeff->Get(intWHistString.c_str()));
     intCVec.push_back (vector<double> (0));
     intWVec.push_back (vector<double> (0));
     if ( !intCHist[iy] || intCHist[iy]->IsZombie() || !intWHist[iy] || intWHist[iy]->IsZombie() ) {
-      cout << "Integral histogram " << intCHistString <<" or " << intWHistString << " not found in file: "<< filename << endl << "Abort" << endl;
+      cout << "Integral histogram " << intCHistString <<" or " << intWHistString << " not found in file: "<< filename_toyeff << endl << "Abort" << endl;
       return;
     } else if ( strcmp( intCHist[iy]->GetTitle(), effCHist[iy]->GetTitle() ) || strcmp( intWHist[iy]->GetTitle(), effWHist[iy]->GetTitle() )) {
     // if the eff_config tag is different between efficiency and precomputed-integral means that they are inconsistent
-      cout << "Integral histograms are incoherent with efficiency in file: " << filename << endl;
+      cout << "Integral histograms are incoherent with efficiency in file: " << filename_toyeff << endl;
       cout << "Efficiency (CT) conf: " << effCHist[iy]->GetTitle() <<endl;
       cout << "Integral (CT) conf: "   << intCHist[iy]->GetTitle() <<endl;
       cout << "Efficiency (WT) conf: " << effWHist[iy]->GetTitle() <<endl;
@@ -233,6 +236,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
     }
 
 
+    cout<<"dataset"<<endl;
     // create roodataset (in case data-like option is selected, only import the correct % of data)
     data.push_back( createDataset( nSample+1,  nSample,  nSample, wsp[iy],  
                                    q2Bin,  parity,  years[iy], 
@@ -240,6 +244,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
 
  
      // now generate bkg events
+    cout<<"bkg"<<endl;
     int nbkg_togen = nbkg_years[years[iy]][q2Bin];
 
     // Read angular pdf for sidebands from external file 
@@ -318,6 +323,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
       wksp->saveSnapshot(Form("fit_bkg_pdf_%i_%i",years[iy], itoy+nSample), *bkg_params, kTRUE) ;
     }      
 
+    cout<<"mass"<<endl;
     // Signal Mass Component
     // import mass PDF from fits to the MC
     string channelStr = "";
@@ -729,6 +735,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
 	string plotString = shortString + "_" + all_years + XGBstr;
 	if (nSample>0) plotString = plotString + Form("_s%i",is);
 	string plotname = "plotSimFit4d_d/xgbv8/simFitResult_recoMC_fullAngularMass_toybkg_" + plotString + ".pdf";
+	string samplename = Form("_subs%d", is);
+	samplename =  "data%i" + samplename;
 	fitter->plotSimFitProjections(plotname.c_str(),{samplename,sigpdfname,bkgpdfname},years,true);
 
       }

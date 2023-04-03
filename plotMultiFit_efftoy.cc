@@ -89,7 +89,7 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
 
     TChain fitResultsTree ("fitResultsTree","");
     // string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/simFitResults4d/simFitResult_recoMC_fullAngularMass_toyeff201620172018_dataStat-0_b%i_good.root",q2Bin);
-    string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-0_b%i_toyeff*.root",q2Bin);
+    string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/MCstat/simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-0_b%i_toyeff*.root",q2Bin);
     // string filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-*_b%i.root",q2Bin);
     // if (plot4dFit==1) filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_dataStat-*_b%i.root",q2Bin);
     // if (plot4dFit==0) filename = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_dataStat-*_b%i.root",q2Bin);
