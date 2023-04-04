@@ -3,29 +3,23 @@
 par=1
 
 multi=0
-nsam=${1}
-q2stat=${4}
+nsam=0
 
 XGBv=8
 localFile=0
-fitopt=0
+fitopt=1
 
 plot=1
-save=${5}
+save=2
 
-bin=${2}
-# ibin=${2}
+xgbv=8
 
-yearConf=${3}
+bin=4
+unbl=4
 
-export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/data-datasets/
-export SBDIR=/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/sidebands/
+yearConf=0
 
-if [ "${XGBv}" == 0 ]; then
-    export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7/files
-else
-    export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7-XGBv8/files
-fi
+wscale=${1}
 
 if [ "${USER}" == "aboletti" ]; then
     export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
@@ -57,40 +51,6 @@ cd $WORKDIR
 
 echo 'now submitting for bin ' ${bin}
 
-if [ "${par}" == 0 ]; then
-    parstr="ev"
-else
-    parstr="od"
-fi
-
-if [ "${localFile}" -gt 0 ]; then 
-    for iy in {2016..2018}
-    do
-        echo 'will copy data samples from  from ' ${SAMPLEDIR}
-        echo 'will copy efficiencies from ' ${EFFDIR}
-        echo 'will copy sidebands from ' ${SBDIR}
-        [ "$yearConf" -gt 0 ] && [ "$((${yearConf}+2015))" != "$iy" ] && continue
-        dataname="${SAMPLEDIR}/recoDATADataset_b${bin}_${iy}.root"
-        effname="${EFFDIR}/KDEeff_b${bin}_${parstr}_${iy}.root"
-        sbname="${SBDIR}/savesb_${iy}_b${bin}.root"
-        if [ ! -r "${dataname}" ]; then
-            echo "${dataname}" not found
-            exit 1
-        fi
-        if [ ! -r "${effname}" ]; then
-            echo "${effname}" not found
-            exit 1
-        fi
-        if [ ! -r "${sbname}" ]; then
-            echo "${sbname}" not found
-            exit 1
-        fi
-        cp "${dataname}" .
-        cp "${effname}" .
-        cp "${sbname}" .
-    done
-fi
-
 if [ ! -r $HOME/simfit_data_fullAngularMass_Swave ]; then
     echo $HOME/simfit_data_fullAngularMass_Swave not found
     exit 1
@@ -105,23 +65,23 @@ case "$yearConf" in
 # void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, int fitOption, int XGBv, bool localFiles, bool plot, int save, std::vector<int> years)
 
     0)
-	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} ${fitopt} ${XGBv} ${localFile} ${plot} ${save} 2016 2017 2018
-	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} ${fitopt} ${XGBv} ${localFile} ${plot} ${save} 2016 2017 2018
+	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${wscale} ${fitopt} ${XGBv} ${unbl} ${localFile} ${plot} ${save} 2016 2017 2018
+	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${wscale} ${fitopt} ${XGBv} ${unbl} ${localFile} ${plot} ${save} 2016 2017 2018
 	;;
 
     1)
-	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} ${fitopt} ${XGBv} ${localFile} ${plot} ${save} 2016
-	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} ${fitopt} ${XGBv} ${localFile} ${plot} ${save} 2016
+	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${wscale} ${fitopt} ${XGBv} ${unbl} ${localFile} ${plot} ${save} 2016
+	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${wscale} ${fitopt} ${XGBv} ${unbl} ${localFile} ${plot} ${save} 2016
 	;;
 
     2)
-	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} ${fitopt} ${XGBv} ${localFile} ${plot} ${save} 2017
-	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} ${fitopt} ${XGBv} ${localFile} ${plot} ${save} 2017
+	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${wscale} ${fitopt} ${XGBv} ${unbl} ${localFile} ${plot} ${save} 2017
+	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${wscale} ${fitopt} ${XGBv} ${unbl} ${localFile} ${plot} ${save} 2017
 	;;
 
     3)
-	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} ${fitopt} ${XGBv} ${localFile} ${plot} ${save} 2018
-	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} ${fitopt} ${XGBv} ${localFile} ${plot} ${save} 2018
+	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${wscale} ${fitopt} ${XGBv} ${unbl} ${localFile} ${plot} ${save} 2018
+	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${wscale} ${fitopt} ${XGBv} ${unbl} ${localFile} ${plot} ${save} 2018
   ;;
 
 esac

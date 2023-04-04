@@ -16,6 +16,7 @@ RooDoubleCBFast* createWTMassShape(int q2Bin,
                                    bool constrainVars, 
                                    RooArgSet &c_vars,
                                    RooArgSet &c_pdfs,
+				   double wscaled,
 				   int contraintStat = -1
                                    ){
 
@@ -29,12 +30,12 @@ RooDoubleCBFast* createWTMassShape(int q2Bin,
       int scaleWidth = -1;
       if (q2Bin==4 && contraintStat>=0) scaleWidth = 2*contraintStat+1;
 
-//       constrainVar2(mean_wt  , Form("mean_{WT}^{%i}",q2Bin)   , w, year, true, c_vars, c_pdfs, scaleWidth);
-      constrainVar2(sigma_wt , Form("#sigma_{WT1}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, scaleWidth);
-      constrainVar2(alpha_wt1, Form("#alpha_{WT1}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, scaleWidth);
-      constrainVar2(alpha_wt2, Form("#alpha_{WT2}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, scaleWidth);
-      constrainVar2(n_wt1    , Form("n_{WT1}^{%i}",q2Bin)     , w, year, true, c_vars, c_pdfs, scaleWidth);
-      constrainVar2(n_wt2    , Form("n_{WT2}^{%i}",q2Bin)     , w, year, true, c_vars, c_pdfs, scaleWidth);
+//       constrainVar2(mean_wt  , Form("mean_{WT}^{%i}",q2Bin)   , w, year, true, c_vars, c_pdfs, wscaled, scaleWidth);
+      constrainVar2(sigma_wt , Form("#sigma_{WT1}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, wscaled, scaleWidth);
+      constrainVar2(alpha_wt1, Form("#alpha_{WT1}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, 1., scaleWidth);
+      constrainVar2(alpha_wt2, Form("#alpha_{WT2}^{%i}",q2Bin), w, year, true, c_vars, c_pdfs, 1., scaleWidth);
+      constrainVar2(n_wt1    , Form("n_{WT1}^{%i}",q2Bin)     , w, year, true, c_vars, c_pdfs, 1., scaleWidth);
+      constrainVar2(n_wt2    , Form("n_{WT2}^{%i}",q2Bin)     , w, year, true, c_vars, c_pdfs, 1., scaleWidth);
     }
 
     return dcb_wt;                                                   

@@ -90,6 +90,7 @@ void constrainVar2(RooRealVar* var,
 		   bool addToList,
 		   RooArgSet &c_vars,
 		   RooArgSet &c_pdfs,
+		   double wscaled,
 		   int scaleWidth = -1
 		   ){
 
@@ -99,7 +100,7 @@ void constrainVar2(RooRealVar* var,
     RooGaussian* gauss_constr = new RooGaussian(  Form("c_%s_%i", inVarName.c_str(), year) , 
                                                   Form("c_%s_%i", inVarName.c_str(), year) , 
                                                   *var,  
-                                                  RooConst( w->var(inVarName.c_str())->getVal()  ), 
+                                                  RooConst( wscaled * w->var(inVarName.c_str())->getVal()  ), 
                                                   RooConst( widthFac*w->var(inVarName.c_str())->getError())
                                                  ); 
     if (addToList){
