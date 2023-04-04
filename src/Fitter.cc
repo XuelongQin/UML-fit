@@ -121,6 +121,9 @@ void Fitter::SetDefConf()
   minParError = 0.01;
   widthScale = 0.1;
 
+  vFreeFitResult = std::vector<Double_t>(angPars.getSize(),0);
+  vFreeFitErrLow  = std::vector<Double_t>(angPars.getSize(),0);
+  vFreeFitErrHigh = std::vector<Double_t>(angPars.getSize(),0);
   vFitResult = std::vector<Double_t>(angPars.getSize(),0);
   vFitErrLow  = std::vector<Double_t>(angPars.getSize(),0);
   vFitErrHigh = std::vector<Double_t>(angPars.getSize(),0);
@@ -131,6 +134,7 @@ void Fitter::SetDefConf()
   vConfInterHigh = std::vector<Double_t>(angPars.getSize(),0);
 
   nCPU = 1;
+  nCPU_Pen=1;
   nCPU_Plot=4;
 
 }
@@ -139,7 +143,6 @@ void Fitter::SetDefConf()
 Int_t Fitter::fit()
 {
 
-    std::cout<<"Setting number of CPU ="<<nCPU<<std::endl;
     coeff1 = 0;
     coeff4 = 0;
     coeff5 = 0;
@@ -161,6 +164,8 @@ Int_t Fitter::fit()
     m.optimizeConst (kTRUE); // do not recalculate constant terms
     m.setOffsetting(kTRUE);  //  Enable internal likelihood offsetting for enhanced numeric precision.
     // m.setVerbose(kTRUE);
+//     m.setPrintLevel(-1);
+//     m.setPrintEvalErrors(-1);
     m.setPrintLevel(2);
     m.setPrintEvalErrors(2);
     //  Minuit2.setEps(1e-16) ;
@@ -189,13 +194,13 @@ Int_t Fitter::fit()
     // if free fit is good return its result
     if ( result_free->status()==0 && result_free->covQual()==3 && boundary->getValV() == 0 ) {
       if ( !runSimpleFit ) computeBoundaryDistance(); //allow to skip the boundary-distance computation (for full-stat MC and control region fits)
-      fillResultContainers();
+      fillResultContainers(false,true);
       return 0;
     }
 
     if ( runSimpleFit ) { //allow to skip the penalised fit (for full-stat MC and control region fits)
       if ( result_free->status()==0 && result_free->covQual()==3 ) {
-	fillResultContainers();
+	fillResultContainers(false,true);
 	return 1;
       }
 
@@ -203,6 +208,7 @@ Int_t Fitter::fit()
 
     }
     
+    std::cout<<"============ START FIT WITH PENALTY ==========="<<std::endl;
     usedPenalty = true;
 
     // optional: if a partial boundary is satisfied
@@ -244,7 +250,7 @@ Int_t Fitter::fit()
 	// set up the penalised fit
 	nll_penalty = simPdf_penalty->createNLL(*combData,
 						RooFit::Extended(kFALSE),
-						RooFit::NumCPU(1)
+						RooFit::NumCPU(nCPU_Pen)
 						);
 
 	RooMinimizer m_penalty (*nll_penalty) ;
@@ -492,7 +498,7 @@ Int_t Fitter::MinosAng(int seed, int nGenMINOS)
 }
 
 
-void Fitter::fillResultContainers(bool fromImprov)
+void Fitter::fillResultContainers(bool fromImprov, bool isFree)
 {
 
   // fill results' containers
@@ -503,9 +509,18 @@ void Fitter::fillResultContainers(bool fromImprov)
     vResult[iPar] = par->getValV();
 
     if (!fromImprov) {
-      vFitResult[iPar] = vResult[iPar];
-      vFitErrLow[iPar] = par->getErrorLo();
-      vFitErrHigh[iPar] = par->getErrorHi();
+      if (isFree) {
+	vFreeFitResult[iPar] = vResult[iPar];
+	vFreeFitErrLow[iPar] = par->getErrorLo();
+	vFreeFitErrHigh[iPar] = par->getErrorHi();
+	vFitResult[iPar] = vResult[iPar];
+	vFitErrLow[iPar] = vFreeFitErrLow[iPar];
+	vFitErrHigh[iPar] = vFreeFitErrHigh[iPar];
+      } else {
+	vFitResult[iPar] = vResult[iPar];
+	vFitErrLow[iPar] = par->getErrorLo();
+	vFitErrHigh[iPar] = par->getErrorHi();
+      }
     } else vImprovResult[iPar] = vResult[iPar];
 
   }
@@ -519,6 +534,7 @@ Double_t Fitter::computeBoundaryDistance()
   TStopwatch distTime;
   distTime.Start(true);
 
+  std::cout<<" == Start to compute  boundary distance == "<<std::endl;
   // Compute distance from boundary
   boundDist = bound_dist->getValV();
 
@@ -536,6 +552,7 @@ Double_t Fitter::computeBoundaryDistance()
 void Fitter::plotSimFitProjections(const char* filename, std::vector<std::string> catnames, std::vector<int> years, bool is4D)
 {
 
+  std::cout<<Form("== Start filling plots in : %s ==",filename)<<std::endl;
   auto canv = new TCanvas ("canv","canv",is4D?2000:1500,500*years.size());
   canv->Divide(is4D?4:3, years.size());
   std::vector<std::string> catnamesresolv(catnames.size());
@@ -562,7 +579,6 @@ void Fitter::plotSimFitProjections(const char* filename, std::vector<std::string
 
 void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearData, std::vector<std::string> catnames, std::string frametitle, bool is4D, TCanvas* canv, int ipad)
 {
-    std::cout<<"Setting number of CPU for plots ="<<nCPU_Plot<<std::endl;
 
     TLegend* leg = new TLegend (0.60,0.75,0.9,0.9);
 
@@ -583,26 +599,22 @@ void Fitter::plotProjections(RooAbsPdf* singleYearPdf, RooAbsData* singleYearDat
 			     RooFit::MarkerColor(kRed+1),
 			     RooFit::LineColor(kRed+1),
 			     RooFit::Binning(40),
-//			     RooFit::NumCPU(nCPU_Plot),
 			     RooFit::Name(Form("plData%i",ipad)) );
         
       singleYearPdf->plotOn(frames[fr],
 			    RooFit::LineWidth(1),
-			    RooFit::Name(Form("plPDF%i",ipad)),
-			    RooFit::NumCPU(nCPU_Plot));
+			    RooFit::Name(Form("plPDF%i",ipad)) );
 
       if (catnames.size()>1) {
 	singleYearPdf->plotOn(frames[fr],
 			      RooFit::LineWidth(1),
 			      RooFit::Name(Form("plPDFbkg%i",ipad)),
-			      RooFit::NumCPU(nCPU_Plot),
 			      RooFit::LineColor(8),
 			      RooFit::Components( catnames[2].c_str() ));
 
 	singleYearPdf->plotOn(frames[fr],
 			      RooFit::LineWidth(1),
 			      RooFit::Name(Form("plPDFsig%i",ipad)),
-			      RooFit::NumCPU(nCPU_Plot),
 			      RooFit::LineColor(880),
 			      RooFit::Components( catnames[1].c_str() ));
       }

@@ -55,10 +55,11 @@ class Fitter {
   Double_t base4_corr;
   Double_t min_base;
 
-  Int_t nCPU;
-  Int_t nCPU_Plot;
+  Int_t nCPU=1;
+  Int_t nCPU_Pen=1;
+  Int_t nCPU_Plot=4;
 
-  void fillResultContainers(bool fromImprov = false) ;
+  void fillResultContainers(bool fromImprov = false, bool isFree = false) ;
 
   Double_t computeBoundaryDistance() ;
 
@@ -91,6 +92,9 @@ class Fitter {
   // boolean to control whether distance from boundary calculation and penalised fit should be run
   bool runSimpleFit;
 
+  std::vector<Double_t> vFreeFitResult;
+  std::vector<Double_t> vFreeFitErrLow;
+  std::vector<Double_t> vFreeFitErrHigh;
   std::vector<Double_t> vFitResult;
   std::vector<Double_t> vFitErrLow;
   std::vector<Double_t> vFitErrHigh;
@@ -136,7 +140,8 @@ class Fitter {
 
   void plotSimFitProjections(const char* filename, std::vector<std::string> catnames, std::vector<int> years, bool is4D);
 
-  void setNCPU(Int_t _nCPU = 1, Int_t _nCPU_Plot=4) { nCPU=_nCPU; nCPU_Plot=_nCPU_Plot; };
+//  void setNCPU(Int_t _nCPU = 1) { nCPU=_nCPU; }; 
+  void setNCPU(Int_t _nCPU = 1, Int_t _nCPU_Pen=1, Int_t _nCPU_Plot=4) { nCPU=_nCPU;nCPU_Pen=_nCPU_Pen; nCPU_Plot=_nCPU_Plot; };
 
   ClassDef(Fitter,1) // Code to run the fit and statistical uncertainty
 };

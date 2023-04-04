@@ -1,6 +1,6 @@
 #root_stuff (root libraries and needed root options)
 ROOTLIBS  := $(shell root-config --glibs)
-ROOTFLAGS := $(shell root-config --cflags --libs) -lRooFit -lRooFitCore -lMathMore -lMinuit
+ROOTFLAGS := $(shell root-config --cflags --libs) -lRooFit -lRooFitCore -lMathMore -lMinuit -lTMVA
 ROOTCINT  := $(shell which rootcint)
 
 #directories
@@ -23,6 +23,7 @@ EXECUTABLE11 := simfit_data_fullAngularMass_Swave
 EXECUTABLE12 := plot_simfit_data_fullAngularMass_Swave
 EXECUTABLE13 := plot_simfit_recoMC_fullAngularMass_toybkg
 EXECUTABLE14 := plot_simfit_recoMC_fullAngularMass
+EXECUTABLE15 := simfit_recoMC_fullAngularMass_sb_syst
 
 EXTRACLASS := RooDataHist.cxx
 CLASS0     := PdfRT
@@ -106,7 +107,10 @@ $(EXECUTABLE13): $(EXECUTABLE13).cc
 $(EXECUTABLE14): $(EXECUTABLE14).cc 
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
 
+$(EXECUTABLE15): $(EXECUTABLE15).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
 #cleaning options
 .PHONY: clean
 clean:
-	rm -f $(EXECUTABLE0) $(EXECUTABLE1) $(EXECUTABLE7)
+	rm -f $(EXECUTABLE0) $(EXECUTABLE1) $(EXECUTABLE7) $(EXECUTABLE15)
