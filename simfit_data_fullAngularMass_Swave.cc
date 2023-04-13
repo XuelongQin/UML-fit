@@ -33,6 +33,7 @@
 #include "RooExponential.h"
 #include "RooPolynomial.h"
 #include "RooGenericPdf.h"
+#include "RooBernstein.h"
 
 #include "utils.h"
 #include "PdfSigRTMass.h"
@@ -58,7 +59,7 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
-void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, int save, std::vector<int> years, int XGBv)
+void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, int fitOption, bool localFiles, bool plot, int save, std::vector<int> years, int XGBv)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
@@ -176,7 +177,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
     if (!localFiles) {
-      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v6/files/" + filename;
+      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7/files/" + filename;
       else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7-XGBv%i/files/",XGBv) + filename;
     }
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
@@ -425,39 +426,24 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
     // read mass pdf for background
     RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , -5., -10., 0.);
-    // RooRealVar* slope       = new RooRealVar    (Form("slope^{%i}",years[iy]),  Form("slope^{%i}",years[iy]) , wsp_sb[iy]->var("slope")->getVal(), -10., 0.);
-    RooExponential* bkg_mass1 = new RooExponential(Form("bkg_mass1_%i",years[iy]),  Form("bkg_mass1_%i",years[iy]) ,  *slope,   *mass  );
+    RooAbsPdf* bkg_mass1 = 0;
+    double pol_bmax =1.;
+    RooRealVar*    b0_bkg_mass = new RooRealVar(Form("b0_bkg_mass-%i",years[iy]) , Form("b0_bkg_mass-%i",years[iy])  ,    pol_bmax  );
+    RooRealVar*    b1_bkg_mass = new RooRealVar(Form("b1_bkg_mass-%i",years[iy]) , Form("b1_bkg_mass-%i",years[iy])  ,    0.1,  0., pol_bmax);
+    RooRealVar*    b2_bkg_mass = new RooRealVar(Form("b2_bkg_mass-%i",years[iy]) , Form("b2_bkg_mass-%i",years[iy])  ,    0.1,  0., pol_bmax);
+    RooRealVar*    b3_bkg_mass = new RooRealVar(Form("b3_bkg_mass-%i",years[iy]) , Form("b3_bkg_mass-%i",years[iy])  ,    0.0 );
+    RooRealVar*    b4_bkg_mass = new RooRealVar(Form("b4_bkg_mass-%i",years[iy]) , Form("b4_bkg_mass-%i",years[iy])  ,    0.1 , 0., pol_bmax);
+    if(q2Bin==4 && fitOption>0){
+      b0_bkg_mass->setConstant(kTRUE);
+      b3_bkg_mass->setConstant(kTRUE);
+      bkg_mass1 = new RooBernstein(Form("bkg_mass1_%i",years[iy]),Form("bkg_mass1_%i",years[iy]),  *mass, RooArgList(*b0_bkg_mass, *b1_bkg_mass, *b2_bkg_mass, *b3_bkg_mass,* b4_bkg_mass));
+    }else{ 
+      bkg_mass1 = new RooExponential(Form("bkg_mass1_%i",years[iy]),  Form("bkg_mass1_%i",years[iy]) ,  *mass,   *slope  );
+    } 
 
-    // RooRealVar* p1_bkg_mass = new RooRealVar(Form("p1-bkg-mass-%i",years[iy]),  Form("p1-bkg-mass^{%i}",years[iy]) , 0. , -100.0 , 100.0 );
-    // RooRealVar* p2_bkg_mass = new RooRealVar(Form("p2-bkg-mass-%i",years[iy]),  Form("p2-bkg-mass^{%i}",years[iy]) , 0. , -100.0 , 100.0 );
-    // RooRealVar* p3_bkg_mass = new RooRealVar(Form("p3-bkg-mass-%i",years[iy]),  Form("p3-bkg-mass^{%i}",years[iy]) , 0. , -100.0 , 100.0 );
-    // RooAbsPdf* bkg_mass = new RooPolynomial(Form("bkg_mass_%i",years[iy]),
-    // 					    Form("bkg_mass_%i",years[iy]) ,
-    // 					    *mass,
-    // 					    RooArgList(*p1_bkg_mass,*p2_bkg_mass,*p3_bkg_mass) );
-
-    // RooAbsPdf* bkg_mass = wsp_sb[iy]->pdf(Form("bkg_mass_sb_bin%i_%i", q2Bin, years[iy]));
-
-    // RooRealVar* p1_bkg_mass = new RooRealVar(Form("p1-bkg-mass-%i",years[iy]),  Form("p1-bkg-mass^{%i}",years[iy]) , 4.95 , 4. , 5. );
-    // RooRealVar* p2_bkg_mass = new RooRealVar(Form("p2-bkg-mass-%i",years[iy]),  Form("p2-bkg-mass^{%i}",years[iy]) , 0.2 , 0. , 1. );
-    // RooAbsPdf* bkg_mass2 = new RooGenericPdf(Form("bkg_mass2_%i",years[iy]),Form("bkg_mass2_%i",years[iy]),"(@0-@1)^@2",RooArgList(*mass,*p1_bkg_mass,*p2_bkg_mass));
-
-    // RooRealVar* p1_bkg_mass = new RooRealVar(Form("p1-bkg-mass-%i",years[iy]),  Form("p1-bkg-mass^{%i}",years[iy]) , 5.1 , 5. , 5.3 );
-    // RooRealVar* p2_bkg_mass = new RooRealVar(Form("p2-bkg-mass-%i",years[iy]),  Form("p2-bkg-mass^{%i}",years[iy]) , 0.05 , 1e-9 , 0.1 );
-    // RooRealVar* p3_bkg_mass = new RooRealVar(Form("p3-bkg-mass-%i",years[iy]),  Form("p3-bkg-mass^{%i}",years[iy]) , 1. , 1e-9 , 100. );
-    // RooAbsPdf* bkg_mass2 = new RooGenericPdf(Form("bkg_mass2_%i",years[iy]),Form("bkg_mass2_%i",years[iy]),"1/(1+(2^@3-1)*exp((@0-@1)/@2))^(1/@3)",RooArgList(*mass,*p1_bkg_mass,*p2_bkg_mass,*p3_bkg_mass));
-
-    // create 4D pdf  for background and import to workspace
-    // auto fBkg = new RooRealVar( ("fBkg_"+shortString+"_"+year).c_str(),
-    // 				("fBkg_"+shortString+"_"+year).c_str(),
-    // 				0.5, 0, 1 );
-    // auto bkg_mass = new RooAddPdf(Form("bkg_mass_%i",years[iy]),
-    // 				 Form("bkg_mass_%i",years[iy]),
-    // 				 *bkg_mass1,*bkg_mass2,*fBkg);
     RooProdPdf* bkg_pdf = new RooProdPdf(Form(bkgpdfname.c_str(),years[iy]),
 					 Form(bkgpdfname.c_str(),years[iy]),
 					 RooArgList(*bkg_ang_pdf,*bkg_mass1));
-    // RooProdPdf* bkg_pdf = new RooProdPdf(Form("bkg_pdf_%i",years[iy]), Form("bkg_pdf_%i",years[iy]), RooArgList(*bkg_ang_pdf,*bkg_mass,*bkg_mass2));
 
 
     // sum signal and bkg pdf 
@@ -726,13 +712,13 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
 
 
-void simfit_data_fullAngularMass_SwaveBin1(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, bool localFiles, bool plot, int save, std::vector<int> years, int XGBv)
+void simfit_data_fullAngularMass_SwaveBin1(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, int fitOption, bool localFiles, bool plot, int save, std::vector<int> years, int XGBv)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years, XGBv);
+      simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, fitOption, localFiles, plot, save, years, XGBv);
   else
-    simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years, XGBv);
+    simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, fitOption, localFiles, plot, save, years, XGBv);
 }
 
 int main(int argc, char** argv)
@@ -761,29 +747,33 @@ int main(int argc, char** argv)
   int XGBv = 0;
   if ( argc > 6 ) XGBv = atoi(argv[6]);
 
+  int fitOption=0;
+  if ( argc > 7 ) fitOption = atoi(argv[7]);
+
   bool localFiles = false;
-  if ( argc > 7 && atoi(argv[7]) > 0 ) localFiles = true;
+  if ( argc > 8 && atoi(argv[8]) > 0 ) localFiles = true;
 
   bool plot = true;
   int save = true;
 
-  if ( argc > 8 && atoi(argv[8]) == 0 ) plot = false;
-  if ( argc > 9 ) save = atoi(argv[9]);
+  if ( argc > 9 && atoi(argv[9]) == 0 ) plot = false;
+  if ( argc > 10 ) save = atoi(argv[10]);
 
   std::vector<int> years;
-  if ( argc > 10 && atoi(argv[10]) != 0 ) years.push_back(atoi(argv[10]));
+  if ( argc > 11 && atoi(argv[11]) != 0 ) years.push_back(atoi(argv[11]));
   else {
     cout << "No specific years selected, using default: 2016" << endl;
     years.push_back(2016);
   }
-  if ( argc > 11 && atoi(argv[11]) != 0 ) years.push_back(atoi(argv[11]));
   if ( argc > 12 && atoi(argv[12]) != 0 ) years.push_back(atoi(argv[12]));
+  if ( argc > 13 && atoi(argv[13]) != 0 ) years.push_back(atoi(argv[13]));
 
   cout <<  "q2Bin       " << q2Bin        << endl;
   cout <<  "parity      " << parity       << endl;
   cout <<  "multiSample " << multiSample  << endl;
   cout <<  "nSample     " << nSample      << endl;
   cout <<  "q2stat      " << q2stat       << endl;
+  cout <<  "fitOption   " << fitOption    << endl;
   cout <<  "local files " << localFiles   << endl;
   cout <<  "plot        " << plot         << endl;
   cout <<  "save        " << save         << endl;
@@ -810,9 +800,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years, XGBv);
+      simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, fitOption, localFiles, plot, save, years, XGBv);
   else
-    simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, localFiles, plot, save, years, XGBv);
+    simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, fitOption, localFiles, plot, save, years, XGBv);
 
   return 0;
 
