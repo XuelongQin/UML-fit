@@ -11,7 +11,7 @@ double PDGKstMass = 0.896;
 
 TCanvas* c [nBins];
 
-void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool plot = false)
+void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 8, bool plot = false, bool localFiles = false)
 {
   // year format: [6] for 2016
   //              [7] for 2017
@@ -24,7 +24,10 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
   if ( year<6 || year>8 ) return;
 
   string XGBstr = "";
-  if (XGBv>0) XGBstr = Form("_XGBv%i",XGBv);
+  if (XGBv>0) {
+    XGBstr = Form("_XGBv%i",XGBv);
+    cout<<Form("Warning!: setting XGBv%d",XGBv)<<endl;
+  }  
 
   bool isJpsi = false;
   bool isPsi  = false;
@@ -35,7 +38,13 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
   else isLMNR = true;
 
   string dataString = data ? "DATA" : "MC";
-
+  string filesPrefix;
+  if (localFiles){
+   filesPrefix="~/";
+  }else{
+   filesPrefix="/eos/cms/store/group/phys_bphys/fiorendi";
+  }
+  filesPrefix=filesPrefix+ "p5prime/ntuples/after_nominal_selection";
   // define angular variables and variable for PU-reweighting
   RooRealVar ctK ("ctK","cos(#theta_{K})",-1,1);
   RooRealVar ctL ("ctL","cos(#theta_{L})",-1,1);
@@ -64,17 +73,25 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 4, bool pl
   // Load ntuples
   TChain* t_num = new TChain();
   string year_str = Form("201%i", year);
+//   if (data==0 && isLMNR)
+//     t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
+//   else if (data==0 && isJpsi) {
+//     if (XGBv==2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/reweightV2/201%iMC_JPSI_withMCw_v2_addxcutvariable.root/ntuple", year, year));
+//     else if (XGBv>2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/reweightV%i/201%iMC_JPSI_v%i_MCw_addxcutvariable.root/ntuple",year,XGBv,year,XGBv));
+//     else t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
+//   }
+//   else if (data==0 && isPsi)
+//     t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
+//   else
+//     t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%idata_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
   if (data==0 && isLMNR)
-    t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
-  else if (data==0 && isJpsi) {
-    if (XGBv==2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/reweightV2/201%iMC_JPSI_withMCw_v2_addxcutvariable.root/ntuple", year, year));
-    else if (XGBv>2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/reweightV%i/201%iMC_JPSI_v%i_MCw_addxcutvariable.root/ntuple",year,XGBv,year,XGBv));
-    else t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
-  }
+    t_num->Add(Form("%s/201%iMC_LMNR_noIP2D_addxcutvariable.root/ntuple",filesPrefix.c_str(), year));
+  else if (data==0 && isJpsi)
+    t_num->Add(Form("%s/201%iMC_JPSI_noIP2D_addxcutvariable.root/ntuple",filesPrefix.c_str(), year));
   else if (data==0 && isPsi)
-    t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%iMC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
+    t_num->Add(Form("%s/201%iMC_PSI_noIP2D_addxcutvariable.root/ntuple" ,filesPrefix.c_str(), year));
   else
-    t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/fixBkg/201%idata_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple", year, year));
+    t_num->Add(Form("%s/201%idata_noIP2D_addxcutvariable.root/ntuple"   ,filesPrefix.c_str(), year));
   int numEntries = t_num->GetEntries();
   std::cout << numEntries << std::endl;
   std::cout << Form("Opening file: %s", (t_num->GetFile())->GetName()) << std::endl;
