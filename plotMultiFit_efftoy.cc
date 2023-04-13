@@ -95,7 +95,8 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
     // if (plot4dFit==0) filename = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_dataStat-*_b%i.root",q2Bin);
     fitResultsTree.Add(filename.c_str());
 
-    string filename_fR = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-0_b%i.root",q2Bin);
+    // string filename_fR = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-0_b%i.root",q2Bin);
+    string filename_fR = Form("simFitResults4d/xgbv8/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-0_b%i.root",q2Bin);
     // string filename_fR = Form("../UML-fit-integration/simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_dataStat-0_b%i.root",q2Bin);
     // string filename_fR = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_MCStat_b%i.root",q2Bin);
     // if (!ref4dFit) filename_fR = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_MCStat_b%i.root",q2Bin);
@@ -313,8 +314,8 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
     // if (plot4dFit) toyConfString = toyConfString + "_4Dbkg";
     // if (!ref4dFit) toyConfString = toyConfString + "_vs3DfullMC";
 
-    cDistr[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_efftoy_%s_dist%s.pdf",parName[iPar].c_str(),toyConfString.c_str()));
-    cUncert[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_efftoy_%s_uncert%s.pdf",parName[iPar].c_str(),toyConfString.c_str()));
+    cDistr[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_efftoy_%s_dist%s_XGBv8.pdf",parName[iPar].c_str(),toyConfString.c_str()));
+    cUncert[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_efftoy_%s_uncert%s_XGBv8.pdf",parName[iPar].c_str(),toyConfString.c_str()));
 
     // Plot resutls vs q2
 
@@ -507,7 +508,7 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
     line->Draw();
     resDiffCover->Draw("e2");
 
-    cResult[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_efftoy_%s_results%s.pdf",parName[iPar].c_str(),toyConfString.c_str()));
+    cResult[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_efftoy_%s_results%s_XGBv8.pdf",parName[iPar].c_str(),toyConfString.c_str()));
 
   }
 
