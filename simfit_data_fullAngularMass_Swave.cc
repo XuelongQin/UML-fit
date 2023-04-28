@@ -166,14 +166,14 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
   //
   // retrieve Z4430 model workspace from file
-  // only a single year sample of Z is available, therfore the same parametrisation is used for the 3 years of data taking
+  // only a single year sample of Z is available, therefore the same parametrisation is used for the 3 years of data taking
   //
   RooAbsPdf* Z4430_ang_pdf = 0;
   RooArgSet* Z4430_ang_params = 0;
   RooAbsPdf* Z4430_mass_pdf = 0;
   RooArgSet* Z4430_mass_params = 0;
   if (q2Bin==6 && fitOption>0){
-    string filename_Z4430    = "HistZ4430.root";
+    string filename_Z4430 = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/Zmodel/HistZ4430.root";
     if (!(retrieveWorkspace(filename_Z4430, wsp_Z4430, "wZ4430"))) return;
 
     // retrieve angular component of the Z pdf
@@ -540,8 +540,6 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     // special case of bin 6, include Z component in the signal model
     if(q2Bin==6 && fitOption>0){
       RooProdPdf* Z4430_pdf = 0;
-//       RooAddPdf* Mass_All = 0;
-//       RooProduct* mass_Frac = 0; 
       if(fitOption==3){
         std::cout << Form("Warning! Z(4430) Mass model from Signal MC Fits for Year=%i", years[iy]) << std::endl;
         RooConstVar* FracZ4430WT = new RooConstVar(Form("FracZ4430WT^{%i}",years[iy]),"FracZ4430WT", fraction);
