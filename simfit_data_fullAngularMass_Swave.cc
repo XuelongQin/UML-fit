@@ -200,7 +200,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
       wsp_Z4430[0]->allPdfs();
       exit(1);
     }
-    Z4430_mass_params = (RooArgSet*) Z4430_mass_pdf->getParameters(RooArgSet(*ctK,*ctL,*phi));
+    Z4430_mass_params = (RooArgSet*) Z4430_mass_pdf->getParameters(RooArgSet(*mass));
     auto iter_z_mass = Z4430_mass_params->createIterator();
     RooRealVar* ivar_z_mass =  (RooRealVar*)iter_z_mass->Next();
     iii=1;
