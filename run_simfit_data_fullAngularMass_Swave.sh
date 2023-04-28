@@ -1,10 +1,14 @@
 #!/bin/bash
 
-par=0
+par=1
 
 multi=0
 nsam=${1}
 q2stat=${4}
+
+XGBv=8
+localFile=1
+fitopt=1
 
 plot=1
 save=${5}
@@ -14,14 +18,24 @@ bin=${2}
 
 yearConf=${3}
 
-XGBv=8
-localFile=1
-fitopt=1
+export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/data-datasets/
 
-export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
-export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
-export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5
-export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/files
+if [ "${XGBv}" == 0 ]; then
+    export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7/files
+else
+    export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7-XGBv8/files
+fi
+
+if [ "${USER}" == "aboletti" ]; then
+    export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
+    export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
+elif [ "${USER}" == "fiorendi" ]; then
+    export HOME=/afs/cern.ch/work/f/fiorendi/private/effKDE/UML-fit
+    export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
+else
+    echo no user found
+    exit 1
+fi
 
 export WORKDIR=$PWD
 cd $CMSSWDIR
@@ -48,23 +62,26 @@ else
     parstr="od"
 fi
 
-for iy in {2016..2018}
-do
-    [ "$yearConf" -gt 0 ] && [ "$((${yearConf}+2015))" != "$iy" ] && continue
-    dataname="${SAMPLEDIR}/recoDATADataset_b${bin}_${iy}.root"
-    # dataname="${SAMPLEDIR}/${iy}/lmnr/newphi/recoDATADataset_b${bin}_${iy}.root"
-    effname="${EFFDIR}/KDEeff_b${bin}_${parstr}_${iy}.root"
-    if [ ! -r "${dataname}" ]; then
-	echo "${dataname}" not found
-	exit 1
-    fi
-    if [ ! -r "${effname}" ]; then
-	echo "${effname}" not found
-	exit 1
-    fi
-    cp "${dataname}" .
-    cp "${effname}" .
-done
+if [ "${localFile}" -gt 0 ]; then 
+    for iy in {2016..2018}
+    do
+        echo 'will copy data samples from  from ' ${SAMPLEDIR}
+        echo 'will copy efficiencies from ' ${EFFDIR}
+        [ "$yearConf" -gt 0 ] && [ "$((${yearConf}+2015))" != "$iy" ] && continue
+        dataname="${SAMPLEDIR}/recoDATADataset_b${bin}_${iy}.root"
+        effname="${EFFDIR}/KDEeff_b${bin}_${parstr}_${iy}.root"
+        if [ ! -r "${dataname}" ]; then
+            echo "${dataname}" not found
+            exit 1
+        fi
+        if [ ! -r "${effname}" ]; then
+            echo "${effname}" not found
+            exit 1
+        fi
+        cp "${dataname}" .
+        cp "${effname}" .
+    done
+fi
 
 if [ ! -r $HOME/simfit_data_fullAngularMass_Swave ]; then
     echo $HOME/simfit_data_fullAngularMass_Swave not found
@@ -97,7 +114,7 @@ case "$yearConf" in
     3)
 	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} ${fitopt} ${XGBv} ${localFile} ${plot} ${save} 2018
 	./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${q2stat} ${fitopt} ${XGBv} ${localFile} ${plot} ${save} 2018
-	;;
+  ;;
 
 esac
 

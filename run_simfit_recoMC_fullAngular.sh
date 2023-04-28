@@ -5,14 +5,34 @@ par=1
 multi=0
 nsam=${1}
 
+xgb=8
+
 plot=0
 save=1
 
 ibin=${2}
 
-export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-custMinos
-export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
-export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE
+localFile=0
+
+export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-datasets/
+
+if [ "${xgb}" == 0 ]; then
+    export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v6/files
+else
+    export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7/files
+fi
+
+
+if [ "${USER}" == "aboletti" ]; then
+    export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
+    export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
+elif [ "${USER}" == "fiorendi" ]; then
+    export HOME=/afs/cern.ch/work/f/fiorendi/private/effKDE/UML-fit
+    export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
+else
+    echo no user found
+    exit 1
+fi
 
 export WORKDIR=$PWD
 cd $CMSSWDIR
@@ -24,72 +44,69 @@ echo setting CMSSWDIR to $CMSSWDIR
 
 cd $WORKDIR
 
-nbin=0
-while read -a line; do
-    abin[$nbin]=${line[0]}
-    nbin=$((nbin+1))
-done < $HOME/../confSF/KDE_SF.list
-bin=${abin[$ibin]}
+# nbin=0
+# while read -a line; do
+#     abin[$nbin]=${line[0]}
+#     nbin=$((nbin+1))
+# done < $HOME/../confSF/KDE_SF.list
+# bin=${abin[$ibin]}
+bin=${ibin}
 
 echo 'now submitting for bin ' ${bin}
 
-if [ ! -r $SAMPLEDIR/2016/lmnr/recoMCDataset_b${bin}_2016.root ]; then
-    echo $SAMPLEDIR/2016/lmnr/recoMCDataset_b${bin}_2016.root not found
-    exit 1
+if [ "${par}" == 0 ]; then
+    parstr="ev"
+else
+    parstr="od"
 fi
-if [ ! -r $SAMPLEDIR/2017/lmnr/recoMCDataset_b${bin}_2017.root ]; then
-    echo $SAMPLEDIR/2017/lmnr/recoMCDataset_b${bin}_2017.root not found
-    exit 1
+
+if [ "${localFile}" -gt 0 ]; then 
+    for iy in {2016..2018}
+    do
+        echo 'will copy MC samples from  from ' ${SAMPLEDIR}
+        echo 'will copy efficiencies from ' ${EFFDIR}
+        dataname="${SAMPLEDIR}/recoMCDataset_b${bin}_${iy}_XGBv8.root"
+        effname="${EFFDIR}/KDEeff_b${bin}_${parstr}_${iy}.root"
+        if [ ! -r "${dataname}" ]; then
+            echo "${dataname}" not found
+            exit 1
+        fi
+        if [ ! -r "${effname}" ]; then
+            echo "${effname}" not found
+            exit 1
+        fi
+        cp "${dataname}" .
+        cp "${effname}" .
+    done
 fi
-if [ ! -r $SAMPLEDIR/2018/lmnr/recoMCDataset_b${bin}_2018.root ]; then
-    echo $SAMPLEDIR/2018/lmnr/recoMCDataset_b${bin}_2018.root not found
-    exit 1
-fi
-if [ ! -r $SAMPLEDIR/2016/lmnr/KDEeff_b${bin}_od_2016.root ]; then
-    echo $SAMPLEDIR/2016/lmnr/KDEeff_b${bin}_od_2016.root not found
-    exit 1
-fi
-if [ ! -r $SAMPLEDIR/2017/lmnr/KDEeff_b${bin}_od_2017.root ]; then
-    echo $SAMPLEDIR/2017/lmnr/KDEeff_b${bin}_od_2017.root not found
-    exit 1
-fi
-if [ ! -r $SAMPLEDIR/2018/lmnr/KDEeff_b${bin}_od_2018.root ]; then
-    echo $SAMPLEDIR/2018/lmnr/KDEeff_b${bin}_od_2018.root not found
-    exit 1
-fi
+
+
 if [ ! -r $HOME/simfit_recoMC_fullAngular ]; then
     echo $HOME/simfit_recoMC_fullAngular not found
     exit 1
 fi
-
-cp $SAMPLEDIR/2016/lmnr/recoMCDataset_b${bin}_2016.root .
-cp $SAMPLEDIR/2017/lmnr/recoMCDataset_b${bin}_2017.root .
-cp $SAMPLEDIR/2018/lmnr/recoMCDataset_b${bin}_2018.root .
-cp $SAMPLEDIR/2016/lmnr/KDEeff_b${bin}_od_2016.root .
-cp $SAMPLEDIR/2017/lmnr/KDEeff_b${bin}_od_2017.root .
-cp $SAMPLEDIR/2018/lmnr/KDEeff_b${bin}_od_2018.root .
 cp $HOME/simfit_recoMC_fullAngular .
 
-mkdir simFitResults
-mkdir plotSimFit_d
+mkdir -p simFitResults/xgbv8
+mkdir -p plotSimFit_d/xgbv8
 
-echo ./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2016 2017 2018
-./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} 1 ${plot} ${save} 2016 2017 2018
+echo ./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} ${xgb} ${localFile}  ${plot} ${save} 2016 2017 2018
+./simfit_recoMC_fullAngular ${bin} ${par} ${multi} ${nsam} ${xgb} ${localFile}  ${plot} ${save} 2016 2017 2018
 
-if [ ! -d $HOME/simFitResults ]; then
-    mkdir $HOME/simFitResults
+if [ ! -d $HOME/simFitResults/xgbv8 ]; then
+    mkdir -p $HOME/simFitResults/xgbv8
 fi
-if [ ! -d $HOME/plotSimFit_d ]; then
-    mkdir $HOME/plotSimFit_d
+if [ ! -d $HOME/plotSimFit_d/xgbv8 ]; then
+    mkdir -p $HOME/plotSimFit_d/xgbv8
 fi
-cp plotSimFit_d/* $HOME/plotSimFit_d/
-cp simFitResults/* $HOME/simFitResults/
+cp plotSimFit_d/xgbv8/* $HOME/plotSimFit_d/xgbv8/
+cp simFitResults/xgbv8/* $HOME/simFitResults/xgbv8/
 # for file in simFitResults/* ; do cp $file $HOME/${file//.root/_${multi}s${nsam}.root}; done
 
-rm -rf plotSimFit_d
-rm -rf simFitResults
-
-rm simfit_recoMC_fullAngular
-rm recoMCDataset_b*
-rm KDEeff_b*
-rm simFitResult*
+# rm -rf plotSimFit_d
+# rm -rf simFitResults
+# 
+# rm simfit_recoMC_fullAngular
+# rm recoMCDataset_b*
+# rm KDEeff_b*
+# rm simFitResult*
