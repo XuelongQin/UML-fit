@@ -134,6 +134,7 @@ void Fitter::SetDefConf()
   vConfInterHigh = std::vector<Double_t>(angPars.getSize(),0);
 
   nCPU = 1;
+  nCPU_Pen=1;
 
 }
 
@@ -204,6 +205,7 @@ Int_t Fitter::fit()
 
     }
     
+    std::cout<<"============ START FIT WITH PENALTY ==========="<<std::endl;
     usedPenalty = true;
 
     // optional: if a partial boundary is satisfied
@@ -245,7 +247,7 @@ Int_t Fitter::fit()
 	// set up the penalised fit
 	nll_penalty = simPdf_penalty->createNLL(*combData,
 						RooFit::Extended(kFALSE),
-						RooFit::NumCPU(1)
+						RooFit::NumCPU(nCPU_Pen)
 						);
 
 	RooMinimizer m_penalty (*nll_penalty) ;
@@ -528,6 +530,7 @@ Double_t Fitter::computeBoundaryDistance()
 
   TStopwatch distTime;
   distTime.Start(true);
+  std::cout<<"== Start to compute  boundary distance =="<<std::endl;
 
   // Compute distance from boundary
   boundDist = bound_dist->getValV();
@@ -546,6 +549,7 @@ Double_t Fitter::computeBoundaryDistance()
 void Fitter::plotSimFitProjections(const char* filename, std::vector<std::string> catnames, std::vector<int> years, bool is4D)
 {
 
+  std::cout<<Form("== Start filling plots in : %s ==",filename)<<std::endl;
   auto canv = new TCanvas ("canv","canv",is4D?2000:1500,500*years.size());
   canv->Divide(is4D?4:3, years.size());
   std::vector<std::string> catnamesresolv(catnames.size());
