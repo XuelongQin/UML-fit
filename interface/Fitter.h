@@ -139,7 +139,7 @@ class Fitter {
 
   void plotSimFitProjections(const char* filename, std::vector<std::string> catnames, std::vector<int> years, bool is4D);
 
-  void setNCPU(Int_t _nCPU = 1, Int_t _nCPU_Pen=1, Int_t _nCPU_Pen=1) { nCPU=_nCPU;nCPU_Pen=_nCPU_Pen };
+  void setNCPU(Int_t _nCPU = 1, Int_t _nCPU_Pen=1) { nCPU=_nCPU;nCPU_Pen=_nCPU_Pen };
 
   ClassDef(Fitter,1) // Code to run the fit and statistical uncertainty
 };
