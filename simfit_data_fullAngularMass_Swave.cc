@@ -225,8 +225,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
     if (!localFiles) {
-      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7/files/" + filename;
-      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7-XGBv%i/files/",XGBv) + filename;
+      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff/" + filename;
+      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff-XGBv%i/",XGBv) + filename;
     }
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
     if ( !fin_eff[iy] || !fin_eff[iy]->IsOpen() ) {
@@ -389,7 +389,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
                                         RooConst(frac_sigma)
                                         );
 
-    cout << fraction << " +/- " << fM_sigmas[years[iy]][q2Bin] << " ---> 1 +/- " << frac_sigma << endl;                                    
+    cout << "mFrac = " << fraction << " +/- " << fM_sigmas[years[iy]][q2Bin] << " ---> R = 1 +/- " << frac_sigma << endl;
     c_vars.add(*mFrac); 
 
     // Angular Component
