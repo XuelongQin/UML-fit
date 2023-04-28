@@ -703,9 +703,13 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     fitter = new Fitter (Form("fitter%i",is),Form("fitter%i",is),pars,combData,simPdf,simPdf_penalty,boundary,bound_dist,penTerm,&c_vars);
     vFitter.push_back(fitter);
 
+    bool runPostFitSteps = true;
     if (nSample==0 && (q2Bin==4 || q2Bin==6)) {
-      fitter->runSimpleFit = true;
+      // define if run improvAng and minosAng
+      runPostFitSteps = false;
       fitter->setNCPU(8);
+      // for bin 4, do not run the penalty even if needed
+      if (q2Bin==4) fitter->runSimpleFit = true;
     }
 
     subTime.Start(true);
@@ -745,7 +749,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
 	TStopwatch improvTime;
 	improvTime.Start(true);
-	if (!fitter->runSimpleFit) fitter->improveAng();
+	if (runPostFitSteps) fitter->improveAng();
 	improvTime.Stop();
 	imprTime = improvTime.CpuTime();
 	cout<<"Improv time: "<<imprTime<<" s"<<endl;
@@ -754,23 +758,21 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
       }
 
-      if (nSample>0) {
-	// run MINOS error
-	TStopwatch minosTime;
-	minosTime.Start(true);
+      // run MINOS error
+      TStopwatch minosTime;
+      minosTime.Start(true);
+      
+      if (runPostFitSteps) fitter->MinosAng();
+      
+      minosTime.Stop();
+      minTime = minosTime.CpuTime();
+      cout<<"MINOS errors computed in "<<minTime<<" s"<<endl;
+      
+      // cout<<"Error difference [custMINOS - fit], lower and higher:"<<endl;
+      // for (int iPar = 0; iPar < pars.getSize(); ++iPar)
+      // 	cout<<vResult[iPar]-vConfInterLow[iPar]+vFitErrLow[iPar]<<"   \t"
+      // 	    <<vConfInterHigh[iPar]-vResult[iPar]-vFitErrHigh[iPar]<<endl;
 
-	if (!fitter->runSimpleFit) fitter->MinosAng();
-
-	minosTime.Stop();
-	minTime = minosTime.CpuTime();
-	cout<<"MINOS errors computed in "<<minTime<<" s"<<endl;
-
-	// cout<<"Error difference [custMINOS - fit], lower and higher:"<<endl;
-	// for (int iPar = 0; iPar < pars.getSize(); ++iPar)
-	// 	cout<<vResult[iPar]-vConfInterLow[iPar]+vFitErrLow[iPar]<<"   \t"
-	// 	    <<vConfInterHigh[iPar]-vResult[iPar]-vFitErrHigh[iPar]<<endl;
-
-      }
 
       // save results in tree
       for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
