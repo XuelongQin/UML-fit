@@ -778,15 +778,15 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
       for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
       	vResult[iPar] = fitter->vResult[iPar];
       	vFreeResult[iPar] = fitter->vFreeFitResult[iPar];
-      	if (nSample>0) {
-      	  vConfInterLow[iPar] = fitter->vConfInterLow[iPar];
-      	  vConfInterHigh[iPar] = fitter->vConfInterHigh[iPar];
+      	if (runPostFitSteps) {
+      	  vConfInterLow[iPar] = fitter->vConfInterLow[iPar] - vResult[iPar];
+      	  vConfInterHigh[iPar] = fitter->vConfInterHigh[iPar] - vResult[iPar];
       	} else {
       	  vConfInterLow[iPar] = fitter->vFitErrLow[iPar];
       	  vConfInterHigh[iPar] = fitter->vFitErrHigh[iPar];
-      	  vFreeConfInterLow[iPar] = fitter->vFreeFitErrLow[iPar];
-      	  vFreeConfInterHigh[iPar] = fitter->vFreeFitErrHigh[iPar];
-      	}
+	}
+	vFreeConfInterLow[iPar] = fitter->vFreeFitErrLow[iPar];
+	vFreeConfInterHigh[iPar] = fitter->vFreeFitErrHigh[iPar];
       }
       fitResultsTree->Fill();
 
