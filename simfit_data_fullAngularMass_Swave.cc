@@ -57,7 +57,7 @@ TCanvas* c [4*nBins];
 
 double power = 1.0;
 
-void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, int fitOption, int XGBv, bool localFiles, bool plot, int save, std::vector<int> years)
+void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, int fitOption, int XGBv, int unblind, bool localFiles, bool plot, int save, std::vector<int> years)
 {
 
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING) ;
@@ -626,7 +626,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   }
 
   TFile* fout = 0;
-  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + stat + Form("_b%i%s.root", q2Bin, XGBstr.c_str())).c_str(),"RECREATE");
+  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_data_fullAngularMass_Swave_" + all_years + stat + Form("_b%i%s_unbl%i.root", q2Bin, XGBstr.c_str(), unblind)).c_str(),"RECREATE");
   RooWorkspace* wsp_out = 0;
 
   // save initial par values    
@@ -713,6 +713,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     fitter = new Fitter (Form("fitter%i",is),Form("fitter%i",is),pars,combData,simPdf,simPdf_penalty,boundary,bound_dist,penTerm,&c_vars);
     vFitter.push_back(fitter);
 
+    fitter->setUnbl(unblind);
+
     bool runPostFitSteps = true;
     if (nSample==0 && (q2Bin==4 || q2Bin==6)) {
       // define if run improvAng and minosAng
@@ -744,7 +746,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
       convCheck = true;
       boundCheck = boundary->getValV() == 0;
 
-      fitter->result()->Print("v");
+      if (unblind>3) fitter->result()->Print("v");
 
       if (fitter->runSimpleFit) boundDistFit = boundDist = -1;
       else boundDistFit = boundDist = fitter->boundDist;
@@ -800,18 +802,23 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
       }
       fitResultsTree->Fill();
 
-      if (save>1 && (q2Bin!=4 || years.size()<3 || nSample>0)) {
-	wsp_out = new RooWorkspace("wsp_out","wsp_out");
-	wsp_out->import(*combData);
-	wsp_out->import(*simPdf);
-      }
+      if (plot && !multiSample && unblind>2) {
 
-      if (plot && !multiSample) {
-
-	string plotString = shortString + "_" + all_years + stat + XGBstr;
+	string plotString = shortString + "_" + all_years + stat + XGBstr + Form("_unbl%i",unblind);
 	string plotname = "plotSimFit4d_d/simFitResult_data_fullAngularMass_Swave_" + plotString + ".pdf";
 	fitter->plotSimFitProjections(plotname.c_str(),{samplename,sigpdfname,bkgpdfname},years,true);
 
+      }
+
+      if (save>1 && (q2Bin!=4 || years.size()<3 || nSample>0) && unblind>1) {
+	wsp_out = new RooWorkspace("wsp_out","wsp_out");
+	if (unblind<4)
+	  for (int iPar = 0; iPar < pars.getSize(); ++iPar) {
+	    ((RooRealVar*)pars.at(iPar))->setVal(0);
+	    ((RooRealVar*)pars.at(iPar))->setError(0);
+	  }
+	wsp_out->import(*combData);
+	wsp_out->import(*simPdf);
       }
 
     }
@@ -843,9 +850,9 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     cout<<"Bad fits: "<<cnt[3]<<" converging outside physical region, "<<cnt[5]+cnt[7]<<" not converged ("<<cnt[5]<<" in ph region)"<<endl;
   }
 
-  if (save>0) {
+  if (save>0 && unblind>1) {
     fout->cd();
-    fitResultsTree->Write();
+    if (unblind>3) fitResultsTree->Write();
     if (wsp_out) wsp_out->Write();
     fout->Close();
   }
@@ -853,13 +860,13 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 }
 
 
-void simfit_data_fullAngularMass_SwaveBin1(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, int fitOption, int XGBv, bool localFiles, bool plot, int save, std::vector<int> years)
+void simfit_data_fullAngularMass_SwaveBin1(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, int fitOption, int XGBv, int unblind, bool localFiles, bool plot, int save, std::vector<int> years)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, fitOption, XGBv, localFiles, plot, save, years);
+      simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, fitOption, XGBv, unblind, localFiles, plot, save, years);
   else
-    simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, fitOption, XGBv, localFiles, plot, save, years);
+    simfit_data_fullAngularMass_SwaveBin(q2Bin, parity, multiSample, nSample, q2stat, fitOption, XGBv, unblind, localFiles, plot, save, years);
 }
 
 int main(int argc, char** argv)
@@ -869,6 +876,11 @@ int main(int argc, char** argv)
   // parity format: [0] even efficiency
   //                [1] odd efficiency
   //                [-1] for each parity recursively
+  // unblind options: [0] no fit in signal q2 bins
+  //                  [1] fit reports only time, convergence and penalty
+  //                  [2] adds root file with RooWorkspace and blinded POI
+  //                  [3] adds fit projections plot
+  //                  [4] adds RooFitResult and MINOS errors to log, unblind POI and add TTree in root file
 
   int q2Bin   = -1;
   int parity  = -1; 
@@ -896,23 +908,26 @@ int main(int argc, char** argv)
   int XGBv = 0;
   if ( argc > 7 ) XGBv = atoi(argv[7]);
 
+  int unblind=0;
+  if ( argc > 8 ) unblind = atoi(argv[8]);
+
   bool localFiles = false;
-  if ( argc > 8 && atoi(argv[8]) > 0 ) localFiles = true;
+  if ( argc > 9 && atoi(argv[9]) > 0 ) localFiles = true;
 
   bool plot = true;
   int save = true;
 
-  if ( argc > 9 && atoi(argv[9]) == 0 ) plot = false;
-  if ( argc > 10 ) save = atoi(argv[10]);
+  if ( argc > 10 && atoi(argv[10]) == 0 ) plot = false;
+  if ( argc > 11 ) save = atoi(argv[11]);
 
   std::vector<int> years;
-  if ( argc > 11 && atoi(argv[11]) != 0 ) years.push_back(atoi(argv[11]));
+  if ( argc > 12 && atoi(argv[12]) != 0 ) years.push_back(atoi(argv[12]));
   else {
     cout << "No specific years selected, using default: 2016" << endl;
     years.push_back(2016);
   }
-  if ( argc > 12 && atoi(argv[12]) != 0 ) years.push_back(atoi(argv[12]));
   if ( argc > 13 && atoi(argv[13]) != 0 ) years.push_back(atoi(argv[13]));
+  if ( argc > 14 && atoi(argv[14]) != 0 ) years.push_back(atoi(argv[14]));
 
   cout <<  "q2Bin       " << q2Bin        << endl;
   cout <<  "parity      " << parity       << endl;
@@ -928,6 +943,7 @@ int main(int argc, char** argv)
 //   cout << years[1] << endl;
 //   cout << years[2] << endl;
 
+  cout <<  "UNBLINDIG STEP " << unblind << endl;
 
   if ( q2Bin   < -1 || q2Bin   >= nBins ) return 1;
   if ( parity  < -1 || parity  > 1      ) return 1;
@@ -937,7 +953,7 @@ int main(int argc, char** argv)
   if ( XGBv < 0 ) return 1;
 
   // Protectrion against accidental unblinding
-  if ( q2Bin != 4 && q2Bin != 6 ) {
+  if ( unblind < 1 && q2Bin != 4 && q2Bin != 6 ) {
     cout<<"The analysis is blind!"<<endl;
     return 1;
   }
@@ -947,9 +963,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, fitOption, XGBv, localFiles, plot, save, years);
+      simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, fitOption, XGBv, unblind, localFiles, plot, save, years);
   else
-    simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, fitOption, XGBv, localFiles, plot, save, years);
+    simfit_data_fullAngularMass_SwaveBin1(q2Bin, parity, multiSample, nSample, q2stat, fitOption, XGBv, unblind, localFiles, plot, save, years);
 
   return 0;
 
