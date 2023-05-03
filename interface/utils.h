@@ -1,3 +1,4 @@
+#include <TSystem.h>
 #include <RooGaussian.h>
 #include <RooPlot.h>
 #include <RooRealVar.h>
@@ -112,8 +113,10 @@ bool retrieveWorkspace(string filename, std::vector<RooWorkspace*> &ws, std::str
 
     TFile* f =  TFile::Open( filename.c_str() ) ;
     if ( !f || !f->IsOpen() ) {
-      cout << "File not found: " << filename << endl;
+      cout << "File not found: " <<  gSystem->GetFromPipe(Form("readlink -m %s",filename.c_str())) << endl;
       return false;
+    }else{
+      cout << "Opening: " << gSystem->GetFromPipe(Form("readlink -m %s",filename.c_str())) << endl;
     }
     RooWorkspace* open_w = (RooWorkspace*)f->Get(ws_name.c_str());
     if ( !open_w || open_w->IsZombie() ) {
