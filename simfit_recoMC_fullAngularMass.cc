@@ -158,8 +158,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
     if (!localFiles) {
-      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v6/files/" + filename;
-      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7-XGBv%i/files/",XGBv) + filename;
+      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff/" + filename;
+      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff-XGBv%i/",XGBv) + filename;
     }
 
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
@@ -224,10 +224,9 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
     // Mass Component
     // import mass PDF from fits to the MC
-    string channelStr = "";
-    if (q2Bin==4) channelStr= "_Jpsi";
-    if (q2Bin==6) channelStr= "_Psi";
-    string filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/noIP2D/xgbv8/results_fits_%i_fM%s_noIP2D_MCw_xgbv8.root",years[iy],channelStr.c_str());
+    string filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-%s-XGBv8/%i.root",q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"LMNR"),years[iy]);
+    if (localFiles)
+      filename_mc_mass = Form("results_fits_%i_fM_%s.root",years[iy], q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"lmnr"));
     if (!retrieveWorkspace( filename_mc_mass, wsp_mcmass, "w"))  return;
 
     wsp_mcmass[iy]->Print();

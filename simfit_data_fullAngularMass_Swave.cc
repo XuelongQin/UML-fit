@@ -503,7 +503,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
     //// Background components ////
     // Read angular pdf for sidebands from external file 
-    string filename_sb = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/sidebands/b%i_%i.root", q2Bin, years[iy]);
+    string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin);
+    if (!localFiles) filename_sb = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/sidebands/" + filename_sb;
     if (!(retrieveWorkspace(filename_sb, wsp_sb, "wsb"))) return;
 
     RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));

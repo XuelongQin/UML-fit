@@ -7,8 +7,8 @@ nsam=${1}
 q2stat=${4}
 
 XGBv=8
-localFile=1
-fitopt=1
+localFile=0
+fitopt=0
 
 plot=1
 save=${5}
@@ -19,6 +19,7 @@ bin=${2}
 yearConf=${3}
 
 export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/data-datasets/
+export SBDIR=/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/sidebands/
 
 if [ "${XGBv}" == 0 ]; then
     export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7/files
@@ -67,9 +68,11 @@ if [ "${localFile}" -gt 0 ]; then
     do
         echo 'will copy data samples from  from ' ${SAMPLEDIR}
         echo 'will copy efficiencies from ' ${EFFDIR}
+        echo 'will copy sidebands from ' ${SBDIR}
         [ "$yearConf" -gt 0 ] && [ "$((${yearConf}+2015))" != "$iy" ] && continue
         dataname="${SAMPLEDIR}/recoDATADataset_b${bin}_${iy}.root"
         effname="${EFFDIR}/KDEeff_b${bin}_${parstr}_${iy}.root"
+        sbname="${SBDIR}/savesb_${iy}_b${bin}.root"
         if [ ! -r "${dataname}" ]; then
             echo "${dataname}" not found
             exit 1
@@ -78,8 +81,13 @@ if [ "${localFile}" -gt 0 ]; then
             echo "${effname}" not found
             exit 1
         fi
+        if [ ! -r "${sbname}" ]; then
+            echo "${sbname}" not found
+            exit 1
+        fi
         cp "${dataname}" .
         cp "${effname}" .
+        cp "${sbname}" .
     done
 fi
 
