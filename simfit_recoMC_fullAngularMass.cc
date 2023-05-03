@@ -309,17 +309,27 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 //     RooProdPdf * c_dcb_wt = new RooProdPdf(("c_dcb_wt_"+year).c_str(), ("c_dcb_wt_"+year).c_str(), constr_wt_list );
 //     c_vars.add(c_vars_wt);
 
-    RooRealVar* mFrac = new RooRealVar(Form("f_{M}^{%i}",years[iy]),"mistag fraction",1, 0.5, 1.5);
-    /// create constraint on mFrac (mFrac = 1, constraint derived from stat scaling)
+    // As the signal PDF is written as [ CT + mFrac * MT ] (see the PdfSigAngMass class),
+    // the mFrac parameter represents the fraction between mistagged and correctly-tagged events (n_MT/n_CT)
+    // Also, since the integral of the efficiencies contains the information on the mistag fraction in MC
+    // this parameter represents the ratio between the fitted mFrac and the MC-based one ( n_MT_data / n_CT_data * n_CT_MC / n_MT_MC )
+    RooRealVar* mFrac = new RooRealVar(Form("f_{M}^{%i}",years[iy]),"mistag fraction",1, 0, 15);
+
+    // The values of fM_sigmas are computed on data-like MC subsamples as the fluctuation of the fraction of mistagged events ( n_MT/(n_MT+n_CT) )
+    // this fluctuation needs to be propagated on the quantity of mFrac, to define a Gaussian contraint
     double nrt_mc   =  wsp_mcmass[iy]->var(Form("nRT_%i",q2Bin))->getVal(); 
     double nwt_mc   =  wsp_mcmass[iy]->var(Form("nWT_%i",q2Bin))->getVal(); 
     double fraction = nwt_mc / (nrt_mc + nwt_mc);
-    double frac_sigma = fM_sigmas[years[iy]][q2Bin]/fraction;
+    // Propagation: sigma(mFrac) = sigma(n_MT/n_CT) * n_CT/n_MT
+    //                           = sigma(fraction)/(1-fraction)^2 * (1-fraction)/fraction
+    //                           = sigma(fraction) / fraction / (1-fraction)
+    double frac_sigma = fM_sigmas[years[iy]][q2Bin]/fraction/(1-fraction);
+
     RooGaussian* c_fm = new RooGaussian(Form("c_fm^{%i}",years[iy]) , "c_fm" , *mFrac,  
                                         RooConst(1.) , 
                                         RooConst(frac_sigma)
                                         );
-//     cout << fraction << " +/- " << fM_sigmas[years[iy]][q2Bin] << " ---> << "1 +/- " << frac_sigma << endl;                                    
+    cout << "mFrac = " << fraction << " +/- " << fM_sigmas[years[iy]][q2Bin] << " ---> R = 1 +/- " << frac_sigma << endl;
     c_vars.add(*mFrac); 
 
     // Angular Component
