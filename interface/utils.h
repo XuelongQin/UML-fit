@@ -131,7 +131,7 @@ bool retrieveWorkspace(string filename, std::vector<RooWorkspace*> &ws, std::str
 
 std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastSample, RooWorkspace *ws, 
                                        int q2Bin, int parity, int year, //std::map<int,float> scale_to_data,
-                                       RooArgSet reco_vars, RooArgSet vars, std::string shortString  ){
+                                       RooArgSet vars, std::string shortString  ){
 
     RooDataSet* dataCT, *dataWT;
     std::vector<RooDataSet*> datasample;
