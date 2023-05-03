@@ -413,7 +413,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     double nrt_mc   =  wsp_mcmass[iy]->var(Form("nRT_%i",q2Bin))->getVal(); 
     double nwt_mc   =  wsp_mcmass[iy]->var(Form("nWT_%i",q2Bin))->getVal(); 
     double fraction = nwt_mc / (nrt_mc + nwt_mc);
-    double frac_sigma = fM_sigmas[years[iy]][q2Bin]/fraction;
+    double frac_sigma = fM_sigmas[years[iy]][q2Bin]/fraction/(1-fraction);
     if (nSample!=0) frac_sigma = fM_sigmas[years[iy]][q2stat]/fraction;
     RooGaussian* c_fm = new RooGaussian(Form("c_fm^{%i}",years[iy]) , "c_fm" , *mFrac,  
                                         RooConst(1.) , 
