@@ -180,7 +180,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     Z4430_ang_pdf = (RooAbsPdf*) wsp_Z4430[0]->pdf("Z4430_ang_pdf");
     if(!Z4430_ang_pdf){
       std::cout << "Z4430_ang_pdf not found!!!\n" << std::endl;
-      wsp_Z4430[0]->allPdfs();
+      wsp_Z4430[0]->allPdfs().Print();
       exit(1);
     }
     Z4430_ang_params = (RooArgSet*) Z4430_ang_pdf->getParameters(RooArgSet(*ctK,*ctL,*phi));
@@ -197,7 +197,7 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
     Z4430_mass_pdf = (RooAbsPdf*) wsp_Z4430[0]->pdf("Z4430_mass_pdf");
     if (!Z4430_mass_pdf){
       std::cout << "Z4430_mass_pdf not found!!!\n" << std::endl;
-      wsp_Z4430[0]->allPdfs();
+      wsp_Z4430[0]->allPdfs().Print();
       exit(1);
     }
     Z4430_mass_params = (RooArgSet*) Z4430_mass_pdf->getParameters(RooArgSet(*mass));
