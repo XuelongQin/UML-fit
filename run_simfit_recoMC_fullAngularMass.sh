@@ -14,7 +14,12 @@ ibin=${2}
 
 localFile=0
 export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-datasets/
-export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v5/files
+
+if [ "${xgb}" == 0 ]; then
+    export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7/files
+else
+    export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7-XGBv8/files
+fi
 
 if [ "${USER}" == "aboletti" ]; then
     export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/UML-fit-JpsiFit
@@ -53,22 +58,30 @@ else
     parstr="od"
 fi
 
-# if [ "${localFile}" == 1 ]; then
-#     for iy in {2016..2018}
-#     do	      
-#         dataname="${SAMPLEDIR}/${iy}/lmnr/newphi/recoMCDataset_b${bin}_${iy}.root"
-#         effname="${EFFDIR}/KDEeff_b${bin}_${parstr}_${iy}.root"
-#         if [ ! -r "${dataname}" ]; then
-# 	    echo "${dataname}" not found
-# 	    exit 1
-#         fi
-#         if [ ! -r "${effname}" ]; then
-# 	    echo "${effname}" not found
-# 	    exit 1
-#         fi
-#         cp "${dataname}" .
-#         cp "${effname}" .
-#     done
+if [ "${localFile}" -gt 0 ]; then 
+    for iy in {2016..2018}
+    do
+        echo 'will copy MC samples from  from ' ${SAMPLEDIR}
+        echo 'will copy efficiencies from ' ${EFFDIR}
+        if [ "${xgb}" == 0 ]; then
+            ## this does not exists at the moment
+            dataname="${SAMPLEDIR}/recoMCDataset_b${bin}_${iy}.root"  
+        else    
+            dataname="${SAMPLEDIR}/recoMCDataset_b${bin}_${iy}_XGBv8.root"
+        fi    
+        effname="${EFFDIR}/KDEeff_b${bin}_${parstr}_${iy}.root"
+        if [ ! -r "${dataname}" ]; then
+            echo "${dataname}" not found
+            exit 1
+        fi
+        if [ ! -r "${effname}" ]; then
+            echo "${effname}" not found
+            exit 1
+        fi
+        cp "${dataname}" .
+        cp "${effname}" .
+    done
+fi
 
 if [ ! -r $HOME/simfit_recoMC_fullAngularMass ]; then
     echo $HOME/simfit_recoMC_fullAngularMass not found

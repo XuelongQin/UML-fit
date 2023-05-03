@@ -262,7 +262,7 @@ void plotSimFitComparison(int q2Bin = 6, int q2Stat = -1)
     yPDG [0] = PDG_Fl[iCR]-bestParSim[0];
     ylPDG[0] = PDG_Flel[iCR];
     yhPDG[0] = PDG_Fleh[iCR];
-    grPDG = new TGraphAsymmErrors(1,xSim,yPDG,xeSim,xeSim,PDG_Flel,PDG_Fleh);
+    grPDG = new TGraphAsymmErrors(1,xSim,yPDG,xeSim,xeSim,ylPDG,yhPDG);
     grPDG->SetName("grPDG");
     grPDG->SetLineColor(15);
     grPDG->SetLineWidth(2);

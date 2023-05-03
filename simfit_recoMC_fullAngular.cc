@@ -94,7 +94,7 @@ void simfit_recoMC_fullAngularBin(int q2Bin, int parity, bool multiSample, uint 
   RooRealVar* mass = new RooRealVar("mass","mass", 5.,5.6);
   RooRealVar* wei  = new RooRealVar("weight","weight",1);
   RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass, *wei);
-  RooArgSet observables (*ctK, *ctL, *phi, *mass, *wei);
+  RooArgSet observables (*ctK, *ctL, *phi, *mass);
 
   // define angular parameters with ranges from positiveness requirements on the decay rate
   RooRealVar* Fl    = new RooRealVar("Fl","F_{L}",0.5,0,1);
@@ -146,8 +146,8 @@ void simfit_recoMC_fullAngularBin(int q2Bin, int parity, bool multiSample, uint 
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
     if (!localFiles) {
-      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v6/files/" + filename;
-      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7-XGBv%i/files/",XGBv) + filename;
+      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff/" + filename;
+      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff-XGBv%i/",XGBv) + filename;
     }
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
     if ( !fin_eff[iy] || !fin_eff[iy]->IsOpen() ) {
@@ -207,7 +207,7 @@ void simfit_recoMC_fullAngularBin(int q2Bin, int parity, bool multiSample, uint 
     // create roodataset (in case data-like option is selected, only import the correct % of data)
     data.push_back( createDataset( nSample,  firstSample,  lastSample, wsp[iy],  
                                    q2Bin,  parity,  years[iy], 
-                                   reco_vars, observables,  shortString  )); 
+                                   observables,  shortString  )); 
 
     // define angular PDF for signal, using the custom class
     // efficiency function and integral values are passed as arguments

@@ -12,14 +12,15 @@ save=1
 
 ibin=${2}
 
+## if localFile == 1, please check the name of the MC dataset being copied
 localFile=0
 
 export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-datasets/
 
 if [ "${xgb}" == 0 ]; then
-    export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v6/files
-else
     export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7/files
+else
+    export EFFDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7-XGBv8/files
 fi
 
 
@@ -65,7 +66,12 @@ if [ "${localFile}" -gt 0 ]; then
     do
         echo 'will copy MC samples from  from ' ${SAMPLEDIR}
         echo 'will copy efficiencies from ' ${EFFDIR}
-        dataname="${SAMPLEDIR}/recoMCDataset_b${bin}_${iy}_XGBv8.root"
+        if [ "${xgb}" == 0 ]; then
+            ## this does not exists at the moment
+            dataname="${SAMPLEDIR}/recoMCDataset_b${bin}_${iy}.root"  
+        else    
+            dataname="${SAMPLEDIR}/recoMCDataset_b${bin}_${iy}_XGBv8.root"
+        fi    
         effname="${EFFDIR}/KDEeff_b${bin}_${parstr}_${iy}.root"
         if [ ! -r "${dataname}" ]; then
             echo "${dataname}" not found
