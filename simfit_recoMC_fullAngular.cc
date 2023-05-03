@@ -94,7 +94,7 @@ void simfit_recoMC_fullAngularBin(int q2Bin, int parity, bool multiSample, uint 
   RooRealVar* mass = new RooRealVar("mass","mass", 5.,5.6);
   RooRealVar* wei  = new RooRealVar("weight","weight",1);
   RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass, *wei);
-  RooArgSet observables (*ctK, *ctL, *phi, *mass, *wei);
+  RooArgSet observables (*ctK, *ctL, *phi, *mass);
 
   // define angular parameters with ranges from positiveness requirements on the decay rate
   RooRealVar* Fl    = new RooRealVar("Fl","F_{L}",0.5,0,1);

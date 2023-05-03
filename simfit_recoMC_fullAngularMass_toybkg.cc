@@ -120,7 +120,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   RooRealVar* mass = new RooRealVar("mass","m(#mu#muK#pi)", 5.,5.6,"GeV");
   RooRealVar* wei  = new RooRealVar("weight","weight",1);
   RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass, *wei);
-  RooArgSet observables (*ctK, *ctL, *phi, *mass, *wei);
+  RooArgSet observables (*ctK, *ctL, *phi, *mass);
   wksp->defineSet("observables", observables, true);
 
   // define angular parameters with ranges from positiveness requirements on the decay rate
@@ -178,7 +178,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     if (!localFiles) filename_data = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-datasets/" + filename_data;
 
     // import data (or MC as data proxy)
-    retrieveWorkspace( filename_data, wsp, Form("ws_b%ip%i", q2Bin, 1-parity ));
+    if (!retrieveWorkspace( filename_data, wsp, Form("ws_b%ip%i", q2Bin, 1-parity ))) return;
 
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
@@ -254,7 +254,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     // Read angular pdf for sidebands from external file 
     string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin);
     if (!localFiles) filename_sb = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/sidebands/" + filename_sb;
-    retrieveWorkspace( filename_sb, wsp_sb, "wsb");
+    if (!retrieveWorkspace( filename_sb, wsp_sb, "wsb")) return;
 
     RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));
     RooArgSet*  bkg_ang_params = (RooArgSet*) bkg_ang_pdf->getParameters(observables);
@@ -329,9 +329,9 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
 
     // Signal Mass Component
     // import mass PDF from fits to the MC
-    string filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-%s-XGBv8/%i.root",q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"LMNR"),years[iy]);
+    string filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-%s%s/%i.root",q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"LMNR"),  XGBv>0 ? Form("-XGBv%i",XGBv):"", years[iy]);
     if (localFiles)
-      filename_mc_mass = Form("results_fits_%i_fM_%s.root",years[iy], q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"lmnr"));
+      filename_mc_mass = Form("results_fits_%i_fM_%s%s.root",years[iy], q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"lmnr"), XGBv>0 ? Form("_MCw_xgbv%i",XGBv):"");
     if (!retrieveWorkspace( filename_mc_mass, wsp_mcmass, "w"))  return;
 
     wsp_mcmass[iy]->loadSnapshot(Form("reference_fit_RT_%i",q2Bin));
@@ -584,7 +584,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
   if (nSample>0)   stat = stat + Form("-%i",firstSample);
   if (multiSample) stat = stat + Form("-%i",lastSample);
   TFile* fout = 0;
-  if (save>0) fout = new TFile(("simFitResults4d/xgbv8/simFitResult_recoMC_fullAngularMass_toybkg" + all_years + stat + Form("_p%s_b%i.root", parity, q2Bin)).c_str(),"RECREATE");
+  if (save>0) fout = new TFile(("simFitResults4d/xgbv8/simFitResult_recoMC_fullAngularMass_toybkg" + all_years + stat + Form("_p%i_b%i.root", parity, q2Bin)).c_str(),"RECREATE");
   RooWorkspace* wsp_out = 0;
   
   wksp->import(*simPdf,RecycleConflictNodes());
@@ -653,8 +653,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     }
  
     combData = (RooDataSet*)allcombData.reduce(Cut(the_cut.c_str()));
-    if (nSample>0) cout<<"Fitting subsample "<<is+1<<" with "<<combData->numEntries()<<" entries"<<endl;
-    else cout<<"Fitting full MC sample with "<<combData->numEntries()<<" entries"<<endl;
+    if (nSample>0) cout<<"Fitting subsample "<<is+1<<" with "<<combData->numEntries()<<" entries, with sum of weights = " << combData->sumEntries()<<endl;
+    else cout<<"Fitting full MC sample with "<<combData->numEntries()<<" entries, with sum of weights = " << combData->sumEntries()<<endl;
 
      // set penalty term power parameter
     int combEntries = combData->numEntries();

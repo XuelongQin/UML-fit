@@ -294,9 +294,9 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
 
     //// Signal part of the pdf ////
     // Mass Component - import mass PDF from fits to the MC
-    string filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-%s-XGBv8/%i.root",q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"LMNR"),years[iy]);
+    string filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-%s%s/%i.root",q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"LMNR"),XGBstr.c_str(), years[iy]);
     if (localFiles)
-      filename_mc_mass = Form("results_fits_%i_fM_%s.root",years[iy], q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"lmnr"));
+      filename_mc_mass = Form("results_fits_%i_fM_%s%s.root",years[iy], q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"lmnr"), XGBv>0 ? Form("_MCw_xgbv%i",XGBv):"");
     if (!retrieveWorkspace( filename_mc_mass, wsp_mcmass, "w")) {
       cout<<"Workspace not found in mass-fit file: "<<filename_mc_mass<<endl;
       return;
