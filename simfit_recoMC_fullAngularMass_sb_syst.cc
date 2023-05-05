@@ -186,8 +186,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
     if (!localFiles) {
-      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7/files/" + filename;
-      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7-XGBv%i/files/",XGBv) + filename;
+      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff/" + filename;
+      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff-XGBv%i/",XGBv) + filename;
     }
 
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
@@ -265,6 +265,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
      RooWorkspace *wsp_toy_bkg_temp =new RooWorkspace(Form("wsp_toy_bkg_%i_b%i.root",years[iy], q2Bin ),"Workspace with set of toy bkg");
      wsp_toy_bkg.push_back(wsp_toy_bkg_temp); 
      string filename_sb_ref = Form("/gwpool/users/dini/p5prime/sidebandXGBv8/%i/", years[iy])+filename_sb_local ;
+     if (!localFiles) filename_sb_ref = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/sidebands/" + filename_sb_local;
 
      retrieveWorkspace( filename_sb_ref, wsp_sb_ref, "wsb");
      wsp_sb_ref[iy]->ls();
@@ -477,7 +478,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, bool multiSample, u
     double nrt_mc   =  wsp_mcmass[iy]->var(Form("nRT_%i",q2Bin))->getVal(); 
     double nwt_mc   =  wsp_mcmass[iy]->var(Form("nWT_%i",q2Bin))->getVal(); 
     double fraction = nwt_mc / (nrt_mc + nwt_mc);
-    double frac_sigma = fM_sigmas[years[iy]][q2Bin]/fraction;
+    double frac_sigma = fM_sigmas[years[iy]][q2Bin]/fraction/(1-fraction);
     RooGaussian* c_fm = new RooGaussian(Form("c_fm^{%i}",years[iy]) , "c_fm" , *mFrac,  
                                         RooConst(1.) , 
                                         RooConst(frac_sigma)
