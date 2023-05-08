@@ -173,7 +173,8 @@ void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSampl
   RooAbsPdf* Z4430_mass_pdf = 0;
   RooArgSet* Z4430_mass_params = 0;
   if (q2Bin==6 && fitOption>0){
-    string filename_Z4430 = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/Zmodel/HistZ4430.root";
+    string filename_Z4430 = "HistZ4430.root";
+    if(!localFiles) filename_Z4430 = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/Zmodel/"+filename_Z4430;
     if (!(retrieveWorkspace(filename_Z4430, wsp_Z4430, "wZ4430"))) return;
 
     // retrieve angular component of the Z pdf
