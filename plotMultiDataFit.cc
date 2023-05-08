@@ -33,6 +33,8 @@ double diffMax = 0.0499;
 void plotMultiDataFit ()
 {
 
+  gROOT->SetBatch(true);
+
   vector< vector<TH1D*> > vHistBest (nPars);
   vector< vector<TH1D*> > vHistPull (nPars);
   vector< vector<TH1D*> > vHistErrH (nPars);
@@ -69,14 +71,15 @@ void plotMultiDataFit ()
     vq2Bins.push_back(q2stat);
 
     TChain fitResultsTree ("fitResultsTree","");
-    string filename = Form("simFitResults4d/simFitResult_data_fullAngularMass_Swave_201620172018_b%istat-*_b%i.root",q2stat,q2Bin);
+    string filename = Form("/eos/cms/store/group/phys_bphys/fiorendi/p5prime/UML-fit/simFitResults4d/simFitResult_data_fullAngularMass_Swave_201620172018_b%istat-*_b%i-XGBv8.root",q2stat,q2Bin);
     fitResultsTree.Add(filename.c_str());
 
-    string filename_fR = Form("/eos/user/a/aboletti/BdToKstarMuMu/dataCR-results/simFitResult_data_fullAngularMass_Swave_201620172018_b%i.root",q2Bin);
+//     string filename_fR = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/simFitResults/simFitResult_data_fullAngularMass_Swave_201620172018_b%ip1_XGBv8.root",q2Bin); // link will be updated
+    string filename_fR = Form("/afs/cern.ch/work/d/dini/public/ResonantXGBv8/Corr_frac_sigma/simFitResults4d/simFitResult_data_fullAngularMass_Swave_201620172018_b%i-XGBv8.root",q2Bin);
     TFile* filein_fR = TFile::Open(filename_fR.c_str());
     TTree* fitResultsTree_fR = (TTree*)filein_fR->Get("fitResultsTree");
     if (!fitResultsTree_fR || fitResultsTree_fR->GetEntries() != 1) {
-      cout<<"Error, unexpected numebr of entries in fitResultsTree in file: "<<filename_fR<<endl;
+      cout<<"Error, unexpected number of entries in fitResultsTree in file: "<<filename_fR<<endl;
       return;
     }
 
@@ -127,10 +130,10 @@ void plotMultiDataFit ()
       fitResultsTree.GetEntry(iEn);
       for (int iPar=0; iPar<nPars; ++iPar) {
 	vHistBest[iPar].back()->Fill(vBest[iPar]);
-	vHistPull[iPar].back()->Fill((vBest[iPar]-vHistBestRECO[iPar].back())/(vBest[iPar]>vHistBestRECO[iPar].back()?vBest[iPar]-vLow[iPar]:vHigh[iPar]-vBest[iPar]));
-	vHistErrH[iPar].back()->Fill(vHigh[iPar]-vBest[iPar]);
-	vHistErrH[iPar].back()->Fill(vBest[iPar]-vLow [iPar]); // To create a stacked histogram
-	vHistErrL[iPar].back()->Fill(vBest[iPar]-vLow [iPar]);
+	vHistPull[iPar].back()->Fill((vBest[iPar]-vHistBestRECO[iPar].back())/(vBest[iPar]>vHistBestRECO[iPar].back()?abs(vLow[iPar]):abs(vHigh[iPar])));
+	vHistErrH[iPar].back()->Fill(vHigh[iPar]);
+	vHistErrH[iPar].back()->Fill(abs(vLow [iPar])); // To create a stacked histogram
+	vHistErrL[iPar].back()->Fill(abs(vLow [iPar]));
 
 	vMean[iPar].back() += vBest[iPar];
 	vRMS[iPar].back() += vBest[iPar]*vBest[iPar];
@@ -340,6 +343,6 @@ void plotMultiDataFit ()
     leg.AddEntry(gr[iStat],Form("q2-bin %i stat",aq2stat[iStat]),"lep");
   leg.Draw();
 
-  canv.SaveAs("plotSimFit_d/simfit_dataCRsub_results.pdf");
+  canv.SaveAs("plotSimFit_d/simfit_dataCRsub_results_xgbv8.pdf");
 
 }

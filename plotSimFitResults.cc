@@ -196,7 +196,7 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
     for (int i=0; i<nBins; ++i) {
       if (i==4 || i==6 || i==8) continue;
 
-      if (plotRECO) finFullReco = TFile::Open(("simFitResults/newphi/simFitResult_recoMC_fullAngular" + year  + Form("_MCStat_b%i.root",i)).c_str());
+      if (plotRECO) finFullReco = TFile::Open(("simFitResults/xgbv8/simFitResult_recoMC_fullAngular" + year  + Form("_MCStat_b%i_XGBv8.root",i)).c_str());
 
       // fill for CT events
       if ( plotCT && finReco && !finReco->IsZombie() ) {
@@ -366,7 +366,7 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
   line->Draw();
   resDiffCover->Draw("e2");
 
-  string confString = "plotSimFit_d/newphi/fitResult_";
+  string confString = "plotSimFit_d/xgbv8/fitResult_";
   if (plotCT) confString = confString + "ctRes_";
   if (plotWT) confString = confString + "wtRes_";
   if (plotRECO) confString = confString + "recoRes_";

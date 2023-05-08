@@ -134,6 +134,9 @@ void Fitter::SetDefConf()
   vConfInterHigh = std::vector<Double_t>(angPars.getSize(),0);
 
   nCPU = 1;
+  nCPU_Pen=1;
+
+  unbl = 0;
 
 }
 
@@ -185,7 +188,7 @@ Int_t Fitter::fit()
     usedPenalty = false;
 
     std::cout<<"============ FREE FIT ==========="<<std::endl;
-    result_free->Print("v");
+    if (unbl>3) result_free->Print("v");
 
     // if free fit is good return its result
     if ( result_free->status()==0 && result_free->covQual()==3 && boundary->getValV() == 0 ) {
@@ -204,6 +207,7 @@ Int_t Fitter::fit()
 
     }
     
+    std::cout<<"============ START FIT WITH PENALTY ==========="<<std::endl;
     usedPenalty = true;
 
     // optional: if a partial boundary is satisfied
@@ -245,7 +249,7 @@ Int_t Fitter::fit()
 	// set up the penalised fit
 	nll_penalty = simPdf_penalty->createNLL(*combData,
 						RooFit::Extended(kFALSE),
-						RooFit::NumCPU(1)
+						RooFit::NumCPU(nCPU_Pen)
 						);
 
 	RooMinimizer m_penalty (*nll_penalty) ;
@@ -264,17 +268,19 @@ Int_t Fitter::fit()
 	result_penalty = m_penalty.save("result");
 	    
 	// std::cout<<penTerm->getCoefficient(1)<<"\t"<<penTerm->getCoefficient(5)<<"\t"<<P5p->getValV()<<std::endl;
-	result_penalty->Print("v");
+	if (unbl>3) result_penalty->Print("v");
 
 	// if a good fit is found return good status
 	if ( result_penalty->status()==0 && result_penalty->covQual()==3 ) {
 	  if ( boundary->getValV()==0 ) {
-	    std::cout<<"P "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
+	    if (unbl>0) std::cout<<"P "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
 	    computeBoundaryDistance();
 	    fillResultContainers();
 	    return 0;
-	  } else std::cout<<"O "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
-	} else std::cout<<"N "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
+	  } else
+	    if (unbl>0) std::cout<<"O "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
+	} else
+	  if (unbl>0) std::cout<<"N "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
 
       }
 
@@ -354,7 +360,7 @@ Int_t Fitter::MinosAng(int seed, int nGenMINOS)
 
     // get and print the best-fit result
     double p_best = vResult[iPar];
-    std::cout<<par->GetName()<<" best: "<<p_best<<std::endl;
+    if (unbl>3) std::cout<<par->GetName()<<" best: "<<p_best<<std::endl;
 
     // vectors for TGraph plots
     // std::vector<double> vPval (0);
@@ -449,10 +455,10 @@ Int_t Fitter::MinosAng(int seed, int nGenMINOS)
 
       if (isErrHigh>0) {
 	vConfInterHigh[iPar] = p_in;
-	std::cout<<par->GetName()<<" high: "<<p_in<<std::endl;
+	if (unbl>3) std::cout<<par->GetName()<<" high: "<<p_in<<std::endl;
       } else {
 	vConfInterLow[iPar] = p_in;
-	std::cout<<par->GetName()<<" low:  "<<p_in<<std::endl;
+	if (unbl>3) std::cout<<par->GetName()<<" low:  "<<p_in<<std::endl;
       }
 
     }
@@ -528,6 +534,7 @@ Double_t Fitter::computeBoundaryDistance()
 
   TStopwatch distTime;
   distTime.Start(true);
+  std::cout<<"== Start to compute  boundary distance =="<<std::endl;
 
   // Compute distance from boundary
   boundDist = bound_dist->getValV();
@@ -546,6 +553,7 @@ Double_t Fitter::computeBoundaryDistance()
 void Fitter::plotSimFitProjections(const char* filename, std::vector<std::string> catnames, std::vector<int> years, bool is4D)
 {
 
+  std::cout<<Form("== Start filling plots in : %s ==",filename)<<std::endl;
   auto canv = new TCanvas ("canv","canv",is4D?2000:1500,500*years.size());
   canv->Divide(is4D?4:3, years.size());
   std::vector<std::string> catnamesresolv(catnames.size());

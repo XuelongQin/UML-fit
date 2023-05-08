@@ -94,7 +94,7 @@ void simfit_recoMC_fullAngularBin(int q2Bin, int parity, bool multiSample, uint 
   RooRealVar* mass = new RooRealVar("mass","mass", 5.,5.6);
   RooRealVar* wei  = new RooRealVar("weight","weight",1);
   RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass, *wei);
-  RooArgSet observables (*ctK, *ctL, *phi, *mass, *wei);
+  RooArgSet observables (*ctK, *ctL, *phi, *mass);
 
   // define angular parameters with ranges from positiveness requirements on the decay rate
   RooRealVar* Fl    = new RooRealVar("Fl","F_{L}",0.5,0,1);
@@ -137,10 +137,8 @@ void simfit_recoMC_fullAngularBin(int q2Bin, int parity, bool multiSample, uint 
   // loop on the various datasets
   for (unsigned int iy = 0; iy < years.size(); iy++) {
     year.clear(); year.assign(Form("%i",years[iy]));
-    string filename_data = Form("recoMCDataset_b%i_%i_XGBv8.root", q2Bin, years[iy]);
+    string filename_data = Form("recoMCDataset_b%i_%i%s.root", q2Bin, years[iy], XGBstr.c_str());
     if (!localFiles) filename_data = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-datasets/" + filename_data;
-//     string filename_data = Form("recoMCDataset_b%i_%i%s.root", q2Bin, years[iy], XGBstr.c_str());
-//     if (!localFiles) filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/", years[iy]) + filename_data;
 
     // import data (or MC as data proxy)
     retrieveWorkspace( filename_data, wsp, Form("ws_b%ip%i", q2Bin, 1-parity ));
@@ -148,10 +146,9 @@ void simfit_recoMC_fullAngularBin(int q2Bin, int parity, bool multiSample, uint 
     // import KDE efficiency histograms and partial integral histograms
     string filename = Form((parity==0 ? "KDEeff_b%i_ev_%i.root" : "KDEeff_b%i_od_%i.root"),q2Bin,years[iy]);
     if (!localFiles) {
-      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v6/files/" + filename;
-      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-theta-v7-XGBv%i/files/",XGBv) + filename;
+      if (XGBv<1) filename = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff/" + filename;
+      else filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/eff-XGBv%i/",XGBv) + filename;
     }
-    // if (!localFiles) filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/newphi/",years[iy]) + filename;
     fin_eff.push_back( new TFile( filename.c_str(), "READ" ));
     if ( !fin_eff[iy] || !fin_eff[iy]->IsOpen() ) {
       cout<<"File not found: "<<filename<<endl;
@@ -210,7 +207,7 @@ void simfit_recoMC_fullAngularBin(int q2Bin, int parity, bool multiSample, uint 
     // create roodataset (in case data-like option is selected, only import the correct % of data)
     data.push_back( createDataset( nSample,  firstSample,  lastSample, wsp[iy],  
                                    q2Bin,  parity,  years[iy], 
-                                   reco_vars, observables,  shortString  )); 
+                                   observables,  shortString  )); 
 
     // define angular PDF for signal, using the custom class
     // efficiency function and integral values are passed as arguments
@@ -270,7 +267,7 @@ void simfit_recoMC_fullAngularBin(int q2Bin, int parity, bool multiSample, uint 
   if (nSample>0)   stat = stat + Form("-%i",firstSample);
   if (multiSample) stat = stat + Form("-%i",lastSample);
   TFile* fout = 0;
-  if (save>0) fout = new TFile(("simFitResults/simFitResult_recoMC_fullAngular" + all_years + stat + "_" + shortString + XGBstr + ".root").c_str(),"RECREATE");
+  if (save>0) fout = new TFile(("simFitResults/xgbv8/simFitResult_recoMC_fullAngular" + all_years + stat + "_" + shortString + XGBstr + ".root").c_str(),"RECREATE");
   RooWorkspace* wsp_out = 0;
 
   // Construct combined dataset in (x,sample)
@@ -439,7 +436,7 @@ void simfit_recoMC_fullAngularBin(int q2Bin, int parity, bool multiSample, uint 
 
 	string plotString = shortString + "_" + all_years + XGBstr;
 	if (nSample>0) plotString = plotString + Form("_s%i",is);
-	string plotname = "plotSimFit_d/simFitResult_recoMC_fullAngular_" + plotString + ".pdf";
+	string plotname = "plotSimFit_d/xgbv8/simFitResult_recoMC_fullAngular_" + plotString + ".pdf";
 	fitter->plotSimFitProjections(plotname.c_str(),{samplename},years,false);
 
       }
@@ -538,6 +535,17 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )   cout << "Running all the q2 bins" << endl;
   if ( parity==-1 )  cout << "Running both the parity datasets" << endl;
+
+  cout <<  "q2Bin       " << q2Bin        << endl;
+  cout <<  "parity      " << parity       << endl;
+  cout <<  "multiSample " << multiSample  << endl;
+  cout <<  "nSample     " << nSample      << endl;
+  cout <<  "xgb?        " << XGBv         << endl;
+  cout <<  "local files " << localFiles   << endl;
+  cout <<  "plot        " << plot         << endl;
+  cout <<  "save        " << save         << endl;
+  cout <<  "years[0]    " << years[0]     << endl;
+
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)

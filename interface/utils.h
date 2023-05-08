@@ -1,3 +1,4 @@
+#include <TSystem.h>
 #include <RooGaussian.h>
 #include <RooPlot.h>
 #include <RooRealVar.h>
@@ -24,11 +25,10 @@ std::map<int,std::vector<float>> frt_sigmas = {
 };
 
 std::map<int,std::vector<float>> fM_sigmas = {
-  {2016, {0.023, 0.015, 0.017, 0.013, 0.0003, 0.010, 0.0009, 0.013}},
-  {2017, {0.018, 0.014, 0.015, 0.010, 0.0003, 0.008, 0.0007, 0.011}},
-  {2018, {0.015, 0.010, 0.011, 0.008, 0.0002, 0.006, 0.0007, 0.008}},
+  {2016, {0.023, 0.015, 0.017, 0.013, 0.0005 , 0.010, 0.0018, 0.013}},
+  {2017, {0.018, 0.014, 0.015, 0.010, 0.0004 , 0.008, 0.0016, 0.011}},
+  {2018, {0.015, 0.010, 0.011, 0.008, 0.00027, 0.006, 0.0011, 0.008}},
 };
-
 
 std::map<int,std::vector<float>> nbkg_years = {
   {2016, {162, 535, 462,  810, 0.005, 1342, 0.006, 467}},
@@ -113,8 +113,10 @@ bool retrieveWorkspace(string filename, std::vector<RooWorkspace*> &ws, std::str
 
     TFile* f =  TFile::Open( filename.c_str() ) ;
     if ( !f || !f->IsOpen() ) {
-      cout << "File not found: " << filename << endl;
+      cout << "File not found: " <<  gSystem->GetFromPipe(Form("readlink -m %s",filename.c_str())) << endl;
       return false;
+    }else{
+      cout << "Opening: " << gSystem->GetFromPipe(Form("readlink -m %s",filename.c_str())) << endl;
     }
     RooWorkspace* open_w = (RooWorkspace*)f->Get(ws_name.c_str());
     if ( !open_w || open_w->IsZombie() ) {
@@ -129,7 +131,7 @@ bool retrieveWorkspace(string filename, std::vector<RooWorkspace*> &ws, std::str
 
 std::vector<RooDataSet*> createDataset(int nSample, uint firstSample, uint lastSample, RooWorkspace *ws, 
                                        int q2Bin, int parity, int year, //std::map<int,float> scale_to_data,
-                                       RooArgSet reco_vars, RooArgSet vars, std::string shortString  ){
+                                       RooArgSet vars, std::string shortString  ){
 
     RooDataSet* dataCT, *dataWT;
     std::vector<RooDataSet*> datasample;
