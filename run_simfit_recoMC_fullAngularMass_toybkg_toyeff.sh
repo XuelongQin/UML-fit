@@ -66,13 +66,13 @@ else
     ./simfit_recoMC_fullAngularMass_toybkg_toyeff ${bin} ${par} ${neff} ${nsam} ${xgb} 0 ${plot} ${save} 2016
 fi
 
-outfiledir="$OUTDIR/simFitResults4d"
+outfiledir="$OUTDIR/simFitResults4d/xgbv8"
 if [ ! -d "${outfiledir}" ]; then
     mkdir -p "${outfiledir}"
 fi
 cp simFitResults4d/* "${outfiledir}/"
 
-outplotdir="$OUTDIR/plotSimFit4d_d"
+outplotdir="$OUTDIR/plotSimFit4d_d/xgbv8"
 if [ ! -d "${outplotdir}" ]; then
     mkdir -p "${outplotdir}"
 fi

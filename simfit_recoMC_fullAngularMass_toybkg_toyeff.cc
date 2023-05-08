@@ -115,10 +115,8 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
   RooRealVar* rand = new RooRealVar("rand", "rand", 0,1);
   RooRealVar* mass = new RooRealVar("mass","m(#mu#muK#pi)", 5.,5.6,"GeV");
   RooRealVar* wei  = new RooRealVar("weight","weight",1);
-  RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass);
+  RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass, *wei);
   RooArgSet observables (*ctK, *ctL, *phi, *mass);
-  // RooArgSet reco_vars (*ctK, *ctL, *phi, *rand, *mass, *wei);
-  // RooArgSet observables (*ctK, *ctL, *phi, *mass, *wei);
   wksp->defineSet("observables", observables, true);
 
   // define angular parameters with ranges from positiveness requirements on the decay rate
@@ -174,7 +172,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
     if (!localFiles) filename_data = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-datasets/" + filename_data;
 
     // import data (or MC as data proxy)
-    retrieveWorkspace( filename_data, wsp, Form("ws_b%ip%i", q2Bin, 1-parity ));
+    if (!retrieveWorkspace( filename_data, wsp, Form("ws_b%ip%i", q2Bin, 1-parity ))) return;
 
     // import KDE efficiency histograms and partial integral histograms
     string filename_toyeff = Form((parity==0 ? "KDEeff_b%i_ev_%i_toy%i_v%s7.root" : "KDEeff_b%i_od_%i_toy%i_v%s7.root"),q2Bin,years[iy],nEff,XGBv>0?Form("%i",XGBv):"");
@@ -192,7 +190,6 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
       return;
     }
 
-    cout<<"eff"<<endl;
     // create efficiency functions
     RooDataHist* effCData = new RooDataHist(("effCData_"+shortString+"_"+year).c_str(),"effCData",vars,effCHist[iy]);
     RooDataHist* effWData = new RooDataHist(("effWData_"+shortString+"_"+year).c_str(),"effWData",vars,effWHist[iy]);
@@ -207,7 +204,6 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
                                     *effWData,
                                     1));
 
-    cout<<"integ"<<endl;
     // import precomputed integrals and fill a std::vector
     intCHist.push_back( (TH1D*)fin_toyeff->Get(intCHistString.c_str()));
     intWHist.push_back( (TH1D*)fin_toyeff->Get(intWHistString.c_str()));
@@ -236,21 +232,19 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
     }
 
 
-    cout<<"dataset"<<endl;
     // create roodataset (in case data-like option is selected, only import the correct % of data)
     data.push_back( createDataset( nSample+1,  nSample,  nSample, wsp[iy],  
                                    q2Bin,  parity,  years[iy], 
-                                   reco_vars, observables,  shortString  )); 
+                                   observables,  shortString  )); 
 
  
      // now generate bkg events
-    cout<<"bkg"<<endl;
     int nbkg_togen = nbkg_years[years[iy]][q2Bin];
 
     // Read angular pdf for sidebands from external file 
-    string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin );
-    filename_sb = "/eos/cms/store/user/fiorendi/p5prime/sidebands/" + filename_sb;
-    retrieveWorkspace( filename_sb, wsp_sb, "wsb");
+    string filename_sb = Form("savesb_%i_b%i.root", years[iy], q2Bin);
+    if (!localFiles) filename_sb = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/sidebands/" + filename_sb;
+    if (!retrieveWorkspace( filename_sb, wsp_sb, "wsb")) return;
 
     RooBernsteinSideband* bkg_ang_pdf = (RooBernsteinSideband*) wsp_sb[iy]->pdf(Form("BernSideBand_bin%i_%i", q2Bin, years[iy]));
     RooArgSet*  bkg_ang_params = (RooArgSet*) bkg_ang_pdf->getParameters(observables);
@@ -323,13 +317,11 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
       wksp->saveSnapshot(Form("fit_bkg_pdf_%i_%i",years[iy], itoy+nSample), *bkg_params, kTRUE) ;
     }      
 
-    cout<<"mass"<<endl;
     // Signal Mass Component
     // import mass PDF from fits to the MC
-    string channelStr = "";
-    if (q2Bin==4) channelStr= "_Jpsi";
-    if (q2Bin==6) channelStr= "_Psi";
-    string filename_mc_mass = Form("/eos/cms/store/user/fiorendi/p5prime/massFits/noIP2D/xgbv8/results_fits_%i_fM%s_noIP2D_MCw_xgbv8.root",years[iy],channelStr.c_str());
+    string filename_mc_mass = Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-%s%s/%i.root",q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"LMNR"),  XGBv>0 ? Form("-XGBv%i",XGBv):"", years[iy]);
+    if (localFiles)
+      filename_mc_mass = Form("results_fits_%i_fM_%s%s.root",years[iy], q2Bin==4?"Jpsi":(q2Bin==6?"Psi":"lmnr"), XGBv>0 ? Form("_MCw_xgbv%i",XGBv):"");
     if (!retrieveWorkspace( filename_mc_mass, wsp_mcmass, "w"))  return;
 
     wsp_mcmass[iy]->loadSnapshot(Form("reference_fit_RT_%i",q2Bin));
@@ -414,16 +406,27 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
 
 
 
-    RooRealVar* mFrac = new RooRealVar(Form("f_{M}^{%i}",years[iy]),"mistag fraction",1, 0.5, 1.5);
-    /// create constraint on mFrac (mFrac = 1, constraint derived from stat scaling)
+    // As the signal PDF is written as [ CT + mFrac * MT ] (see the PdfSigAngMass class),
+    // the mFrac parameter represents the fraction between mistagged and correctly-tagged events (n_MT/n_CT)
+    // Also, since the integral of the efficiencies contains the information on the mistag fraction in MC
+    // this parameter represents the ratio between the fitted mFrac and the MC-based one ( n_MT_data / n_CT_data * n_CT_MC / n_MT_MC )
+    RooRealVar* mFrac = new RooRealVar(Form("f_{M}^{%i}",years[iy]),"mistag fraction",1, 0, 15);
+
+    // The values of fM_sigmas are computed on data-like MC subsamples as the fluctuation of the fraction of mistagged events ( n_MT/(n_MT+n_CT) )
+    // this fluctuation needs to be propagated on the quantity of mFrac, to define a Gaussian contraint
     double nrt_mc   =  wsp_mcmass[iy]->var(Form("nRT_%i",q2Bin))->getVal(); 
     double nwt_mc   =  wsp_mcmass[iy]->var(Form("nWT_%i",q2Bin))->getVal(); 
     double fraction = nwt_mc / (nrt_mc + nwt_mc);
-    double frac_sigma = fM_sigmas[years[iy]][q2Bin]/fraction;
+    // Propagation: sigma(mFrac) = sigma(n_MT/n_CT) * n_CT/n_MT
+    //                           = sigma(fraction)/(1-fraction)^2 * (1-fraction)/fraction
+    //                           = sigma(fraction) / fraction / (1-fraction)
+
+    double frac_sigma = fM_sigmas[years[iy]][q2Bin]/fraction/(1-fraction);
     RooGaussian* c_fm = new RooGaussian(Form("c_fm^{%i}",years[iy]) , "c_fm" , *mFrac,  
                                         RooConst(1.) , 
                                         RooConst(frac_sigma)
                                         );
+    cout << "mFrac = " << fraction << " +/- " << fM_sigmas[years[iy]][q2Bin] << " ---> R = 1 +/- " << frac_sigma << endl;
     c_vars.add(*mFrac); 
 
     // Angular Component
@@ -558,7 +561,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
   }
   
   TFile* fout = 0;
-  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg" + all_years + stat + Form("_b%i_toyeff%i.root", q2Bin, nEff)).c_str(),"RECREATE");
+  if (save>0) fout = new TFile(("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg" + all_years + stat + Form("_p%i_b%i_toyeff%i.root", parity, q2Bin, nEff)).c_str(),"RECREATE");
   RooWorkspace* wsp_out = 0;
   
   wksp->import(*simPdf,RecycleConflictNodes());
@@ -626,7 +629,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
     }
  
     combData = (RooDataSet*)allcombData.reduce(Cut(the_cut.c_str()));
-    cout<<"Fitting subsample "<<is+1<<" with "<<combData->numEntries()<<" entries"<<endl;
+    cout<<"Fitting subsample "<<is+1<<" with "<<combData->numEntries()<<" entries, with sum of weights = " << combData->sumEntries()<<endl;
 
      // set penalty term power parameter
     int combEntries = combData->numEntries();
@@ -734,7 +737,7 @@ void simfit_recoMC_fullAngularMassBin(int q2Bin, int parity, int nEff, uint nSam
 
 	string plotString = shortString + "_" + all_years + XGBstr;
 	if (nSample>0) plotString = plotString + Form("_s%i",is);
-	string plotname = "plotSimFit4d_d/xgbv8/simFitResult_recoMC_fullAngularMass_toybkg_" + plotString + ".pdf";
+	string plotname = "plotSimFit4d_d/simFitResult_recoMC_fullAngularMass_toybkg_" + plotString + ".pdf";
 	string samplename = Form("_subs%d", is);
 	samplename =  "data%i" + samplename;
 	fitter->plotSimFitProjections(plotname.c_str(),{samplename,sigpdfname,bkgpdfname},years,true);

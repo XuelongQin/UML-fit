@@ -28,7 +28,7 @@ int colors [12] = { 633, 417, 879, 857, 839, 801, 921, 607, 807, 419, 907, 402 }
 double diffMax = 0.0999;
 // double diffMax = 0.0499;
 
-void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, bool ref4dFit = true)
+void plotMultiFit_efftoy (int binIndex=-1, int parity=0, int whichSamples = 2, bool ref4dFit = true)
 {
 
   // whichSamples=0 -> plot fit results to 3D MC subsamples
@@ -89,7 +89,8 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
 
     TChain fitResultsTree ("fitResultsTree","");
     // string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/simFitResults4d/simFitResult_recoMC_fullAngularMass_toyeff201620172018_dataStat-0_b%i_good.root",q2Bin);
-    string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/MCstat/simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-0_b%i_toyeff*.root",q2Bin);
+    // string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/MCstat/simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-0_b%i_toyeff*.root",q2Bin);
+    string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/MCstat/simFitResults4d/xgbv8/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-0_p%i_b%i_toyeff*.root",parity,q2Bin);
     // string filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass_toybkg201620172018_dataStat-*_b%i.root",q2Bin);
     // if (plot4dFit==1) filename = Form("simFitResults4d/simFitResult_recoMC_fullAngularMass201620172018_dataStat-*_b%i.root",q2Bin);
     // if (plot4dFit==0) filename = Form("simFitResults/simFitResult_recoMC_fullAngular201620172018_dataStat-*_b%i.root",q2Bin);
@@ -314,8 +315,8 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
     // if (plot4dFit) toyConfString = toyConfString + "_4Dbkg";
     // if (!ref4dFit) toyConfString = toyConfString + "_vs3DfullMC";
 
-    cDistr[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_efftoy_%s_dist%s_XGBv8.pdf",parName[iPar].c_str(),toyConfString.c_str()));
-    cUncert[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_efftoy_%s_uncert%s_XGBv8.pdf",parName[iPar].c_str(),toyConfString.c_str()));
+    cDistr[iPar]->SaveAs(Form("plotSimFit4d_d/xgbv8/simfit_recoMC_efftoy_%s_dist%s_XGBv8.pdf",parName[iPar].c_str(),toyConfString.c_str()));
+    cUncert[iPar]->SaveAs(Form("plotSimFit4d_d/xgbv8/simfit_recoMC_efftoy_%s_uncert%s_XGBv8.pdf",parName[iPar].c_str(),toyConfString.c_str()));
 
     // Plot resutls vs q2
 
@@ -508,7 +509,7 @@ void plotMultiFit_efftoy (int binIndex=-1, int parity=1, int whichSamples = 2, b
     line->Draw();
     resDiffCover->Draw("e2");
 
-    cResult[iPar]->SaveAs(Form("plotSimFit_d/simfit_recoMC_efftoy_%s_results%s_XGBv8.pdf",parName[iPar].c_str(),toyConfString.c_str()));
+    cResult[iPar]->SaveAs(Form("plotSimFit4d_d/xgbv8/simfit_recoMC_efftoy_%s_results%s_XGBv8.pdf",parName[iPar].c_str(),toyConfString.c_str()));
 
   }
 
