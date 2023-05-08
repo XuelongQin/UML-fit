@@ -4,6 +4,10 @@ string year[3] = {"2016","2017","2018"};
 
 void plotSimFitComparison_manual(int q2Bin = 4)
 {
+  gROOT->SetBatch(true);
+  
+  bool verbose = false;
+
   string shortString = Form("b%ip1",q2Bin);
 
   static const int nPars = 8;
@@ -51,19 +55,21 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   double lowSPar [3][nSPars];
   double highSPar[3][nSPars];
   
-  double bestMassParSim[3*nMassPars];
-  double errMassParSim [3*nMassPars];
-  double bestMassConstParSim[3*nMassConstPars];
-  double errMassConstParSim [3*nMassConstPars];
-  double bestMassPar[3*nMassPars];
-  double errMassPar [3*nMassPars];
-  double bestMassConstPar[3*nMassConstPars];
-  double errMassConstPar [3*nMassConstPars];
+  double bestMassParSim[3][nMassPars];
+  double errMassParSim [3][nMassPars];
+  double bestMassConstParSim[3][nMassConstPars];
+  double errMassConstParSim [3][nMassConstPars];
+  double bestMassPar[3][nMassPars];
+  double errMassPar [3][nMassPars];
+  double bestMassConstPar[3][nMassConstPars];
+  double errMassConstPar [3][nMassConstPars];
 
-  double massConstVal[3*nMassConstPars];
-  double massConstErr[3*nMassConstPars];
+  double massConstVal[3][nMassConstPars];
+  double massConstErr[3][nMassConstPars];
 
-  string finLogName = "/afs/cern.ch/work/d/dini/public/ResonantXGBv8/Bin4SimBern/allYears-bin%i.log";
+
+  // First reads values of parameters which are not P_i or F_L from the log file of the simultaneous fit
+  string finLogName = "/afs/cern.ch/work/d/dini/public/ResonantXGBv8/Corr_frac_sigma/Bin%i-allYears-Bern.log";
   // string finLogName = "logs_parSub/simfit_data_fullAngularMass_Swave_0_%i_0.out";
   // string finLogName = "logs_simFit4d/simfit_data_fullAngularMass_Swave_%i_1_0_0_0_0_1_2016_2017_2018.log";
   ifstream fin_log(Form(finLogName.c_str(),q2Bin));
@@ -87,27 +93,33 @@ void plotSimFitComparison_manual(int q2Bin = 4)
       }
     for (int iPar = 0; iPar<3*nMassPars; ++iPar)
       if ( vec[0].compare(Form(massParName[iPar/3].c_str(),year[iPar%3].c_str())) == 0 ) {
-	bestMassParSim[iPar] = atof(vec[2].c_str());
-	errMassParSim [iPar] = atof(vec[4].c_str());
+	bestMassParSim[iPar%3][iPar/3] = atof(vec[2].c_str()); // [year][parIndex]
+	errMassParSim [iPar%3][iPar/3] = atof(vec[4].c_str());
+	if (verbose) std::cout << "sim results (free): \t" << Form(massParName[iPar/3].c_str(),year[iPar%3].c_str()) << " = " << bestMassParSim[iPar%3][iPar/3] << std::endl;
       }
     for (int iPar = 0; iPar<3*nMassConstPars; ++iPar)
       if ( vec[0].compare(Form(massConstParName[iPar/3].c_str(),year[iPar%3].c_str())) == 0 ) {
-	bestMassConstParSim[iPar] = atof(vec[2].c_str());
-	errMassConstParSim [iPar] = atof(vec[4].c_str());
+	bestMassConstParSim[iPar%3][iPar/3] = atof(vec[2].c_str());
+	errMassConstParSim [iPar%3][iPar/3] = atof(vec[4].c_str());
+	if (verbose) std::cout << "sim results (constr): \t" << Form(massConstParName[iPar/3].c_str(),year[iPar%3].c_str()) << " = " << bestMassConstParSim[iPar%3][iPar/3] << std::endl;
       }
   }
   fin_log.close();
 
+  // INPUTS
+  // Now retrieves the angular parameters from the root file (they are saved in the fitResultsTree)
   string finName = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/simFitResults/simFitResult_data_fullAngularMass_Swave_%s_b%ip1_XGBv8.root";
-  // string finName = "simFitResults4d/simFitResult_data_fullAngularMass_Swave_%s_b%i.root";
+  // which single year fits are available
+  std::vector<int> haveSingleFits = {2016,2017,2018};
+  int nYears = (int)haveSingleFits.size();
+
+  // Here the files used to get the constraints
   string finName2 = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-LMNR-XGBv8/%s.root";
   if (q2Bin==4) finName2 = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-Jpsi-XGBv8/%s.root";
   else if (q2Bin==6) finName2 = "/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/massFits-Psi-XGBv8/%s.root";
-  // string finName2 = "/eos/cms/store/user/fiorendi/p5prime/massFits/results_fits_%s_fM_";
-  // if (q2Bin==4) finName2 = finName2 + "Jpsi_newbdt.root";
-  // else if (q2Bin==6) finName2 = finName2 + "Psi_newbdt.root";
-  // else finName2 = finName2 + "newbdt.root";
 
+
+  // Get the angular pars from the root file 
   auto finSim = TFile::Open(Form(finName.c_str(),"201620172018",q2Bin));
   if ( !finSim || finSim->IsZombie() ) {
     cout<<"Sim file is problematic!"<<endl;
@@ -127,102 +139,110 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   }
   tinSim->GetEntry(0);
 
-  for (int iy=0; iy<3; ++iy) {
-    auto fin = TFile::Open(Form(finName.c_str(),year[iy].c_str(),q2Bin));
+  // Get pars from the single year fits, if any 
+  for (int iYear=0; iYear<nYears; ++iYear) {
+    auto fin = TFile::Open(Form(finName.c_str(),year[iYear].c_str(),q2Bin));
     if ( !fin || fin->IsZombie() ) {
-      cout<<year[iy]<<" file is problematic!"<<endl;
+      cout<<year[iYear]<<" file is problematic!"<<endl;
       return;
     }
-    auto fin2 = TFile::Open(Form(finName2.c_str(),year[iy].c_str()));
-    if ( !fin2 || fin2->IsZombie() ) {
-      cout<<year[iy]<<" file2 is problematic!"<<endl;
-      return;
-    }
-
     auto tin= (TTree*)fin->Get("fitResultsTree");
     if ( !tin || tin->IsZombie() || tin->GetEntries() < 1 ) {
-      cout<<year[iy]<<" tree is problematic!"<<endl;
+      cout<<year[iYear]<<" tree is problematic!"<<endl;
       fin->Close();
       return;
     }
+    // Get P-wave angular pars 
     for (int iPar=0; iPar<nPars; ++iPar) {
-      tin->SetBranchAddress((parName[iPar]+"_best").c_str(),&bestPar[iy][iPar]);
-      tin->SetBranchAddress((parName[iPar]+"_low" ).c_str(),&lowPar [iy][iPar]);
-      tin->SetBranchAddress((parName[iPar]+"_high").c_str(),&highPar[iy][iPar]);
+      tin->SetBranchAddress((parName[iPar]+"_best").c_str(),&bestPar[iYear][iPar]);
+      tin->SetBranchAddress((parName[iPar]+"_low" ).c_str(),&lowPar [iYear][iPar]);
+      tin->SetBranchAddress((parName[iPar]+"_high").c_str(),&highPar[iYear][iPar]);
     }
     tin->GetEntry(0);
 
+    // Get S-wave and mass pars 
     auto ws = (RooWorkspace*)fin->Get("wsp_out");
     if ( !ws || ws->IsZombie() ) {
-      cout<<year[iy]<<" workspace is problematic!"<<endl;
-      return;
-    }
-    auto ws2 = (RooWorkspace*)fin2->Get("w");
-    if ( !ws2 || ws2->IsZombie() ) {
-      cout<<year[iy]<<" workspace2 is problematic!"<<endl;
+      cout<<year[iYear]<<" workspace is problematic!"<<endl;
       return;
     }
 
     for (int iPar=0; iPar<nSPars; ++iPar) {
       auto par = (RooRealVar*)ws->var(sParName[iPar].c_str());
-      bestSPar[iy][iPar] = par->getValV();
-      lowSPar [iy][iPar] = par->getErrorLo();
-      highSPar[iy][iPar] = par->getErrorHi();
+      bestSPar[iYear][iPar] = par->getValV();
+      lowSPar [iYear][iPar] = par->getErrorLo();
+      highSPar[iYear][iPar] = par->getErrorHi();
     }
     for (int iPar=0; iPar<nMassPars; ++iPar) {
-      auto par = (RooRealVar*)ws->var(Form(massParName[iPar].c_str(),year[iy].c_str()));
+      auto par = (RooRealVar*)ws->var(Form(massParName[iPar].c_str(),year[iYear].c_str()));
       if (!par) {
-	cout<<"Error: "<<massParName[iPar]<<" not found in file "<<Form(finName.c_str(),year[iy].c_str(),q2Bin)<<endl;
+	cout<<"Error: "<<massParName[iPar]<<" not found in file "<<Form(finName.c_str(),year[iYear].c_str(),q2Bin)<<endl;
 	return;
       }
-      bestMassPar[iPar*3+iy] = par->getValV();
-      errMassPar [iPar*3+iy] = par->getError();
+      bestMassPar[iYear][iPar] = par->getValV();
+      errMassPar [iYear][iPar] = par->getError();
+      if (verbose) std::cout << "single fit (free): " << Form(massParName[iPar].c_str(),year[iYear].c_str()) << " = " << bestMassPar[iYear][iPar]  << std::endl;
+    }
+    for (int iPar=0; iPar<nMassConstPars; ++iPar) {
+      auto par = (RooRealVar*)ws->var(Form(massConstParName[iPar].c_str(),year[iYear].c_str()));
+      if (!par) {
+	cout<<"Error: "<<Form(massConstParName[iPar].c_str(),year[iYear].c_str()) <<" not found in file "<<Form(finName.c_str(),year[iYear].c_str(),q2Bin)<<endl;
+	return;
+      }
+      bestMassConstPar[iYear][iPar] = par->getValV();
+      errMassConstPar [iYear][iPar] = par->getError();
+      if (verbose) std::cout << "single fit (constr): " << Form(massConstParName[iPar].c_str(),year[iYear].c_str()) << " = " << bestMassConstPar[iYear][iPar]  << std::endl;
+    }
+
+    fin->Close();
+  }
+
+  // Now read constraints from the mass-pdf files
+  for (int iYear=0; iYear<3; ++iYear) {
+    auto fin2 = TFile::Open(Form(finName2.c_str(),year[iYear].c_str()));
+    if ( !fin2 || fin2->IsZombie() ) {
+      cout<<year[iYear]<<" file2 is problematic!"<<endl;
+      return;
+    }
+    auto ws2 = (RooWorkspace*)fin2->Get("w");
+    if ( !ws2 || ws2->IsZombie() ) {
+      cout<<year[iYear]<<" workspace2 is problematic!"<<endl;
+      return;
     }
     ws2->loadSnapshot(Form("reference_fit_RT_%i",q2Bin));
     double mean_rt_val = ws2->var(Form("mean_{RT}^{%i}", q2Bin))->getVal(); 
     double mean_rt_err = ws2->var(Form("mean_{RT}^{%i}", q2Bin))->getError(); 
     for (int iPar=0; iPar<nMassConstPars; ++iPar) {
-      auto par = (RooRealVar*)ws->var(Form(massConstParName[iPar].c_str(),year[iy].c_str()));
-      if (!par) {
-	cout<<"Error: "<<massConstParName[iPar]<<" not found in file "<<Form(finName.c_str(),year[iy].c_str(),q2Bin)<<endl;
-	return;
-      }
-      bestMassConstPar[iPar*3+iy] = par->getValV();
-      errMassConstPar [iPar*3+iy] = par->getError();
       if (iPar==8) ws2->loadSnapshot(Form("reference_fit_WT_%i",q2Bin));
       if (iPar==11) {
 	double mean_wt_val = ws2->var(Form("mean_{WT}^{%i}", q2Bin))->getVal(); 
 	double mean_wt_err = ws2->var(Form("mean_{WT}^{%i}", q2Bin))->getError(); 
-	massConstVal[iPar*3+iy] = mean_rt_val-mean_wt_val;
-	massConstErr[iPar*3+iy] = sqrt(mean_rt_err*mean_rt_err+mean_wt_err*mean_wt_err); 
+	massConstVal[iYear][iPar] = mean_rt_val-mean_wt_val;
+	massConstErr[iYear][iPar] = sqrt(mean_rt_err*mean_rt_err+mean_wt_err*mean_wt_err); 
       } else if (iPar>0) {
 	auto par2 = (RooRealVar*)ws2->var(Form(massConstParName[iPar].c_str(),Form("%i",q2Bin)));
 	if ( !par2 || par2->IsZombie() ) {
-	  cout<<Form(massConstParName[iPar].c_str(),year[iy].c_str())<<" constraint not found"<<endl;
+	  cout<<Form(massConstParName[iPar].c_str(),year[iYear].c_str())<<" constraint not found"<<endl;
 	  return;
 	}
-	massConstVal[iPar*3+iy] = par2->getValV();
-	massConstErr[iPar*3+iy] = par2->getError();
+	massConstVal[iYear][iPar] = par2->getValV();
+	massConstErr[iYear][iPar] = par2->getError();
       } else {
 	double nrt_mc = ws2->var(Form("nRT_%i",q2Bin))->getVal();
 	double nwt_mc = ws2->var(Form("nWT_%i",q2Bin))->getVal();
-	massConstVal[iy] = 1.;
-	massConstErr[iy] = fM_sigmas[atoi(year[iy].c_str())][q2Bin] / ( nwt_mc / (nrt_mc + nwt_mc) );
-	cout<<"==========="
-	    <<iy<<"\t"<<nrt_mc<<"\t"<<nwt_mc<<"\t"
-	    <<massConstErr[iy]<<"\t"
-	    <<bestMassConstPar[iy]<<"\t"
-	    <<errMassConstPar [iPar*3+iy]<<endl;
+	massConstVal[iYear][iPar] = 1.;
+        double fraction = nwt_mc / (nrt_mc + nwt_mc);
+	massConstErr[iYear][iPar] = fM_sigmas[atoi(year[iYear].c_str())][q2Bin] / fraction/(1-fraction); 
       }
+      cout<< "constr val " << Form(massConstParName[iPar].c_str(),year[iYear].c_str()) << " = " << massConstVal[iYear][iPar]<<endl;
+      
     }
-
-    fin->Close();
     fin2->Close();
-
   }
 
+
   // Plot P-wave parameters
-  double x[3][nPars];
+  double x[nYears][nPars];
   double xe[nPars];
   double xSim[nPars];
   double xeSim[nPars];
@@ -230,22 +250,22 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   double ySim [nPars];
   double ylSim[nPars];
   double yhSim[nPars];
-  double y [3][nPars];
-  double yl[3][nPars];
-  double yh[3][nPars];
+  double y [nYears][nPars];
+  double yl[nYears][nPars];
+  double yh[nYears][nPars];
 
   for (int iPar=0; iPar<nPars; ++iPar) {
     xSim[iPar]  = 0.5+iPar;
     xeSim[iPar] = 0.5;
-    xe[iPar]    = 1.0/6;
+    xe[iPar]    = 1.0/(2*nYears);
     ySim [iPar] = 0;
     ylSim[iPar] = -1 * lowParSim [iPar];
     yhSim[iPar] = highParSim[iPar];
-    for (int iy=0; iy<3; ++iy) {
-      x [iy][iPar] = (2.0*iy+1)/6+iPar;
-      y [iy][iPar] = bestPar[iy][iPar] - bestParSim[iPar];
-      yl[iy][iPar] = -1 * lowPar [iy][iPar];
-      yh[iy][iPar] = highPar[iy][iPar];
+    for (int iYear=0; iYear < nYears; ++iYear) {
+      x [iYear][iPar] = (2.0*iYear+1)/(2*nYears)+iPar;
+      y [iYear][iPar] = bestPar[iYear][iPar] - bestParSim[iPar];
+      yl[iYear][iPar] = -1 * lowPar [iYear][iPar];
+      yh[iYear][iPar] = highPar[iYear][iPar];
     }
   }
 
@@ -292,27 +312,27 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   line.SetLineColor(13);
   line.Draw();
 
-  TGraphAsymmErrors* gr [3];
+  TGraphAsymmErrors* gr [nYears];
   int colours [3] = {2,kViolet+7,4};
-  for (int iy=0; iy<3; ++iy) {
-    gr[iy] = new TGraphAsymmErrors(nPars,x[iy],y[iy],xe,xe,yl[iy],yh[iy]);
-    gr[iy]->SetName(Form("gr%i",iy));
-    gr[iy]->SetLineColor(colours[iy]);
-    gr[iy]->SetLineWidth(2);
-    gr[iy]->Draw("P");
+  for (int iYear=0; iYear< nYears ; ++iYear) {
+    gr[iYear] = new TGraphAsymmErrors(nPars,x[iYear],y[iYear],xe,xe,yl[iYear],yh[iYear]);
+    gr[iYear]->SetName(Form("gr%i",iYear));
+    gr[iYear]->SetLineColor(colours[iYear]);
+    gr[iYear]->SetLineWidth(2);
+    gr[iYear]->Draw("P");
   }
 
   TLegend leg (0.15,0.66,0.4,0.9);
   leg.AddEntry(grSim,"Simultaneous result","f");
   if (q2Bin==4 || q2Bin==6) leg.AddEntry(grPDG,"PDG value","lep");
-  for (int iy=0; iy<3; ++iy)
-    leg.AddEntry(gr[iy],("Result "+year[iy]).c_str(),"lep");
+  for (int iYear=0; iYear< nYears; ++iYear)
+    leg.AddEntry(gr[iYear], Form("Result %i", haveSingleFits[iYear]),"lep");
   leg.Draw();
 
-  canv.SaveAs(("plotSimFit4d_d/comparisonSimFit_result_"+shortString+"_XGBv8.pdf").c_str());
+  canv.SaveAs(("plotSimFit4d_d/comparisonSimFit_result_"+shortString+"_XGBv8_newMaster.pdf").c_str());
 
   // Plot S-wave parameters
-  double xS[3][nSPars];
+  double xS[nYears][nSPars];
   double xSe[nSPars];
   double xSSim[nSPars];
   double xSeSim[nSPars];
@@ -320,22 +340,22 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   double ySSim [nSPars];
   double ySlSim[nSPars];
   double yShSim[nSPars];
-  double yS [3][nSPars];
-  double ySl[3][nSPars];
-  double ySh[3][nSPars];
+  double yS [nYears][nSPars];
+  double ySl[nYears][nSPars];
+  double ySh[nYears][nSPars];
 
   for (int iPar=0; iPar<nSPars; ++iPar) {
     xSSim[iPar]  = 0.5+iPar;
     xSeSim[iPar] = 0.5;
-    xSe[iPar]    = 1.0/6;
+    xSe[iPar]    = 1.0/(2*nYears);
     ySSim [iPar] = 0;
     ySlSim[iPar] = -1 * lowSParSim [iPar];
     yShSim[iPar] = highSParSim[iPar];
-    for (int iy=0; iy<3; ++iy) {
-      xS [iy][iPar] = (2.0*iy+1)/6+iPar;
-      yS [iy][iPar] = bestSPar[iy][iPar] - bestSParSim[iPar];
-      ySl[iy][iPar] = -1 * lowSPar [iy][iPar];
-      ySh[iy][iPar] = highSPar[iy][iPar];
+    for (int iYear=0; iYear<nYears; ++iYear) {
+      xS [iYear][iPar] = (2.0*iYear+1)/(2*nYears)+iPar;
+      yS [iYear][iPar] = bestSPar[iYear][iPar] - bestSParSim[iPar];
+      ySl[iYear][iPar] = -1 * lowSPar [iYear][iPar];
+      ySh[iYear][iPar] = highSPar[iYear][iPar];
     }
   }
 
@@ -363,88 +383,109 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   lineS.SetLineColor(13);
   lineS.Draw();
 
-  TGraphAsymmErrors* grS [3];
-  for (int iy=0; iy<3; ++iy) {
-    grS[iy] = new TGraphAsymmErrors(nSPars,xS[iy],yS[iy],xSe,xSe,ySl[iy],ySh[iy]);
-    grS[iy]->SetName(Form("grS%i",iy));
-    grS[iy]->SetLineColor(colours[iy]);
-    grS[iy]->SetLineWidth(2);
-    grS[iy]->Draw("P");
+  TGraphAsymmErrors* grS [nYears];
+  for (int iYear=0; iYear<nYears; ++iYear) {
+    grS[iYear] = new TGraphAsymmErrors(nSPars,xS[iYear],yS[iYear],xSe,xSe,ySl[iYear],ySh[iYear]);
+    grS[iYear]->SetName(Form("grS%i",iYear));
+    grS[iYear]->SetLineColor(colours[iYear]);
+    grS[iYear]->SetLineWidth(2);
+    grS[iYear]->Draw("P");
   }
 
   TLegend legS (0.65,0.73,0.9,0.9);
   legS.AddEntry(grSimS,"Simultaneous result","f");
-  for (int iy=0; iy<3; ++iy)
-    legS.AddEntry(grS[iy],("Result "+year[iy]).c_str(),"lep");
+  for (int iYear=0; iYear<nYears; ++iYear)
+    legS.AddEntry(grS[iYear], Form("Result %i", haveSingleFits[iYear]),"lep");
   legS.Draw();
 
   canvS.SaveAs(("plotSimFit4d_d/comparisonSimFit_Swave_"+shortString+"_XGBv8.pdf").c_str());
 
+
   // Plot mass parameters
-  double xMass[3*(nMassPars+nMassConstPars)];
-  double xMasse[3*(nMassPars+nMassConstPars)];
+  double xMass[nYears*(nMassPars+nMassConstPars)];
+  double xMasse[nYears*(nMassPars+nMassConstPars)];
 
-  double yMassSim [3*(nMassPars+nMassConstPars)];
-  double yMasseSim[3*(nMassPars+nMassConstPars)];
-  double yMass [3*(nMassPars+nMassConstPars)];
-  double yMasse[3*(nMassPars+nMassConstPars)];
-  double yMassConst [3*(nMassPars+nMassConstPars)];
-  double yMasseConst[3*(nMassPars+nMassConstPars)];
+  double yMassSim [nYears*(nMassPars+nMassConstPars)];
+  double yMasseSim[nYears*(nMassPars+nMassConstPars)];
+  double yMass [nYears*(nMassPars+nMassConstPars)];
+  double yMasse[nYears*(nMassPars+nMassConstPars)];
+  double yMassConst [nYears*(nMassPars+nMassConstPars)];
+  double yMasseConst[nYears*(nMassPars+nMassConstPars)];
 
-  for (int iPar=0; iPar<3*(nMassPars+nMassConstPars); ++iPar) {
+  for (int iPar=0; iPar<nYears*(nMassPars+nMassConstPars); ++iPar) {
     xMass[iPar]  = 0.5+iPar;
     xMasse[iPar] = 0.5;
     yMassSim [iPar] = 0.;
     yMasseSim[iPar] = 1.;
   }
-  for (int iPar=0; iPar<3*nMassPars; ++iPar) {
-    yMass [iPar] = (bestMassPar[iPar] - bestMassParSim[iPar]) / errMassParSim[iPar];
-    yMasse[iPar] = errMassPar[iPar] / errMassParSim[iPar];
-    yMassConst [iPar] = 1e99;
-    yMasseConst[iPar] = 0;
-  }
-  for (int iPar=0; iPar<3*nMassConstPars; ++iPar) {
-    yMass [iPar+3*nMassPars] = (bestMassConstPar[iPar] - bestMassConstParSim[iPar]) / errMassConstParSim[iPar];
-    yMasse[iPar+3*nMassPars] = errMassConstPar[iPar] / errMassConstParSim[iPar];
-    yMassConst [iPar+3*nMassPars] = (massConstVal[iPar] - bestMassConstParSim[iPar]) / errMassConstParSim[iPar];
-    yMasseConst[iPar+3*nMassPars] = massConstErr[iPar] / errMassConstParSim[iPar];
+
+  for (int iPar=0; iPar<nMassPars; ++iPar) {
+    for (int iYear = 0; iYear < nYears; iYear++){
+      int this_index = iPar*nYears + iYear;
+      int year_index = haveSingleFits[iYear] - 2016;
+      yMass [this_index] = (bestMassPar[iYear][iPar] - bestMassParSim[year_index][iPar]) / errMassParSim[year_index][iPar];
+      yMasse[this_index] = errMassPar[iYear][iPar] / errMassParSim[year_index][iPar];
+      yMassConst [this_index] = 1e99;
+      yMasseConst[this_index] = 0;
+    }
+  }  
+
+
+  for (int iPar=0; iPar<nMassConstPars; ++iPar) {
+    for (int iYear = 0; iYear < nYears; iYear++){
+      int this_index = nMassPars*nYears + iPar*nYears + iYear;
+      int year_index = haveSingleFits[iYear] - 2016;
+      yMass [this_index] = (bestMassConstPar[iYear][iPar] - bestMassConstParSim[year_index][iPar]) / errMassConstParSim[year_index][iPar];
+      yMasse[this_index] =  errMassConstPar[iYear][iPar] / errMassConstParSim[year_index][iPar];
+      yMassConst [this_index] = (massConstVal[year_index][iPar] - bestMassConstParSim[year_index][iPar]) / errMassConstParSim[year_index][iPar];
+      yMasseConst[this_index] = massConstErr[year_index][iPar] / errMassConstParSim[year_index][iPar];
+    }
   }
 
   TCanvas canvM("canvM","canvM",1500,1000);
   canvM.cd();
 
   string plotTitleM = Form("Comparison of simultaneous fit mass parameters - q2 bin %i;;pulls",q2Bin);
-  auto hLabM = new TH1S ("hLabM",plotTitleM.c_str(),3*(nMassPars+nMassConstPars),0,3*(nMassPars+nMassConstPars));
-  for (int iBin=0; iBin<3*nMassPars; ++iBin)
-    hLabM->GetXaxis()->SetBinLabel(iBin+1,Form(massParName[iBin/3].c_str(),year[iBin%3].c_str()));
-  for (int iBin=0; iBin<3; ++iBin)
-    hLabM->GetXaxis()->SetBinLabel(iBin+1+3*nMassPars,Form("R^{%s}",year[iBin%3].c_str()));
-  for (int iBin=3; iBin<3*nMassConstPars; ++iBin)
-    hLabM->GetXaxis()->SetBinLabel(iBin+1+3*nMassPars,Form(massConstParName[iBin/3].c_str(),year[iBin%3].c_str()));
+  auto hLabM = new TH1S ("hLabM",plotTitleM.c_str(),nYears*(nMassPars+nMassConstPars),0,nYears*(nMassPars+nMassConstPars));
+  for (int iBin=0; iBin<nYears*nMassPars; ++iBin){
+    string this_year = Form("%i", haveSingleFits[iBin%nYears]);
+    hLabM->GetXaxis()->SetBinLabel(iBin+1,Form(massParName[iBin/nYears].c_str(), this_year.c_str()));
+  }
+  for (int iBin=0; iBin<nYears; ++iBin){
+    string this_year = Form("%i", haveSingleFits[iBin%nYears]);
+    hLabM->GetXaxis()->SetBinLabel(iBin+1+nYears*nMassPars,Form("R^{%s}", this_year.c_str()));
+  }  
+  for (int iBin=nYears; iBin<nYears*nMassConstPars; ++iBin){
+    string this_year = Form("%i", haveSingleFits[iBin%nYears]);
+    hLabM->GetXaxis()->SetBinLabel(iBin+1+nYears*nMassPars,Form(massConstParName[iBin/nYears].c_str(), this_year.c_str()));
+  
+  }
   double yRangeM = 9;
-  if (q2Bin==4) yRangeM = 30;
+  if (q2Bin==4) yRangeM = 30;//30;
   hLabM->SetMinimum(-1*yRangeM);
   hLabM->SetMaximum(yRangeM);
   hLabM->Draw();
+  hLabM->GetXaxis()->LabelsOption("v");
 
-  auto grSimM = new TGraphErrors(3*(nMassPars+nMassConstPars),xMass,yMassSim,xMasse,yMasseSim);
+
+  auto grSimM = new TGraphErrors(nYears*(nMassPars+nMassConstPars),xMass,yMassSim,xMasse,yMasseSim);
   grSimM->SetName("grSimM");
   grSimM->SetFillColor(30);
   grSimM->Draw("2");
 
-  TLine lineM (0,0,3*(nMassPars+nMassConstPars),0);
+  TLine lineM (0,0,nYears*(nMassPars+nMassConstPars),0);
   lineM.SetLineWidth(2);
   lineM.SetLineStyle(2);
   lineM.SetLineColor(13);
   lineM.Draw();
 
-  auto grM = new TGraphErrors(3*(nMassPars+nMassConstPars),xMass,yMass,xMasse,yMasse);
+  auto grM = new TGraphErrors(nYears*(nMassPars+nMassConstPars),xMass,yMass,xMasse,yMasse);
   grM->SetName("grM");
   grM->SetLineColor(2);
   grM->SetLineWidth(2);
   grM->Draw("P");
 
-  auto grConst = new TGraphErrors(3*(nMassPars+nMassConstPars),xMass,yMassConst,xMasse,yMasseConst);
+  auto grConst = new TGraphErrors(nYears*(nMassPars+nMassConstPars),xMass,yMassConst,xMasse,yMasseConst);
   grConst->SetName("grConst");
   grConst->SetLineColor(1);\
   grConst->SetLineWidth(2);
@@ -459,7 +500,7 @@ void plotSimFitComparison_manual(int q2Bin = 4)
   legM.Draw();
 
   canvM.SaveAs(("plotSimFit4d_d/comparisonSimFit_massParameters_"+shortString+"_XGBv8.pdf").c_str());
-
+  
   // Plot contrained mass parameters with traditional pull plots
   {
     double xMass[3*nMassConstPars];
@@ -478,11 +519,12 @@ void plotSimFitComparison_manual(int q2Bin = 4)
       yMassConst [iPar] = 0.;
       yMasseConst[iPar] = 1.;
     }
-    for (int iPar=0; iPar<3*nMassConstPars; ++iPar) {
-      yMass [iPar] = (bestMassConstPar[iPar] - massConstVal[iPar]) / massConstErr[iPar];
-      yMasse[iPar] = errMassConstPar[iPar] / massConstErr[iPar];
-      yMassSim [iPar] = (bestMassConstParSim[iPar] - massConstVal[iPar]) / massConstErr[iPar];
-      yMasseSim[iPar] = errMassConstParSim[iPar] / massConstErr[iPar];
+    for (int iPar=0; iPar<nMassConstPars; ++iPar) {
+      for (int iYear=0; iYear<3; ++iYear) {
+        int this_index = iPar*3 + iYear;
+        yMassSim [this_index] = (bestMassConstParSim[iYear][iPar] - massConstVal[iYear][iPar]) / massConstErr[iYear][iPar];
+        yMasseSim[this_index] = errMassConstParSim[iYear][iPar] / massConstErr[iYear][iPar];
+      }
     }
 
     TCanvas canvM("canvPull","canvPull",1000,1500);

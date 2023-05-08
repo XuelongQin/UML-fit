@@ -136,6 +136,8 @@ void Fitter::SetDefConf()
   nCPU = 1;
   nCPU_Pen=1;
 
+  unbl = 0;
+
 }
 
 
@@ -186,7 +188,7 @@ Int_t Fitter::fit()
     usedPenalty = false;
 
     std::cout<<"============ FREE FIT ==========="<<std::endl;
-    result_free->Print("v");
+    if (unbl>3) result_free->Print("v");
 
     // if free fit is good return its result
     if ( result_free->status()==0 && result_free->covQual()==3 && boundary->getValV() == 0 ) {
@@ -266,17 +268,19 @@ Int_t Fitter::fit()
 	result_penalty = m_penalty.save("result");
 	    
 	// std::cout<<penTerm->getCoefficient(1)<<"\t"<<penTerm->getCoefficient(5)<<"\t"<<P5p->getValV()<<std::endl;
-	result_penalty->Print("v");
+	if (unbl>3) result_penalty->Print("v");
 
 	// if a good fit is found return good status
 	if ( result_penalty->status()==0 && result_penalty->covQual()==3 ) {
 	  if ( boundary->getValV()==0 ) {
-	    std::cout<<"P "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
+	    if (unbl>0) std::cout<<"P "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
 	    computeBoundaryDistance();
 	    fillResultContainers();
 	    return 0;
-	  } else std::cout<<"O "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
-	} else std::cout<<"N "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
+	  } else
+	    if (unbl>0) std::cout<<"O "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
+	} else
+	  if (unbl>0) std::cout<<"N "<<coeff1<<"\t"<<coeff4<<"\t"<<coeff5<<std::endl;
 
       }
 
@@ -356,7 +360,7 @@ Int_t Fitter::MinosAng(int seed, int nGenMINOS)
 
     // get and print the best-fit result
     double p_best = vResult[iPar];
-    std::cout<<par->GetName()<<" best: "<<p_best<<std::endl;
+    if (unbl>3) std::cout<<par->GetName()<<" best: "<<p_best<<std::endl;
 
     // vectors for TGraph plots
     // std::vector<double> vPval (0);
@@ -451,10 +455,10 @@ Int_t Fitter::MinosAng(int seed, int nGenMINOS)
 
       if (isErrHigh>0) {
 	vConfInterHigh[iPar] = p_in;
-	std::cout<<par->GetName()<<" high: "<<p_in<<std::endl;
+	if (unbl>3) std::cout<<par->GetName()<<" high: "<<p_in<<std::endl;
       } else {
 	vConfInterLow[iPar] = p_in;
-	std::cout<<par->GetName()<<" low:  "<<p_in<<std::endl;
+	if (unbl>3) std::cout<<par->GetName()<<" low:  "<<p_in<<std::endl;
       }
 
     }
