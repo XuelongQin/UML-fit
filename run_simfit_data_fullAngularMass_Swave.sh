@@ -9,7 +9,7 @@ q2stat=${4}
 XGBv=8
 localFile=0
 fitopt=0
-unbl=0
+unbl=4
 
 plot=1
 save=${5}
