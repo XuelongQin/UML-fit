@@ -7,7 +7,8 @@ nsam=0
 
 XGBv=8
 localFile=0
-fitopt=1
+fitopt=0
+unbl=4
 
 plot=1
 save=2
@@ -62,7 +63,7 @@ mkdir simFitResults4d
 mkdir plotSimFit4d_d
 
 case "$yearConf" in
-# void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, int fitOption, int XGBv, bool localFiles, bool plot, int save, std::vector<int> years)
+# void simfit_data_fullAngularMass_SwaveBin(int q2Bin, int parity, bool multiSample, uint nSample, uint q2stat, int fitOption, int XGBv, int unblind, bool localFiles, bool plot, int save, std::vector<int> years)
 
     0)
 	echo ./simfit_data_fullAngularMass_Swave ${bin} ${par} ${multi} ${nsam} ${wscale} ${fitopt} ${XGBv} ${unbl} ${localFile} ${plot} ${save} 2016 2017 2018
