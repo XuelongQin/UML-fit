@@ -6,10 +6,10 @@ double deltaR(double eta1, double phi1, double eta2, double phi2);
 static const int nBins = 9;
 float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
 
-double PDGB0Mass = 5.27958;
-double PDGJpsiMass = 3.096916;
-double PDGPsiPrimeMass = 3.686109;
-double PDGKstMass = 0.896;
+double PDGB0Mass = 5.2797;
+double PDGJpsiMass = 3.0969;
+double PDGPsiPrimeMass = 3.6861;
+double PDGKstMass = 0.8956;
 
 map<int,vector<double>> swapCut = {
   {6, {0.13, 0.15, 0.07, 0.43, -0.45, 2.0}},
@@ -31,7 +31,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 8, bool pl
   if ( year<6 || year>8 ) return;
 
   string XGBstr = "";
-  if (XGBv==8 || (XGBv>0 && XGBv<6)) XGBstr = Form("_XGBv%i",XGBv);
+  if (!data && (XGBv==8 || (XGBv>0 && XGBv<6))) XGBstr = Form("_XGBv%i",XGBv);
 
   bool isJpsi = false;
   bool isPsi  = false;
@@ -63,6 +63,7 @@ void createDataset(int year, int q2Bin = -1, int data = 0, int XGBv = 8, bool pl
   for (int i=0; i<nBins; ++i) {
     runBin [i] = false;
     if ( q2Bin!=-1 && q2Bin!=i ) continue;
+    if ( !data && (q2Bin==-1 && ( i==4 || i==6 ) ) ) continue; // b4 and b6 use different MC samples, so don't overwrite them when running the non-resonant for all the bins
     runBin [i] = true;
     shortString [i] = Form("b%i",i);
     longString  [i] = Form("q2 bin %i",i);
