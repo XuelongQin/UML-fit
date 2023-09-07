@@ -164,14 +164,14 @@ Double_t PdfSigMass::analyticalIntegral(Int_t code, const char* rangeName) const
   
   RooAbsReal & rtMass = (RooAbsReal&)rtMassTerm.arg();
   double rtMassIntegral = ((RooAbsReal* )rtMass.createIntegral(marg))->getVal();
-  std::cout <<  "PdfSigMass:analyticalIntegral:rtMassIntegral  " << rtMassIntegral << std::endl;
+  //std::cout <<  "PdfSigMass:analyticalIntegral:rtMassIntegral  " << rtMassIntegral << std::endl;
   
   RooAbsReal & wtMass = (RooAbsReal&)wtMassTerm.arg();
   double wtMassIntegral = ((RooAbsReal* )wtMass.createIntegral(marg))->getVal();
-  std::cout <<  "PdfSigMass:analyticalIntegral:wtMassIntegral  " << wtMassIntegral << std::endl;
+  //std::cout <<  "PdfSigMass:analyticalIntegral:wtMassIntegral  " << wtMassIntegral << std::endl;
 
   double theIntegral = rtMassIntegral + mFrac*wtMassIntegral  ;
-  std::cout <<  "integral: " << theIntegral << std::endl;
+  //std::cout <<  "integral: " << theIntegral << std::endl;
 
   return theIntegral ;
 

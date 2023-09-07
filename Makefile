@@ -2,7 +2,7 @@
 ROOTLIBS  := $(shell root-config --glibs)
 ROOTFLAGS := $(shell root-config --cflags --libs) -lRooFit -lRooFitCore -lMathMore -lMinuit
 ROOTCINT  := $(shell which rootcint)
-
+ROOTFLAGS1 := $(shell root-config --cflags --libs) -lRooFitCore -lRooFit -lRooStats -lMathMore -lMinuit
 #directories
 SOURCEDIR   := ./src
 INCLUDEDIR  := ./interface
@@ -23,6 +23,16 @@ EXECUTABLE11 := simfit_data_fullAngularMass_Swave
 EXECUTABLE12 := plot_simfit_data_fullAngularMass_Swave
 EXECUTABLE13 := plot_simfit_recoMC_fullAngularMass_toybkg
 EXECUTABLE14 := plot_simfit_recoMC_fullAngularMass
+EXECUTABLE15 := Moment_gen
+EXECUTABLE16 := Moment_reco
+EXECUTABLE17 := createCocktail
+EXECUTABLE18 := Moment_reco_toyMC
+EXECUTABLE19 := Moment_reco_cocktail
+EXECUTABLE20 := Moment_reco_onecocktail
+EXECUTABLE21 := Moment_data
+EXECUTABLE22 := Generate_momtoy
+EXECUTABLE23 := Moment_control_toy_FixFs
+EXECUTABLE24 := Moment_data_fixbkg
 
 EXTRACLASS := RooDataHist.cxx
 CLASS0     := PdfRT
@@ -106,6 +116,35 @@ $(EXECUTABLE13): $(EXECUTABLE13).cc
 $(EXECUTABLE14): $(EXECUTABLE14).cc 
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
 
+$(EXECUTABLE15): $(EXECUTABLE15).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE16): $(EXECUTABLE16).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE17): $(EXECUTABLE17).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE18): $(EXECUTABLE18).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR) 
+	
+$(EXECUTABLE19): $(EXECUTABLE19).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS1) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE20): $(EXECUTABLE20).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS1) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE21): $(EXECUTABLE21).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS1) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE22): $(EXECUTABLE22).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS1) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE23): $(EXECUTABLE23).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS1) -I$(INCLUDEDIR) 
+
+$(EXECUTABLE24): $(EXECUTABLE24).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(SOURCEDIR)/$(CLASS4).cc $(CLASSDICT2).cc $(ROOTLIBS) $(ROOTFLAGS1) -I$(INCLUDEDIR) 
 #cleaning options
 .PHONY: clean
 clean:
